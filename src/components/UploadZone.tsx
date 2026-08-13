@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
-import { FileText, Loader2, CheckCircle2, AlertTriangle, RotateCcw } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { FileText, CheckCircle2, AlertTriangle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { ScanSkeleton } from '@/components/KineticLoader'
 import {
   extractTextFromFile,
   ParsingError,
@@ -10,6 +12,9 @@ import {
 import { cn } from '@/lib/utils'
 
 type UploadPhase = 'idle' | 'parsing' | 'error' | 'success'
+
+/** Minimum time the scanning treatment stays visible (Todo 4.4). */
+const PARSING_MIN_MS = 400
 
 const ACCEPT =
   '.pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain'
@@ -59,8 +64,15 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
     if (!file) return
     setPhase('parsing')
     setMessage('')
+    const started = performance.now()
     try {
       const parsed = await extractTextFromFile(file)
+      // Keep the scanning treatment visible for a beat (Todo 4.4) —
+      // well under the 2.5s kinetic budget.
+      const elapsed = performance.now() - started
+      if (elapsed < PARSING_MIN_MS) {
+        await new Promise((r) => setTimeout(r, PARSING_MIN_MS - elapsed))
+      }
       setResult(parsed)
       setPhase('success')
       onParsed(parsed)
@@ -137,88 +149,111 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
           dragOver && 'scale-[1.01] border-accent bg-accent-soft/40'
         )}
       >
-        {phase === 'idle' && (
-          <>
-            <div
-              aria-hidden="true"
-              className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 bg-paper text-ink-soft transition-colors group-hover:text-accent"
+        <AnimatePresence mode="wait" initial={false}>
+          {phase === 'idle' && (
+            <motion.div
+              key="idle"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              <FileText className="h-6 w-6" strokeWidth={1.75} />
-            </div>
-            <p className="font-display text-lg font-semibold text-ink">
-              Drop your resume here
-            </p>
-            <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-muted">
-              or click to browse
-            </p>
-            <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              PDF · DOCX · TXT — ≤ 5 MB — parsed in your browser
-            </p>
-          </>
-        )}
+              <div
+                aria-hidden="true"
+                className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 bg-paper text-ink-soft transition-colors group-hover:text-accent"
+              >
+                <FileText className="h-6 w-6" strokeWidth={1.75} />
+              </div>
+              <p className="font-display text-lg font-semibold text-ink">
+                Drop your resume here
+              </p>
+              <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-muted">
+                or click to browse
+              </p>
+              <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+                PDF · DOCX · TXT — ≤ 5 MB — parsed in your browser
+              </p>
+            </motion.div>
+          )}
 
-        {phase === 'parsing' && (
-          <div className="flex flex-col items-center gap-3 py-4">
-            <Loader2
-              aria-hidden="true"
-              className="h-8 w-8 animate-spin text-accent"
-              strokeWidth={1.75}
-            />
-            <p className="font-mono text-sm uppercase tracking-[0.14em] text-ink-soft">
-              Extracting text…
-            </p>
-          </div>
-        )}
-
-        {phase === 'error' && (
-          <div className="flex flex-col items-center gap-3 py-4">
-            <AlertTriangle
-              aria-hidden="true"
-              className="h-8 w-8 text-danger"
-              strokeWidth={1.75}
-            />
-            <p role="alert" className="max-w-sm text-sm text-ink">
-              {message}
-            </p>
-            <Button
-              variant="outline"
-              className="mt-1"
-              onClick={(e) => {
-                e.stopPropagation()
-                reset()
-              }}
+          {phase === 'parsing' && (
+            <motion.div
+              key="parsing"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              Try again
-            </Button>
-          </div>
-        )}
+              <ScanSkeleton />
+            </motion.div>
+          )}
 
-        {phase === 'success' && result && (
-          <div className="flex flex-col items-center gap-3 py-4">
-            <CheckCircle2
-              aria-hidden="true"
-              className="h-8 w-8 text-accent"
-              strokeWidth={1.75}
-            />
-            <p className="font-display text-lg font-semibold text-ink">
-              Resume ready
-            </p>
-            <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted">
-              {result.format.toUpperCase()} · {wordCount(result.text)} words
-            </p>
-            <Button
-              variant="outline"
-              className="mt-1"
-              onClick={(e) => {
-                e.stopPropagation()
-                reset()
-              }}
+          {phase === 'error' && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              <RotateCcw className="mr-2 h-3.5 w-3.5" />
-              Try another resume
-            </Button>
-          </div>
-        )}
+              <div className="flex flex-col items-center gap-3 py-4">
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="h-8 w-8 text-danger"
+                  strokeWidth={1.75}
+                />
+                <p role="alert" className="max-w-sm text-sm text-ink">
+                  {message}
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    reset()
+                  }}
+                >
+                  Try again
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {phase === 'success' && result && (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <div className="flex flex-col items-center gap-3 py-4">
+                <CheckCircle2
+                  aria-hidden="true"
+                  className="h-8 w-8 text-accent"
+                  strokeWidth={1.75}
+                />
+                <p className="font-display text-lg font-semibold text-ink">
+                  Resume ready
+                </p>
+                <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted">
+                  {result.format.toUpperCase()} · {wordCount(result.text)} words
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    reset()
+                  }}
+                >
+                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                  Try another resume
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {phase === 'idle' && (

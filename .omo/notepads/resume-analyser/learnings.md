@@ -106,3 +106,16 @@
 - Deps added: recharts ^3.10.1, sonner ^2.0.8.
 - QA evidence: 4-1-report-success.png, 4-1-charts.png, 4-1-report-weak.png + 4-1-test.log (32/32), 4-1-build.log (exit 0). Strong=100 emerald, weak=0 red (7 feedback items), sample=54 amber; JD chips 7/2; 0 console errors.
 - Commit: feat: add report view with interactive charts, scorecard, and print support
+
+## 2026-08-14 Todo 4.4: Kinetic loading system (commit pending)
+- KineticLoader.tsx: ScanSkeleton (resume card + shimmer .skeleton-shimmer + sweeping scan line + mono ticker via useTicker 650ms), AnalyzingSkeleton (score 0->100 ease-out-quart 900ms rAF, 5 CATEGORY_BARS staggered ease-out-expo delay i*0.1, SKILL_CHIPS pop-in 0.35+i*0.08), ReportReveal (useInView once margin -40px, opacity+y 16px, ease [0.16,1,0.3,1], delay prop).
+- UploadZone: PARSING_MIN_MS=400 min-display so scan treatment is visible on fast parses; phase blocks wrapped in AnimatePresence mode="wait" initial={false}, 200ms easeOut fade/slide; parsing phase renders ScanSkeleton (replaced Loader2).
+- ToolSection: ANALYZING_MIN_MS=700; AnimatePresence mode="wait" around idle/parsed/analyzing/done phases; JD textarea toggle in AnimatePresence height animation (overflow-hidden); analyzing renders AnalyzingSkeleton. useReducedMotion gates all transitions (reduce -> instant).
+- ReportView: report sections wrapped in ReportReveal with delays 0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.75. PLAN DEVIATION: plan said 500ms apart stagger, but 7 blocks * 500ms = 3.5s > 2.5s kinetic budget (acceptance criterion) -> used 0.15s increments. Recorded in plan.
+- TEST GOTCHA (motion 13): motion-dom's initPrefersReducedMotion snapshots prefersReducedMotion.current ONCE at module level (guarded by hasReducedMotionListener). Stubbing window.matchMedia per-test CANNOT change it after first render. Deterministic fix: vi.mock('motion/react') and override useReducedMotion: () => reducedMotion.current via vi.hoisted mutable object. ALSO: jsdom lacks IntersectionObserver -> motion useInView (ReportReveal) throws -> stub no-op observer class.
+- Test conventions: KineticLoader.test.tsx mirrors UploadZone.test.tsx (jsdom directive comment, explicit afterEach(cleanup) since Vitest globals disabled, vi.useRealTimers() reset).
+- Reduced-motion QA (Playwright newContext({ reducedMotion: 'reduce' })): scan line element ABSENT (count 0), score renders 100 instantly (no count-up), 0 console errors.
+- Kinetic QA measured: scan line top 0.0171% -> 12.6397% over 300ms (sweeping); analyzing score 16 -> 81 over 250ms (counting). Report settles at 100.
+- Evidence: 4-4-test.log (38/38), 4-4-build.log (exit 0), 4-4-kinetic-parsing.png, 4-4-kinetic-score.png, 4-4-report-final.png, 4-4-reduced-motion.png.
+- Playwright MCP: cdp_url must be top-level param http://127.0.0.1:9222 (nested fails with "Browser already in use"); CSS class selectors with dots need escaping (h-0.5 -> .h-0\.5).
+- css selector gotcha: Tailwind class h-0.5 in Playwright selector must be escaped as .h-0\.5 or locator throws "Unexpected token".

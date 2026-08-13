@@ -260,6 +260,32 @@ p {
 }
 
 /* ─────────────────────────────────────────────
+   Skeleton shimmer (Todo 4.4 — kinetic loading)
+   Reduced-motion safe: the global reduced-motion
+   block above already collapses animation-duration,
+   so the shimmer freezes automatically.
+   ───────────────────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(
+    100deg,
+    oklch(0.16 0 0 / 0.08) 40%,
+    oklch(0.16 0 0 / 0.18) 50%,
+    oklch(0.16 0 0 / 0.08) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s linear infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ─────────────────────────────────────────────
    Print — report-only output (Todo 4.1)
    Hides everything except #report-print; the
    toolbar (.no-print) is excluded.
