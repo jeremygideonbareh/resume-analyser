@@ -1,0 +1,8 @@
+﻿rtk : [rtk] /!\ No hook installed ΓÇö run `rtk init -g` for automatic token savings
+At line:1 char:91
++ ... econd_Brain\clients website\resume analyser"; rtk vitest 2>&1 | Out-F ...
++                                                   ~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([rtk] /!\ No ho...c token savings:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+PASS (16) FAIL (0)

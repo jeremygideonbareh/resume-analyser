@@ -1,4 +1,4 @@
-## 2026-08-13 Todo 1.1
+﻿## 2026-08-13 Todo 1.1
 - Windows excluded TCP port ranges (netsh): 4738-4937, 5041-5240, 8032, 9032, 12484-12583, 41216-41415, 48512-48611, 50000-50059, 59407-59506. Ports in these ranges fail with EACCES even for plain Node. Vite default 5173 is safe. For dev-server smoke tests use --port 5173 or another port outside these ranges.
 - Start-Process with npm shim on Windows doesn't reliably spawn the server; use 'node node_modules\vite\bin\vite.js' directly or Start-Job with Set-Location first.
 - shadcn CLI v4.17 dropped components into a literal '@\components\ui' dir at project root instead of src/components/ui (alias misresolution) � relocate manually.
@@ -64,3 +64,13 @@
 - Test gotcha: short-text warning test needs text between 50 and 200 chars (34-char text throws no-text instead).
 - Test file imports node:fs/process/Buffer -> tsconfig.app.json types:["vite/client"] blocks node globals -> add /// <reference types="node" /> at top of test file (file-scoped, doesn't pollute app).
 - Evidence: .omo/evidence/2-1-parsing-test.log (9/9 PASS), 2-1-build.log. Build exit 0. Dev smoke 200/0 errors.
+
+## 2026-08-13 Todo 2.2 EXECUTION (UploadZone + tests)
+- Created src/components/UploadZone.tsx (phases idle/parsing/error/success; drag-drop onDragOver/onDrop + hidden input accept .pdf,.docx,.txt + paste Textarea expander -> File([text],"pasted-resume.txt",{type:"text/plain"}) -> same handleFile path; error copy mapped per ParsingError code; role="button" + Enter/Space open picker; role="alert" errors; reset/"Try another resume"; success "{FORMAT} · {N} words"). Wired ToolSection.tsx: <UploadZone onParsed={(p)=>setParsed(p)}/>, parsed state held for Todo 3.2.
+- CRITICAL RTL gotcha: Vitest globals are DISABLED (default config) so @testing-library/react auto-cleanup NEVER hooks in -> DOM accumulates across tests -> "Found multiple elements with role button" + querySelector grabs stale zone from a previous test. Fix: import { cleanup } and afterEach(() => cleanup()) in the test file. This was the root cause of 3/3 failures.
+- RTL fireEvent.change(selector, { target: { files: [file] } }) triggers the input onChange; component then does e.target.value = '' (allowed in jsdom).
+- TS: vi.mock factory return must type ParsingError.code as string (or cast); SAMPLE_PARSED fixture needs explicit `: ParsedResume` annotation or `format: 'txt'` widens to string -> TS2345 on toHaveBeenCalledWith. Type imports from the mocked module are safe (erased at runtime).
+- Removed unused lucide FileText import in ToolSection (TS6133, noUnusedLocals).
+- Playwright MCP browser lock: "Browser is already in use" -> launch headless Chrome: chrome.exe --headless=new --remote-debugging-port=9222 --user-data-dir=... then attach via cdp_url=http://127.0.0.1:9222. MCP VM has NO require, NO dynamic import -> use setInputFiles with PATH strings (file must exist on disk; created 5MB+100B temp file via PowerShell). Regex escaping: in waitForSelector the pattern is a STRING (\\d -> digit class), in page.evaluate it is a regex LITERAL (\\d -> literal backslash+d). Over-escaped evaluate regex returned null first run.
+- MCP screenshots save to MCP cwd (C:\Users\cloud\.omo\evidence\) NOT project dir -> copy into .omo/evidence/ after QA.
+- Final: 16/16 tests PASS (9 parsing + 6 UploadZone + 1), build exit 0, browser QA success "TXT · 50 words" + error "File must be under 5MB." 0 console errors. Evidence: 2-2-component-test.log, 2-2-build.log, 2-2-upload-success.png, 2-2-upload-error.png.
