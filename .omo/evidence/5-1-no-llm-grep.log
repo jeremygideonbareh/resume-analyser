@@ -1,0 +1,17 @@
+﻿=== Todo 5.1 QA failure: grep dist for sk- / AIza / api/analyze (VITE_ENABLE_LLM unset) ===
+Date: 2026-08-14 00:21:23
+
+Scanned files: 4 (3192696 bytes)
+
+--- pattern 'api/analyze': 0 hit(s) ---
+--- pattern 'AIza': 0 hit(s) ---
+--- pattern 'sk-': 4 hit(s) ---
+  dist\assets\index-B_vyPL7x.css : ...4px;position:absolute;inset:0;-webkit-mask-image:radial-gradient(circle,#000 0%,#0000 62%);mask-image:radial-gradient(ci...
+  dist\assets\index-DFOyILra.js : ...r`]}],"bg-blend":[{"bg-blend":ee()}],"mask-clip":[{"mask-clip":[`border`,`padding`,`content`,`fill`,`stroke`,`view`]},`m...
+  dist\assets\index-DFOyILra.js : ...er`,UF=`completed`,WF=`cancelled`,GF=`task-${WF}`,KF=`task-${UF}`,qF=`${HF}-${WF}`,JF=`${HF}-${UF}`,YF=class{constructor...
+  dist\assets\pdf.worker.min-CLrFZWeq.mjs : ... */var e={9306(e,t,n){var a=n(4901),r=n(6823),s=TypeError;e.exports=function(e){if(a(e))return e;throw new s(r(e)+" is n...
+
+Key-shaped regex hits (sk-<16+ alnum> / AIza<20+>): 0
+
+RESULT: '/api/analyze' present in dist: False
+RESULT: key-shaped strings present in dist: False

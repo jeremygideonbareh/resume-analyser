@@ -119,3 +119,15 @@
 - Evidence: 4-4-test.log (38/38), 4-4-build.log (exit 0), 4-4-kinetic-parsing.png, 4-4-kinetic-score.png, 4-4-report-final.png, 4-4-reduced-motion.png.
 - Playwright MCP: cdp_url must be top-level param http://127.0.0.1:9222 (nested fails with "Browser already in use"); CSS class selectors with dots need escaping (h-0.5 -> .h-0\.5).
 - css selector gotcha: Tailwind class h-0.5 in Playwright selector must be escaped as .h-0\.5 or locator throws "Unexpected token".
+## 2026-08-14 Todo 5.1: env-gated LLM feedback tier (DONE)
+- Gate: LLM_ENABLED = import.meta.env.VITE_ENABLE_LLM === 'true'. Vite statically folds it at build time.
+- KEY TRICK for "no /api/analyze literal in dist when disabled": derive the URL via ternary (`import.meta.env.VITE_ENABLE_LLM === 'true' ? '/api/analyze' : ''`) so the bundler constant-folds it to ''. Verified: grep of default build -> 0 hits.
+- LLM_API_KEY lives ONLY in api/analyze.ts via process.env. Never reference keys in client code.
+- api/ dir serverless: default-export Web Request/Response handler works on Vercel AND Netlify. Added "api" to tsconfig.node.json include so `tsc -b` typechecks it; nodenext + allowImportingTsExtensions lets api import types from src with explicit .ts extension.
+- vitest: env-gated module tests need vi.stubEnv + vi.resetModules() + dynamic import (module reads import.meta.env at eval time).
+- Component gate tests: vi.hoisted mutable object + getters inside the vi.mock factory = live-binding so LLM_ENABLED can flip true/false within one test file.
+- Fetch spec gotcha: GET/HEAD Request cannot carry a body (TypeError) - guard init.body only for POST in test helpers.
+- Playwright MCP (this build) has NO browser_route / browser_route_fulfill / browser_screenshot. Stub fetch via browser_evaluate with a SINGLE-EXPRESSION IIFE (multi-statement strings throw SyntaxError). Screenshot tool is browser_take_screenshot; files land in C:\Users\cloud\.playwright-mcp\ (MCP cwd, not project) - copy to .omo/evidence.
+- ReportView: AI section wrapped in ReportReveal delay 0.9, gated {LLM_ENABLED && parsed && ...}.
+- Serverless fn shape: POST-only 405, LLM_API_KEY missing 503, 100KB Buffer.byteLength 413, bad/empty JSON 400, upstream non-ok 502, malformed LLM JSON 502, AbortError 504, unexpected 500; never logs text.
+- Evidence: 57/57 tests, build exit 0, dist grep clean, QA happy (sample score 54, AI section renders).

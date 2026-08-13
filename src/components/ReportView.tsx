@@ -25,6 +25,8 @@ import {
   buildCopySummary,
 } from '@/lib/report-format'
 import { ReportReveal } from '@/components/KineticLoader'
+import { AiFeedbackSection } from '@/components/AiFeedbackSection'
+import { LLM_ENABLED } from '@/lib/llm'
 
 /** Animated count-up — ease-out-quart; instant when reduced motion. */
 function useCountUp(target: number, duration = 800): number {
@@ -426,6 +428,13 @@ export function ReportView({ result, parsed }: ReportViewProps) {
           )}
         </div>
       </ReportReveal>
+
+      {/* Optional AI feedback (beta) — env-gated, key server-side (Todo 5.1) */}
+      {LLM_ENABLED && parsed && (
+        <ReportReveal delay={0.9}>
+          <AiFeedbackSection text={parsed.text} />
+        </ReportReveal>
+      )}
     </div>
   )
 }
