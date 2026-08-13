@@ -51,3 +51,16 @@
 - Evidence: .omo/evidence/1-3-components.png, 1-3-marquee-motion.json, 1-3-reduced-motion.png.
 - tsc -b: No errors found. npm run build: exit 0 (index-UM6eB2td.js 385.87 kB, gzip 121.80 kB).
 - Componentry attempt skipped (bash flaky; optional per spec).
+
+## 2026-08-13 Todo 2.1 EXECUTION (parsing engine)
+- Created src/lib/parsing.ts (extractTextFromFile, ParsingError codes file-too-large/unsupported-type/no-text/parse-error, MAX_FILE_BYTES 5MB, MIN_TEXT_CHARS 50, LOW_CONFIDENCE_CHARS 200 -> possible-scanned warning), scripts/make-fixtures.mjs (pdf-lib + docx pkg), fixtures sample.pdf/docx/txt (marker "FixtureName"), src/lib/__tests__/parsing.test.ts (9 tests).
+- pdfjs-dist installed is v6.2.108 (plan referenced v4) - MAJOR API DIFFERENCES:
+  1) MAIN build (pdfjs-dist) FAILS to import in Node (browser globals at module load). Use pdfjs-dist/legacy/build/pdf.mjs - works in BOTH browser and Node. Single import path.
+  2) doc.destroy() REMOVED in v6 -> use the LoadingTask: const task = getDocument({data}); const doc = await task.promise; ... finally { await task.destroy() }.
+  3) isEvalSupported option REMOVED from DocumentInitParameters (TS2353) - pass { data } only.
+  4) workerSrc must be set ONLY in browser (	ypeof window !== 'undefined'). In Node/Vitest setting it makes pdf.js dynamic-import the worker via the ?url-resolved path -> "Setting up fake worker failed: Cannot find module 'C:\node_modules\...'" (path mangled). Without workerSrc in Node, pdf.js uses built-in fake worker (main thread) - works.
+  5) Cosmetic warning "Ensure that the standardFontDataUrl API parameter is provided" - extraction still works; standardFontDataUrl/cMapUrl need a served directory (Vite can't ?url a dir) - documented limitation for CJK/standard-font edge cases.
+- mammoth 1.12.1: types say { arrayBuffer } is valid Input, but the NODE build's unzip.openZip only accepts path|buffer|file -> "Could not find file in options". Browser build accepts arrayBuffer. Fix: runtime detect globalThis.Buffer -> pass { buffer: Buffer.from(ab) } in Node, { arrayBuffer } in browser.
+- Test gotcha: short-text warning test needs text between 50 and 200 chars (34-char text throws no-text instead).
+- Test file imports node:fs/process/Buffer -> tsconfig.app.json types:["vite/client"] blocks node globals -> add /// <reference types="node" /> at top of test file (file-scoped, doesn't pollute app).
+- Evidence: .omo/evidence/2-1-parsing-test.log (9/9 PASS), 2-1-build.log. Build exit 0. Dev smoke 200/0 errors.

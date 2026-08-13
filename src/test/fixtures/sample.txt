@@ -1,0 +1,11 @@
+FixtureName
+fixture@example.com
+Senior Software Engineer
+Summary
+Software engineer with 8 years of experience building scalable web applications with React and TypeScript.
+Skills
+React, TypeScript, Node.js, SQL, AWS
+Experience
+Led a team of 6 engineers; improved deployment speed by 40%; reduced error rates by 25%.
+Education
+BSc Computer Science, Example University
