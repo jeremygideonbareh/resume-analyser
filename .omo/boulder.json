@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "active_work_id": "resume-analyser",
+  "works": {
+    "resume-analyser": {
+      "work_id": "resume-analyser",
+      "active_plan": ".omo/plans/resume-analyser.md",
+      "plan_name": "resume-analyser",
+      "session_ids": ["opencode:ses_0059fff04ffen7rG9KvvUP7wa7"],
+      "status": "active",
+      "worktree_path": null,
+      "started_at": "2026-08-13T15:16:47.677Z"
+    }
+  }
+}

@@ -1,0 +1,195 @@
+# resume-analyser - Work Plan
+
+## TL;DR (For humans)
+
+**What you'll get:** A polished, privacy-first **resume analyser website** — the client uploads a resume (PDF/DOCX/TXT, ≤5MB, drag-drop or paste), and instantly gets an **ATS score (0–100) with a category breakdown**, detected sections, extracted skills, optional **job-description keyword match** (paste a JD → see present vs missing keywords), and **actionable per-section feedback**. A one-page site: hero + how-it-works + the analyser tool + report, with a distinctive ink-on-paper scorecard design. Optional (off by default) AI-powered feedback tier that can be enabled later without any code change to the core.
+
+**Why this approach:** I treated this as an open-ended brief and chose best-practice defaults (see "Decisions I made for you" below). The architecture is **zero-upload**: your client's resume never leaves their browser — parsing happens client-side (industry-standard libraries), nothing is stored, no cookies, no server. That's the privacy-first pattern every leading resume tool (Resume Worded, resume-parser.app) follows in 2026, and it means the site works for free with **zero API keys and zero running costs**. The stack matches your other client tool sites (Vite + React 19 + TypeScript + Tailwind + shadcn/ui, like `crumbs` and `sales-crm`).
+
+**What it will NOT do:** No user accounts, no resume storage/database, no OCR of scanned/image PDFs (clear error + paste fallback instead), no job-board integration, no AI resume rewriting, no Chrome extension. The LLM tier is an optional hook, NOT part of the core build.
+
+**Effort:** ~13 todos across 6 waves — foundation, parsing, analysis, report UI, optional LLM hook, quality + ship. **Risk:** Low-Medium. Main risk is PDF parsing edge cases (scanned PDFs, two-column layouts) — mitigated by client-side libs + graceful degradation + paste fallback.
+
+**Decisions I made for you** (all reversible — tell me at the gate and I'll change any):
+1. **I treated this as open-ended** ("resume analyser" = ATS-style analysis tool). If you had a specific outcome in mind, say so and I'll switch to asking.
+2. Stack: Vite + React 19 + TS + Tailwind v4 + shadcn/ui (your repo convention for tool sites).
+3. Scoring: 0–100 with industry-sourced 2026 weights (keywords 45%, structure 17%, formatting 12%, recency 13%, contact 8%).
+4. Privacy: zero-upload, client-side parsing, nothing persisted.
+5. Design: ink-on-paper light theme, Fraunces serif + Inter + IBM Plex Mono, emerald accent, signature = animated ATS scorecard card.
+6. LLM tier env-gated `VITE_ENABLE_LLM` default **false** — key lives server-side only when enabled.
+7. Deploy: static build → Vercel (works on Cloudflare Pages too).
+
+## Scope
+
+**In scope (components):**
+1. **Foundation** — git init, Vite + React 19 + TS scaffold, Tailwind v4, shadcn/ui, motion stack (`motion` + `lenis`), base layout
+2. **Component sourcing (user requirement)** — Componentry animated components (shadcn CLI) + 21st.dev components via `magic-dev-21st` MCP, restyled to tokens
+3. **Parsing engine** — client-side text extraction: PDF (pdfjs-dist), DOCX (mammoth), TXT passthrough; 5MB validation; scanned-PDF error
+4. **Analysis engine** — rule-based: section detection (summary/experience/education/skills), keyword extraction, weighted ATS score, per-section feedback rules
+5. **JD comparison** — optional job-description paste → present/missing keyword lists with category grouping
+6. **Report UI with interactive graphs (user requirement)** — Recharts RadarChart + BarChart (hover tooltips, bar→feedback drill-down), score gauge, keyword chips, feedback list, print/export
+7. **Kinetic loading system (user requirement)** — animated skeletons, scan-line parsing animation, staggered score count-up, AnimatePresence transitions everywhere, reduced-motion alternatives
+8. **LLM enhancement (optional hook)** — `api/analyze.ts` serverless fn, env-gated, default OFF, key never in client
+9. **Landing + design** — hero, how-it-works, tool section, footer; responsive + accessible; magnetic CTAs; smooth scrolling (lenis)
+
+**Out of scope / Must-NOT-Have:** auth/accounts; resume storage or database; OCR of scanned PDFs; job-board integration; Chrome extension; multi-language; AI rewriting of resume content; server-side persistence of uploaded files (even with LLM on, file text should pass through without storage).
+
+## Verification strategy
+
+- **TDD for pure logic:** parsing + analysis engines are pure functions → unit tests written first (Vitest), covering happy + failure paths.
+- **Agent-executed QA per todo:** each todo carries explicit happy + failure QA scenarios with exact tool invocations and evidence paths. Zero human-intervention verification.
+- **E2E:** Playwright flow test — upload fixture resume → parse → analyze → report renders with score + keywords.
+- **Final verification wave (F1–F4):** plan compliance audit, code quality review, real manual QA in browser, scope fidelity audit — all four must APPROVE before "done" is claimed.
+- **Security pass:** dependency audit (`npm audit`), no secrets in client bundle check (grep for `sk-`, `AIza`, keys), CSP headers.
+
+## Execution strategy
+
+- Worker executes via `$start-work` or `/webdev full` in the project dir `C:\Users\cloud\OneDrive\Desktop\Hybrid_Second_Brain\clients website\resume analyser` (note: **path contains a space** — quote it in all shell commands).
+- **AUTONOMOUS EXECUTION (user directive: "plan executor do all changes itself and verify itself"):** the executor makes **ALL changes itself** and **verifies each change itself** — no per-todo check-ins with the user, no "should I continue?" prompts. Run every wave in order (1 → 6) without stopping.
+- **Self-verification is mandatory per todo:** for EVERY todo, the executor must (a) run the todo's QA happy + QA failure scenarios itself, (b) save the evidence files to `.omo/evidence/` exactly as named in each todo, (c) confirm the acceptance criteria against the actual repo state before marking the todo complete and committing. A todo is NOT done on the executor's self-report alone — the evidence files ARE the record. Do not skip a QA scenario because it looks obvious; run it and save the output.
+- **Stop conditions (the ONLY reasons to pause):** (1) BLOCKED — a blocker that cannot be resolved with more context or a more capable model; (2) genuine ambiguity that prevents progress (resolve it by re-reading the plan's pinned decisions first — they are decision-complete; escalate to the user only if the plan itself is wrong); (3) all todos complete. Otherwise keep going. Never stop for progress summaries.
+- **Subagent policy:** if subagent dispatch is available (billing resolved), the executor MAY use `subagent-driven-development` (fresh implementer per todo + task reviewer + final review) as long as each dispatched task still produces the todo's evidence files. If dispatch is unavailable, the executor executes todos directly in its own session (per `executing-plans`) — same self-verification requirements. The user's directive "do all changes itself and verify itself" means: no dependency on subagents being available, and verification is always performed, never assumed.
+- **Final verification wave (F1–F4):** the executor runs all four audits itself against the completed repo, fixes any issues found, and only then surfaces results to the user for the explicit okay before declaring complete.
+- One wave at a time, in order (Wave 1 → 6). Waves 2–4 can partially parallelize within a wave only if tasks are independent (parse engine before report UI; JD compare after analysis engine).
+- Commit per todo (conventional commits). Never commit to main without explicit user consent — use a branch (`feat/resume-analyser`) until final approval, then merge.
+- `npm run build` must pass after every wave; `npm run dev` smoke-test after every wave.
+
+## Todos
+
+### Wave 1 — Foundation
+
+**Todo 1.1 — Scaffold Vite + React 19 + TS + Tailwind v4 + shadcn/ui project in the project dir**
+- **References:** `crumbs/package.json` (Vite 8, React 19, shadcn, sonner, framer-motion — the repo convention; note: crumbs uses react-router but this project is single-page and does NOT use it); `sales-crm/frontend/` (Vite + TS + Tailwind + shadcn); Vite docs `https://vite.dev/guide/`; Tailwind v4 `https://tailwindcss.com/docs/installation/using-vite`; shadcn `https://ui.shadcn.com/docs/installation/vite`
+- **Actions:** `git init` in project dir; **non-empty-dir gotcha:** `.omo/` already exists in the target dir — run `npm create vite@latest . -- --template react-ts`; if it prompts about a non-empty directory, answer yes/overwrite (it only conflicts on same-named files; `.omo/` is safe) — if it refuses entirely, scaffold into a temp subfolder and move the generated files up; install Tailwind v4 (`tailwindcss @tailwindcss/vite`) + configure plugin in `vite.config.ts`; `npx shadcn@latest init` (base color: neutral, CSS variables on); add base `Button`, `Card`, `Input`, `Textarea`, `Progress` shadcn components; **motion stack (repo precedent: kiki-rental-app, crumbs):** install `motion` (framer-motion successor, same API for `motion`/`AnimatePresence`/`useScroll`) + `lenis` (smooth scrolling) — configure `Lenis` in `src/main.tsx` with default options (smoothWheel true, lerp 0.1); **no router dependency** — this is a single-page app: `src/main.tsx` renders `src/App.tsx` directly (tool + report on one page, no routes); add `src/index.css` with design tokens (see Todo 1.2); scripts: `dev`, `build`, `preview`, `test` (Vitest), `lint` (eslint), `typecheck`.
+- **Acceptance criteria:** `npm run dev` boots with no errors; `npm run build` exits 0 producing `dist/`; `npm run typecheck` exits 0; `npm run test` runs with Vitest configured; shadcn components render; git repo initialized with `.gitignore` (node_modules, dist).
+- **QA happy:** run `npm run build` in project dir → exit 0, `dist/index.html` exists → evidence: command output saved to `.omo/evidence/1-1-build.log`.
+- **QA failure:** run `npm run typecheck` with an intentionally broken type in a scratch file → non-zero exit → remove scratch → evidence: `.omo/evidence/1-1-typecheck-fail.log`.
+- **Commit:** `chore: scaffold vite react-ts project with tailwind and shadcn`
+
+**Todo 1.2 — Design tokens + base layout (ink-on-paper, scorecard identity)**
+- **References:** `impeccable` skill (OKLCH palette, contrast ≥4.5:1 body / ≥3:1 large text, no gradient text, no side-stripe borders, no eyebrow kickers on every section, line length 65–75ch); `frontend-design` skill (subject-grounded: documents/scorecards vernacular); tokens in `src/index.css` `:root`
+- **Actions:** **Brand name is fixed: "ResumeLab"** (displayed in header + footer + `<title>`; easy to change later — record in HANDOFF). Define tokens: bg `oklch(0.985 0 0)` (paper, chroma 0 — NOT warm cream), surface `oklch(0.96 0 0)`, ink `oklch(0.16 0 0)`, muted `oklch(0.45 0 0)`, accent emerald `#059669` (→ oklch ~`oklch(0.58 0.13 162)`), semantic danger `oklch(0.55 0.2 27)` (red), warning `oklch(0.68 0.15 75)` (amber); Fonts via `@fontsource`: Fraunces (display serif), Inter (body sans), IBM Plex Mono (data/keywords); type scale: display clamp(2.5rem, 6vw, 4.5rem) letter-spacing ≥ -0.04em, body 1rem/1.6; **Interactive/kinetic motion system (user requirement — see Wave 4 Todo 4.4):** establish motion primitives now — `motion` components with ease-out-expo curves, staggered section reveals (each section reveals once on scroll into view via `useInView`), magnetic hover on primary CTAs (translate toward cursor, spring), AnimatePresence for state transitions (idle→parsing→analyzing→report), `prefers-reduced-motion: reduce` → all motion collapses to instant/crossfade; Base layout: sticky header (ResumeLab logo mark), hero section, tool section, how-it-works (3 steps: Upload → Analyse → Improve), footer with privacy note ("Your resume never leaves your browser"); responsive at 375px / 768px / 1280px; `prefers-reduced-motion: reduce` respected.
+- **Acceptance criteria:** tokens exist as CSS variables; body text contrast ≥4.5:1 verified (computed check: log the ratio of ink-on-paper to `.omo/evidence/1-2-contrast.log` during QA); layout renders at 3 breakpoints without horizontal scroll or overflow; all three fonts load via @fontsource; no banned patterns (gradient text, glassmorphism default, eyebrow on every section).
+- **QA happy:** Playwright/agent-browser screenshot at 375/768/1280 → no horizontal scrollbar, hero + footer visible → evidence: `.omo/evidence/1-2-breakpoints.png`.
+- **QA failure:** open page with `prefers-reduced-motion: reduce` emulation → no animations fire / instant transitions → evidence: `.omo/evidence/1-2-reduced-motion.png`.
+- **Commit:** `feat: add design tokens and base layout with scorecard identity`
+
+**Todo 1.3 — Source + integrate animated UI components from Componentry and 21st.dev**
+- **References:** Componentry `https://componentry.fun/docs` + `https://github.com/harshjdhv/componentry` (free, open-source animated React components by Harsh Jadhav — Tailwind + TypeScript + Framer Motion; install via shadcn CLI `npx shadcn@latest add @componentry/<name>`); 21st.dev MCP `magic-dev-21st` is **configured and enabled** with `X_API_KEY` = `${21ST_API_KEY}` (verified set in `~/.config/opencode/.env`) — use it to search and pull components (see webdev skill Phase 2 step 9); user requirement: "find components from componentry, find good ui components from 21st dev"
+- **Actions:** (1) **Componentry:** run `npx shadcn@latest add @componentry/magnetic-dock` (or the closest currently-published package — check `https://componentry.fun/docs` for the exact package names; if a specific one fails, log it and pick the nearest motion-focused equivalent) and integrate 1–2 of its animated components where they genuinely fit: e.g., **magnetic hover** on the Analyse CTA or **animated gradient/marquee** as a subtle hero accent strip. Do NOT force every animation in — restraint (see impeccable: one signature element). Restyle all pulled components to the Todo 1.2 tokens (paper/ink/emerald, Fraunces/Inter/IBM Plex Mono); (2) **21st.dev:** use the `magic-dev-21st` MCP to search for and pull 2–4 high-quality components relevant to this app — candidates: file-upload/dropzone cards, dashboard score/stat cards, animated progress or gauge cards, hero sections. Evaluate each against the design direction (ink-on-paper scorecard identity); integrate the best fits, restyle to tokens, adapt code to local conventions; record what was pulled + from where (componentry vs 21st.dev) in HANDOFF.
+- **Acceptance criteria:** at least one Componentry animated component integrated and working; at least one 21st.dev-sourced component integrated (via MCP, not manual copy from memory); all pulled components restyled to tokens (no default color clashes); bundle still builds; no duplicate/shadowing component conflicts; HANDOFF records provenance.
+- **QA happy:** `npm run build` + `npm run dev` → page renders with integrated components, hover states animate (magnetic/scroll effects) → evidence: `.omo/evidence/1-3-components.png` (screenshot of hero with componentry/21st components) + `.omo/evidence/1-3-mcp.log` (record of MCP pulls).
+- **QA failure:** disable JS (`page.setJavaScriptEnabled(false)` in Playwright) → page still renders core content (progressive enhancement: components degrade gracefully, no blank sections) → evidence: `.omo/evidence/1-3-no-js.png`.
+- **Commit:** `feat: integrate componentry and 21st.dev animated components`
+
+### Wave 2 — Parsing
+
+**Todo 2.1 — Parsing engine: extract text from PDF / DOCX / TXT (pure functions + tests first)**
+- **References:** pdfjs-dist `https://github.com/mozilla/pdfjs-dist` (v4+: `import * as pdfjsLib from 'pdfjs-dist'`; worker via `?url` import; `getDocument({ data })`; disable text layer, use `page.getTextContent()` → join items' `str`); mammoth `https://github.com/michael-wolfenden/mammoth.js` (`mammoth.extractRawText({ arrayBuffer })`); file types: PDF (application/pdf), DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document), TXT (text/*)
+- **Actions:** Create `src/lib/parsing.ts` with: `extractTextFromFile(file: File): Promise<{ text: string; format: 'pdf' | 'docx' | 'txt'; warnings: string[] }>` — dispatch on MIME; PDF via pdfjs-dist with worker configured (`import workerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url'` + `GlobalWorkerOptions.workerSrc` — **confirm the exact worker import path against the installed pdfjs-dist version's docs before coding; API may differ by major version**), pages concatenated with `\n\n` separators; DOCX via mammoth.extractRawText; TXT via `file.text()`; validation: reject >5MB (`throw new ParsingError('file-too-large')`), reject unsupported types (`unsupported-type`), reject empty extracted text / text < 50 chars (`no-text` — likely scanned PDF); warnings for low text confidence (e.g., text < 200 chars → `possible-scanned`); export `ParsingError` class with `code` field; pure-function structure so it's unit-testable.
+- **Fixture strategy (pinned):** add dev dependency `pdf-lib`; create `scripts/make-fixtures.mjs` that generates: `src/test/fixtures/sample.pdf` (text-based, known content incl. the string "FixtureName"), `src/test/fixtures/sample.docx` (via `docx` npm package, known content), and `src/test/fixtures/sample.txt` (plain text with known content); run it once and commit the generated fixtures (small, text-based).
+- **Acceptance criteria:** unit tests (Vitest, in `src/lib/__tests__/parsing.test.ts`) with fixture files under `src/test/fixtures/`: PDF text contains expected string; DOCX text matches; TXT passthrough; >5MB file rejected with `file-too-large`; wrong MIME rejected `unsupported-type`; garbage PDF (random bytes) → `no-text` or parse error surfaced as `ParsingError`; all tests pass.
+- **QA happy:** run `npm run test -- parsing` → all parsing tests green → evidence: `.omo/evidence/2-1-parsing-test.log`.
+- **QA failure:** feed `new File([new Uint8Array([1,2,3])], 'bad.pdf', {type:'application/pdf'})` in a test → expect `ParsingError` with code `no-text`/parse-error, no unhandled throw → evidence: test output in same log.
+- **Commit:** `feat: add client-side resume parsing engine with tests`
+
+**Todo 2.2 — Upload component (drag-drop + picker + paste fallback + progress)**
+- **References:** shadcn components (Button, Card, Textarea); existing upload patterns in repo sites if any (none found — adopt standard); a11y: keyboard-operable dropzone (`onKeyDown` Enter/Space), `aria-label`, focus-visible states
+- **Actions:** Create `src/components/UploadZone.tsx`: drag-drop zone (`onDragOver` preventDefault + visual state, `onDrop` → files[0]) + hidden `<input type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">` + "or paste your resume" Textarea expander; validate via `extractTextFromFile`; states: idle / parsing (show spinner + "Extracting text…") / error (inline error message mapped from ParsingError code: file-too-large → "File must be under 5MB"; unsupported-type → "Please upload a PDF, DOCX, or TXT file"; no-text → "No readable text found — this looks like a scanned/image PDF. Try pasting the text instead.") / success (text passed up via `onParsed({text, format, warnings})`); shows parsed word count; reset button.
+- **Acceptance criteria:** drop + click both work; paste expander works; each error code maps to its user-facing message; parsing state shows during extraction; success passes text upward; component keyboard-accessible; tested via unit (component test with mocked `extractTextFromFile`) + manual browser check.
+- **QA happy:** browser test (Playwright): set file input to `fixtures/sample.txt` → success state shows word count → evidence: `.omo/evidence/2-2-upload-success.png`.
+- **QA failure:** browser test: set file input to a >5MB fake file → error message "File must be under 5MB" displayed, no crash → evidence: `.omo/evidence/2-2-upload-error.png`.
+- **Commit:** `feat: add upload zone with drag-drop and paste fallback`
+
+### Wave 3 — Analysis
+
+**Todo 3.1 — Analysis engine: section detection + skill extraction + weighted ATS score (pure functions + tests first)**
+- **References:** scoring weights adopted from 2026 industry research (resumeaimatch.com: keyword match 40–50%, structure 15–20%, formatting 10–15%, recency 10–15%, contact 5–10%) → normalized: keywords 45%, structure 17%, formatting 12%, recency 13%, contact 8%, parse-confidence ±5 bonus/penalty; section headings that ATS parsers recognize: "Summary"/"Professional Summary", "Experience"/"Work Experience", "Education", "Skills" (quickcv.io 8-system study: creative headings fail) — also accept common variants list; skills lexicon: a curated list of ~200 common hard skills (JS, React, Python, SQL, Figma, Excel, project management…) + regex for acronyms — store in `src/lib/skills-lexicon.ts`
+- **Actions:** Create `src/lib/analysis.ts`: `analyzeResume(text: string, opts?: { jdText?: string }): AnalysisResult` where `AnalysisResult = { score: number; breakdown: CategoryScore[]; sections: DetectedSection[]; skills: string[]; presentKeywords: string[]; missingKeywords: string[]; feedback: FeedbackItem[]; warnings: string[] }`; logic: (1) section detection by heading regex (`/^(summary|professional summary|experience|work experience|education|skills)\b/i` on lines) → scores structure sub-score for presence of experience/education/skills headings; (2) formatting: bullet points present (`/^[•\-*]\s/` line count), quantified achievements (`/\d+%/|\\$[\d,]+|improved|increased|reduced|grew/` counts) — sub-scores; (3) contact: email regex, phone regex, LinkedIn mention — completeness sub-score; (4) recency: date regex `/(20\d{2})/` — recent dates present; (5) keywords: if `jdText` provided, extract JD keywords (split on non-alphanumerics, filter stopwords, keep length≥3, intersect with skills lexicon + capitalization match) → present = in resume text (case-insensitive), missing = not; keyword sub-score = present/(present+missing) × 45; without JD: keyword sub-score from lexicon skills coverage; (6) feedback items: rule-driven (no contact info → "Add your email and phone", no quantified achievements → "Quantify achievements with numbers or percentages", missing JD keywords (top 5) → "Add these keywords: …", short/no summary → "Add a professional summary"); deterministic, no LLM. Pure function, unit-testable.
+- **Acceptance criteria:** unit tests (`src/lib/__tests__/analysis.test.ts`) with 3 fixture texts: strong resume (all sections, bullets, quantified, contact) → score ≥ 70, all sections detected; weak resume (no contact, no bullets, no dates) → score ≤ 40 with matching feedback items; JD-match fixture → present/missing lists correct per fixture JD; scores bounded 0–100; breakdown sums to 100 ±1; all tests pass.
+- **QA happy:** run `npm run test -- analysis` → green → evidence: `.omo/evidence/3-1-analysis-test.log`.
+- **QA failure:** feed empty string `analyzeResume('')` → returns result with score 0 and warning `no-content`, no throw → evidence: same log.
+- **Commit:** `feat: add rule-based analysis engine with scoring and tests`
+
+**Todo 3.2 — Wire analysis into the tool flow + JD comparison UI**
+- **References:** Todo 2.2 UploadZone props; Todo 3.1 `analyzeResume`; shadcn Textarea/Card/Button
+- **Actions:** In `src/App.tsx` tool section: state machine `idle → parsed → analyzing → done`; after upload, show optional "Paste a job description to match keywords (optional)" collapsible Textarea + "Analyse" button (default: analyse without JD); on Analyse → run `analyzeResume(text, { jdText })` (synchronous, fast — no artificial delay; show brief "Analysing…" state only if needed) → store `AnalysisResult` in state → render `<ReportView result={result} />` (Todo 4.1); "Try another resume" reset button.
+- **Acceptance criteria:** full flow upload → analyse → report renders; JD optional and its presence changes present/missing lists; reset returns to idle; no server calls anywhere (verify no fetch to own origin except static assets).
+- **QA happy:** Playwright: upload fixture → click Analyse → report section appears with score, breakdown, sections, skills → evidence: `.omo/evidence/3-2-flow-success.png`.
+- **QA failure:** upload → paste JD → Analyse → JD keywords appear in missing list when absent from resume → evidence: `.omo/evidence/3-2-jd-match.png`.
+- **Commit:** `feat: wire analysis flow with optional job description matching`
+
+### Wave 4 — Report
+
+**Todo 4.1 — Report UI: interactive graphs (Recharts), score gauge, keywords, feedback, print/export**
+- **References:** Recharts `https://recharts.org/en-US` (React chart lib: `RadarChart`, `BarChart`, `ResponsiveContainer`, tooltips, animations — standard for interactive React graphs); shadcn Progress/Card/Badge; impeccable (no hero-metric template cliché in report — this is a legit scorecard so gauge is earned; keep clean); print: `@media print` stylesheet hiding header/footer/upload, showing report only
+- **Actions:** Install `recharts`. Create `src/components/ReportView.tsx`: (1) **Signature scorecard card** — big score number (IBM Plex Mono, tabular), animated count-up on mount (respect reduced motion → instant), color-coded band (≥70 emerald / 40–69 amber / <40 red), label "ATS Score"; (2) **interactive graphs (user requirement):** a **RadarChart** of the 5 category sub-scores (keywords/structure/formatting/recency/contact) with hover tooltips + animated radar sweep on mount, AND category **BarChart** (horizontal, animated bars, hover tooltip per category, click a bar → highlights the matching feedback item below — interactive drill-down); (3) sections detected — chips/list with counts; (4) skills extracted — wrap-chips; (5) JD keywords — two groups: present (emerald Badge) / missing (outline Badge) with count summary; (6) feedback — numbered list grouped by priority (high/medium); (7) buttons: "Print report" (`window.print()`) + "Copy summary" (clipboard, with toast via sonner); word count + format badge; all charts `ResponsiveContainer` so they scale on mobile; reduced-motion: charts render final state without animation.
+- **Acceptance criteria:** all result fields rendered; RadarChart + BarChart render with real analysis data and working hover tooltips; bar→feedback drill-down works; count-up respects reduced-motion; print stylesheet produces clean report-only output; copy summary copies meaningful text; responsive (charts stack on mobile); unit test for pure formatting helpers (score band color fn, feedback grouping) + browser verification.
+- **QA happy:** Playwright: run full flow with strong-resume fixture → report shows score ≥70 in emerald band, radar + bar charts with tooltips (hover a bar → tooltip text present), drill-down highlights feedback, all categories, present/missing chips → evidence: `.omo/evidence/4-1-report-success.png` + `.omo/evidence/4-1-charts.png`.
+- **QA failure:** run flow with weak fixture → score <40 in red band, feedback list non-empty → evidence: `.omo/evidence/4-1-report-weak.png`.
+- **Commit:** `feat: add report view with interactive charts, scorecard, and print support`
+
+**Todo 4.4 — Kinetic loading system (user requirement: "everything should have kinetic loading")**
+- **References:** `motion` (framer-motion) primitives already installed (Todo 1.1); Componentry animated components (Todo 1.3); impeccable motion rules (ease-out-quart/quint/expo, no bounce/elastic, staggered lists legitimate, `prefers-reduced-motion: reduce` mandatory alternative); web-perf (loading must not hurt LCP/CLS — skeleton containers sized to final layout)
+- **Actions:** Build `src/components/KineticLoader.tsx` + per-state loading treatments so EVERY async/transition state feels alive: (1) **idle→parsing:** document "scanning" animation — animated scan line sweeping down a resume-shaped skeleton card + shimmer (`background-position` keyframes or motion pulse) + mono text ticker cycling "Reading headings…", "Extracting skills…", "Checking keywords…" (respect reduced motion → static skeleton + static label); (2) **parsing→analyzing:** skeleton morphs to scorecard outline — the score number counts 0→100 while category bars fill in sequence (staggered, ease-out-expo), radar chart draws its sweep (recharts animation), keywords chips pop in staggered; (3) **JD-optional expansion** and error-state transitions via AnimatePresence (fade/slide, 200ms ease-out); (4) report sections reveal on scroll via `useInView` with stagger (500ms apart, transform+opacity only); (5) all skeletons sized to final content (no layout shift — CLS < 0.1); every animation has a reduced-motion instant/crossfade alternative.
+- **Acceptance criteria:** every state transition (idle→parsing→analyzing→report, error, JD toggle) has a kinetic treatment (no jarring instant swaps); skeletons are layout-stable (no CLS jump when content replaces them); kinetic sequence completes in <2.5s (fast enough not to feel slow); reduced-motion mode renders static equivalents; component unit-testable (loading state machine renders expected phase labels).
+- **QA happy:** Playwright: upload fixture → capture screenshot mid-parsing (skeleton + scan line visible) → wait for report → capture mid-animating (score counting) → assert both screenshots show kinetic states, not blank/static gaps → evidence: `.omo/evidence/4-4-kinetic-parsing.png` + `.omo/evidence/4-4-kinetic-score.png`.
+- **QA failure:** Playwright with `reducedMotion: 'reduce'` emulation → all loading states render final content instantly with no animation side-effects → evidence: `.omo/evidence/4-4-reduced-motion.png`.
+- **Commit:** `feat: add kinetic loading system across all state transitions`
+
+### Wave 5 — Optional LLM + hardening
+
+**Todo 5.1 — Optional LLM feedback tier (env-gated, default OFF, key server-side)**
+- **References:** Vite env vars `https://vite.dev/guide/env-and-mode` (`import.meta.env.VITE_ENABLE_LLM`); Vercel serverless functions (an `api/` dir with `analyze.ts` exporting a handler — works on Vercel + Netlify); never put `AIza…`/`sk-…` in client; privacy: pass extracted text to the function, do not log or persist
+- **Actions:** Gate: `const LLM_ENABLED = import.meta.env.VITE_ENABLE_LLM === 'true'`; when false → UI hides "AI feedback" section entirely and `api/` is not called (no bundled key, no calls); when true → show optional "Get AI feedback" button after analysis → POST `{ text }` to `/api/analyze` → serverless fn (only when enabled) reads `LLM_API_KEY` from env, calls configured LLM (OpenAI-compatible chat completions — model configurable via `LLM_MODEL` env, default `gpt-4o-mini`), returns structured JSON `{ summary, strengths[], improvements[], suggestions[] }`; render in ReportView under "AI Feedback (beta)" section; failure → friendly error "AI feedback is temporarily unavailable", core report unaffected; function has 10s timeout guard, 100KB body limit.
+- **Acceptance criteria:** with `VITE_ENABLE_LLM` unset/false: build contains no LLM key strings, no call to `/api/analyze`, AI section absent; with `true` + mock fetch in tests: button appears, POST body = `{ text }`, response renders; serverless fn unit-tested with mocked LLM fetch (happy + 5xx + timeout); no resume text logged/persisted.
+- **QA happy:** env `VITE_ENABLE_LLM=true`, stub `api/analyze` (or mocked) → click "Get AI feedback" → AI section renders strengths/improvements → evidence: `.omo/evidence/5-1-llm-success.png`.
+- **QA failure:** `VITE_ENABLE_LLM=false` (default) → grep dist bundle for `sk-`/`AIza`/`api/analyze` → absent → evidence: `.omo/evidence/5-1-no-llm-grep.log`.
+- **Commit:** `feat: add env-gated optional LLM feedback tier with server-side key`
+
+**Todo 5.2 — Accessibility + security + performance hardening**
+- **References:** WCAG 2.1 AA; OWASP client-side checklist (no secrets, CSP, XSS-safe rendering — React escapes by default, no dangerouslySetInnerHTML); `npm audit`; web-perf skill (LCP < 2.5s, CLS < 0.1)
+- **Actions:** a11y: full keyboard nav (dropzone, buttons, chips), visible focus-visible styles, aria-live="polite" on parsing/analyse state changes, labels on all inputs, heading hierarchy h1→h3, contrast re-check; security: add CSP meta tag (default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'), run `npm audit` and fix or document HIGH/CRITICAL, grep dist for key patterns, confirm no `dangerouslySetInnerHTML`; perf: `npm run build` bundle report (`vite build` output sizes; add `vite-bundle-visualizer` or `rollup-plugin-visualizer` dev-dep to check), lazy-load pdfjs-dist (`import()` inside `extractTextFromFile` so it's a dynamic chunk), LCP audit via Playwright/Chrome.
+- **Acceptance criteria:** keyboard-only pass of full flow; axe or manual a11y scan has no critical violations; CSP present in index.html; `npm audit` shows 0 HIGH/CRITICAL (or documented exceptions); dist grep clean; pdfjs is a separate lazy chunk; LCP < 2.5s on local build (documented measurement).
+- **QA happy:** Playwright keyboard-only: Tab through upload → Enter to open picker → Escape/cancel → paste fallback reachable; axe scan (if available) 0 critical → evidence: `.omo/evidence/5-2-a11y.log`.
+- **QA failure:** `npm audit --audit-level=high` exit code check + grep `AIza|sk-[A-Za-z0-9]` over `dist/` → no matches → evidence: `.omo/evidence/5-2-audit-grep.log`.
+- **Commit:** `chore: harden accessibility, security headers, and bundle performance`
+
+### Wave 6 — Ship
+
+**Todo 6.1 — Deploy config + docs (README, HANDOFF, deploy instructions)**
+- **References:** `vercel.json` (static SPA: `{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }` — only needed if client routing used; adjust if single-page); sales-crm deploy precedent (Cloudflare Pages + GitHub Actions); repo HANDOFF.md convention
+- **Actions:** Add `vercel.json` (if routing), `_headers` or vercel headers for CSP if not inline; `README.md` (what it is, stack, scripts, how to enable LLM: set `VITE_ENABLE_LLM=true`, deploy `api/` with `LLM_API_KEY` + `LLM_MODEL` env vars, privacy note); `HANDOFF.md` (session summary, design decisions incl. chosen brand name, scoring weights table, how to swap lexicon, known limitations: scanned PDFs, English-only scoring lexicon); optionally `.env.example` with `VITE_ENABLE_LLM=false` documented; `npm run build` final green + `npm run preview` smoke.
+- **Acceptance criteria:** README + HANDOFF written and accurate; build + preview work; deploy target documented; brand name recorded in HANDOFF; no secrets committed (grep `.env*` not committed).
+- **QA happy:** `npm run build && npm run preview` → site loads at preview URL, full flow works → evidence: `.omo/evidence/6-1-preview.png`.
+- **QA failure:** `git status` shows no `.env*` files staged → evidence: `.omo/evidence/6-1-no-env.log`.
+- **Commit:** `docs: add readme, handoff, and deploy configuration`
+
+## Final verification wave
+
+Run after ALL todos, in parallel; ALL four must APPROVE before declaring complete; surface results and wait for the user's explicit okay:
+
+- **F1 Plan compliance audit:** every todo's acceptance criteria checked against actual repo state (walk each todo, verify criteria, no skipped verifications).
+- **F2 Code quality review:** whole-branch code review (per `requesting-code-review` / CodeRabbit) — CRITICAL/HIGH issues fixed before approval.
+- **F3 Real manual QA:** open the deployed/preview site in a real browser; full user journey (drag-drop a real resume fixture → analyse → read report → print); test failure paths (too-large file, scanned PDF, empty paste); mobile viewport check.
+- **F4 Scope fidelity:** confirm nothing from Scope OUT was built (no auth, no storage, no OCR, no keys in client) and nothing in Scope was dropped.
+
+## Commit strategy
+
+- Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `perf:`.
+- One commit per todo (atomic), on branch `feat/resume-analyser`; never push to `main` without explicit user consent.
+- After F1–F4 all approve and user says go: merge to `main` (or deploy directly per user's hosting choice — Vercel default), tag `v1.0.0` optional.
+- HANDOFF.md appended at session end per repo convention.
+
+## Success criteria
+
+1. A visitor can upload a PDF/DOCX/TXT resume (drag-drop or paste) and receive an ATS score (0–100) with category breakdown, detected sections, extracted skills, and actionable feedback — entirely in-browser, zero uploads to a server.
+2. **Interactive UI (user requirement):** report includes interactive graphs — Recharts RadarChart (skill/category coverage) + horizontal BarChart with hover tooltips and bar→feedback drill-down; magnetic hover CTAs; lenis smooth scrolling; every section animates in with stagger.
+3. **Kinetic loading (user requirement):** every state transition (idle→parsing→analyzing→report, errors, JD toggle) has an animated loading treatment — scan-line skeleton, staggered count-up, sequential chart drawing; all with `prefers-reduced-motion` static alternatives; no layout shift (CLS < 0.1).
+4. **Componentry + 21st.dev (user requirement):** at least one Componentry animated component and at least one 21st.dev-sourced component (via `magic-dev-21st` MCP) integrated and restyled to the design tokens; provenance recorded in HANDOFF.
+5. Optional job-description paste produces present/missing keyword lists with category grouping.
+6. Site is responsive (375/768/1280), keyboard-accessible, WCAG 2.1 AA, reduced-motion safe; LCP < 2.5s; no secrets in client bundle; `npm audit` clean of HIGH/CRITICAL.
+7. Design is distinctive (ink-on-paper scorecard identity), not a template — one signature element (animated scorecard) carrying the identity.
+8. Optional LLM tier is env-gated (default OFF), key server-side only, zero impact on the core when disabled.
+9. All unit tests green; Playwright E2E of the full flow green; final verification wave F1–F4 all approve.
+10. Docs: README, HANDOFF, deploy instructions, `.env.example` — accurate, no secrets committed.
