@@ -92,3 +92,17 @@
 - Browser QA via Playwright CDP (Chrome 151 on :9222): fixture sample.txt -> Analyse -> report "ATS Score 54" (engine math: kw 23 + structure 17 + formatting 6 + recency 0 + contact 3 + parse +5 = 54), Skills extracted (5) = react/typescript/node.js/sql/aws, reset -> idle works. JD flow: JD with React/TypeScript/SQL/AWS/Docker/Kubernetes/Python/Figma -> Present (5) / Missing (7). NOTE: capitalized proper nouns (Senior, Full, Stack, Developer) count as JD keywords too -> resume containing "Senior Software Engineer" matches "senior" as present. Expected behavior per extraction rule (SKILLS.has OR /[A-Z]/).
 - Zero server calls verified: page.on('request') filtered resourceType fetch/xhr -> [] for the entire upload-analyse-reset flow. Acceptance "no server calls anywhere" proven in-browser.
 - Playwright gotcha: getByText('ATS Score', { exact: true }) is a STRICT MODE violation because the Todo 1.3 SampleReport mock scorecard (#sample) also renders "ATS Score" (twice). Scope waits to page.locator('#tool') for anything the mock scorecard duplicates. Use #tool-scoped locators for report assertions.
+## 2026-08-13 Todo 4.1 - Report UI (charts, scorecard, print/export) - DONE
+- Recharts v3 gotchas found via browser QA:
+  - Bars with radius render as <path> elements inside .recharts-bar-rectangles g.recharts-layer, NOT .recharts-bar-rectangle rects. Click target for drill-down: .recharts-bar-rectangles path (index = CHART_CATEGORIES order: keywords=0, structure=1, formatting=2, recency=3, contact=4).
+  - All-zero bars (weak resume score 0) render NO clickable path shapes - drill-down QA must use a non-zero fixture (sample.txt, score 54, has formatting feedback).
+  - Tooltip wrapper: .recharts-tooltip-wrapper - one per chart, first in DOM = radar chart's. Hovering bar activates the 2nd wrapper; check getComputedStyle(w).visibility === 'visible' across ALL wrappers, never read only the first.
+  - Custom tooltip content returning null when inactive is fine; recharts toggles wrapper visibility itself.
+- Count-up: ease-out-quart rAF over 800ms; useReducedMotion -> instant (QA: reducedMotion 'reduce' -> score renders 100 immediately, no wait needed).
+- Charts: isAnimationActive={!reduce} animationDuration={700}; RadarChart outerRadius 68%; BarChart layout=vertical, XAxis hide domain [0,100].
+- Drill-down state: selected category id -> feedback li gets bg-accent-soft ring-1 ring-accent; note text 'Drill-down - feedback for "Label":' or 'No specific feedback for this category.'
+- Print: root id="report-print" + .no-print toolbar; index.css @media print hides everything but #report-print (visibility trick).
+- sonner: <Toaster position="bottom-right" /> in main.tsx; toast.success('Summary copied to clipboard').
+- Deps added: recharts ^3.10.1, sonner ^2.0.8.
+- QA evidence: 4-1-report-success.png, 4-1-charts.png, 4-1-report-weak.png + 4-1-test.log (32/32), 4-1-build.log (exit 0). Strong=100 emerald, weak=0 red (7 feedback items), sample=54 amber; JD chips 7/2; 0 console errors.
+- Commit: feat: add report view with interactive charts, scorecard, and print support

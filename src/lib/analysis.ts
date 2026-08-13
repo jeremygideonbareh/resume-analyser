@@ -35,6 +35,9 @@ export interface DetectedSection {
 export interface FeedbackItem {
   severity: 'info' | 'warning' | 'critical'
   message: string
+  /** Category this item belongs to — used by the ReportView drill-down
+   * (clicking a breakdown bar highlights matching feedback). */
+  category?: CategoryId
 }
 
 export interface AnalyzeOptions {
@@ -187,23 +190,27 @@ function buildFeedback(
   if (!hasEmail && !hasPhone) {
     feedback.push({
       severity: 'critical',
+      category: 'contact',
       message: 'Add your email and phone number so recruiters can reach you.',
     })
   } else if (!hasLinkedIn) {
     feedback.push({
       severity: 'info',
+      category: 'contact',
       message: 'Consider adding a LinkedIn profile link.',
     })
   }
   if (!hasBullets) {
     feedback.push({
       severity: 'warning',
+      category: 'formatting',
       message: 'Use bullet points to make achievements scannable.',
     })
   }
   if (quantifiedCount === 0) {
     feedback.push({
       severity: 'warning',
+      category: 'formatting',
       message:
         'Quantify achievements with numbers or percentages (e.g. "improved load time by 40%").',
     })
@@ -211,18 +218,21 @@ function buildFeedback(
   if (!hasSummary) {
     feedback.push({
       severity: 'info',
+      category: 'structure',
       message: 'Add a professional summary at the top of your resume.',
     })
   }
   for (const s of missingSections) {
     feedback.push({
       severity: 'info',
+      category: 'structure',
       message: `Add a "${s}" section — ATS parsers rely on clear section headings.`,
     })
   }
   if (missingKeywords.length > 0) {
     feedback.push({
       severity: 'warning',
+      category: 'keywords',
       message: `Add these keywords from the job description: ${missingKeywords.slice(0, 5).join(', ')}.`,
     })
   }

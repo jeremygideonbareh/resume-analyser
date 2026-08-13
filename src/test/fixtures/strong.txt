@@ -1,0 +1,18 @@
+Professional Summary
+Senior frontend developer with 8 years of experience building web applications.
+
+Contact
+jane.doe@email.com | +1 (555) 123-4567 | linkedin.com/in/janedoe
+
+Skills
+React, TypeScript, JavaScript, CSS, HTML, Node.js, Next.js, GraphQL, AWS, Docker, Jest, Figma
+
+Experience
+Senior Frontend Developer - Acme Corp (2021 - 2024)
+- Improved page load time by 40% using React and TypeScript
+- Reduced infrastructure costs by $50,000 with AWS optimization
+- Increased conversion rate by 15% through A/B testing
+- Led a team of 6 engineers
+
+Education
+B.S. Computer Science, State University (2015 - 2019)
