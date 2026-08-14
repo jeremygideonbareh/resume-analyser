@@ -142,3 +142,12 @@
 - npm audit --audit-level=high: 0 vulnerabilities. dist grep AIza|sk-[A-Za-z0-9]{16,}: 0 hits.
 - Remaining chunk-size warning = recharts + mammoth in main bundle — documented out of scope (plan only required pdfjs lazy chunk).
 - Known minor gap (documented in evidence): focus drops to BODY after phase transitions (parsed->analyzing->done); next Tab re-enters flow. Acceptable per plan scope.
+## [2026-08-14 09:12] Todo 6.1 — Deploy config + docs (DONE, commit pending)
+- README.md fully rewritten (was Vite scaffold template). Includes LLM enablement table, Windows ';' gotcha, privacy note.
+- HANDOFF.md rewritten: brand ResumeLab, weights table (keywords 45, structure 17, formatting 12, recency 13, contact 8, parse-confidence 5), lexicon swap (skills-lexicon.ts + HEADING_RE/SECTION_NAMES in analysis.ts), known limitations (scanned PDFs -> possible-scanned warning, English-only, lazy pdfjs first-load beat, focus drop after phase transitions), security posture (CSP build-only, no client secrets, audit clean), full session log (11 commits).
+- vercel.json: framework vite + outputDirectory dist; NO SPA rewrites needed (anchor-link single page, no router). api/ dir auto-detected as serverless by Vercel/Netlify.
+- .env.example documents VITE_ENABLE_LLM + server vars (LLM_API_KEY/LLM_MODEL/LLM_BASE_URL/LLM_TIMEOUT_MS) commented out.
+- .gitignore: added .env + .env.* with !.env.example exception (was missing plain .env / .env.production protection).
+- 6.1 QA happy: preview :8083 smoke - setInputFiles sample.txt -> TXT LOADED -> Analyse -> full report; screenshot 6-1-preview.png (68.5KB).
+- 6.1 QA failure: 0 .env* files present/staged/committed -> 6-1-no-env.log.
+- Playwright note: setInputFiles on the hidden file input is the reliable smoke path (avoids filechooser modal state that drops run_code_unsafe returns). Screenshot relative filenames land in MCP cwd C:\Users\cloud.

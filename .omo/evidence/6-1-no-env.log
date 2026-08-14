@@ -1,0 +1,8 @@
+﻿=== Todo 6.1 QA failure: no .env* secrets committed ===
+Date: 2026-08-14 09:12:15
+
+Env files present in repo root: 0
+Staged .env* files: 0
+Committed .env* files (git ls-files): 0
+
+RESULT: PASS - no .env* secrets present, staged, or committed (.env.example is the only tracked env file)
