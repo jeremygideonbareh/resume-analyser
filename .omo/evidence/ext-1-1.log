@@ -1,0 +1,13 @@
+﻿[2026-08-14T05:15:00Z] Todo 1.1 - Componentry install + KineticTextReveal in Hero
+INSTALL: npx shadcn@latest add @componentry/kinetic-text-reveal @componentry/letter-cascade @componentry/scroll-based-velocity @componentry/flipping-word-swap -> SUCCESS (4 files)
+FIXES APPLIED:
+  - Moved files from stray '@/' dir (Windows path bug) to src/components/ui/
+  - Rewrote framer-motion imports -> motion/react (kinetic-text-reveal, letter-cascade, scroll-based-velocity)
+  - Rewrote flipping-word-swap from gsap -> motion/react useAnimate (gsap dep removed)
+  - Fixed @workspace/ui/lib/utils -> @/lib/utils (letter-cascade, scroll-based-velocity)
+  - Added useReducedMotion guards (letter-cascade trigger skip, scroll-based-velocity frame skip)
+  - Removed framer-motion + gsap from package.json (plan MUST-NOT-HAVE); npm install synced lock
+HERO: KineticTextReveal on h1, splitBy=words, direction=up, distance=24, stagger=0.06, blur; accent em preserved as second reveal with delay=0.36
+GATES: typecheck 0 | lint 0 (3 pre-existing warnings) | test 57/57 | build 0
+QA HAPPY (Playwright, 127.0.0.1:8080): h1 renders 7 animated word segments; t0=matrix(1,0,0,1,0,24)|0|blur(6px) -> t1=none|1|blur(0px) (changed=true); 0 console errors; screenshot ext-1-1-hero.png
+QA REDUCED-MOTION (emulateMedia reduce): t0=t1=none|1|blur(0px) (static, changed=false); sr-only text present; h1 text present; 0 errors

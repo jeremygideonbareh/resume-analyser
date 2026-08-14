@@ -52,7 +52,12 @@ Score bands (from `scoreBand()` in `src/lib/report-format.ts`): `>=70` Strong ·
 - `SampleReport` layout pattern ← interior-design `about-us-section` (pasted by user): services grid → ATS-guidance cards, StatCounter springs → stat count-ups.
 - `UploadCard` states + `.lab-bg` ripple ← larsen66 `upload-ui` (21st.dev), ported to lab-dots/scanline.
 - `hover-footer` ← mdafsarx (21st.dev), restyled.
-- Componentry: not integrated (bash flaky during Todo 1.3; optional per plan — revisit if desired).
+- Componentry: **integrated 2026-08-14 (extension wave 1)** — 4 components installed via `npx shadcn@latest add @componentry/<name>` (registry `https://componentry.fun/r/{name}.json` auto-added to `components.json`):
+  - `KineticTextReveal` ← componentry.dev/docs/components/kinetic-text-reveal — used in Hero h1 (words, up, blur) + HowItWorks/SampleReport headings (Todo 1.4). Adapted: `framer-motion` → `motion/react`; reduced-motion guard already built in (static final state).
+  - `LetterCascade` ← componentry.dev/docs/components/letter-cascade — Footer brand/tagline + ToolSection heading (Todo 1.2). Adapted: `@workspace/ui/lib/utils` → `@/lib/utils`; `framer-motion` → `motion/react`; added `useReducedMotion` skip (front face already visible = static fallback).
+  - `ScrollBasedVelocity` ← componentry.dev/docs/components/scroll-based-velocity — skills-marquee strip (Todo 1.3). Adapted: `@workspace/ui/lib/utils` → `@/lib/utils`; `framer-motion` → `motion/react`; added `useReducedMotion` frame skip (strip stays static).
+  - `FlippingWordSwap` ← componentry.dev/docs/components/flipping-word-swap — Header "Analyse" CTA (Todo 1.3). **Rewritten from gsap to `motion/react` `useAnimate`** (gsap dep removed — plan forbids it); reduced-motion collapses timings to instant.
+  - Install gotcha: on Windows the shadcn CLI wrote files to a stray `@/components/ui/` dir (path bug) — moved to `src/components/ui/`; CLI also added `framer-motion` + `gsap` to package.json — removed (plan MUST-NOT-HAVE; imports rewritten to `motion/react`).
 - ATS guidance content ← 2026 web research (igotanoffer.com, resumeadapter.com, resumly.ai, ophyai.com, flavoredresume.com, hireflow.net, workable.com) — digest in `.omo/notepads/resume-analyser/learnings.md`.
 
 ## Build / run
@@ -67,6 +72,7 @@ Score bands (from `scoreBand()` in `src/lib/report-format.ts`): `>=70` Strong ·
 - 2026-08-14: **Todo 4.1** report view — scorecard, interactive recharts bars (click a bar → feedback), print support (commit `25a24bf`); **Todo 4.4** kinetic loading across all state transitions (commit `d1c4eb5`).
 - 2026-08-14: **Todo 5.1** env-gated optional LLM feedback tier — `api/analyze.ts` serverless proxy + client gate (commit `142b24b`); **Todo 5.2** a11y + security + perf hardening — build-only CSP, lazy pdfjs, Escape/focus-restore in paste dialog, keyboard-only QA + LCP audit (commit `13b82f5`).
 - 2026-08-14: **Todo 6.1** deploy config + docs — this HANDOFF, README, `vercel.json`, `.env.example`, `.gitignore` env protection. Next: **Final Verification Wave F1–F4** (plan compliance, code quality, real manual QA, scope fidelity).
+- 2026-08-14: **Extension wave 1 (Todo 1.1)** — Componentry integrated: 4 components installed + adapted to `motion/react` (gsap/framer-motion removed), `KineticTextReveal` in Hero h1 (evidence `.omo/evidence/ext-1-1.log`, screenshot `ext-1-1-hero.png`). Next: Todo 1.2 LetterCascade (Footer + ToolSection), 1.3 ScrollVelocity + FlippingWordSwap, 1.4 KineticTextReveal (HowItWorks + SampleReport), then Wave 2 Supabase auth.
 
 ## Next steps
 

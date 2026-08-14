@@ -1,5 +1,6 @@
 import { SectionReveal } from '@/components/motion/SectionReveal'
 import { MagneticButton } from '@/components/motion/MagneticButton'
+import { KineticTextReveal } from '@/components/ui/kinetic-text-reveal'
 
 /**
  * Hero — ResumeLab pitch with the "robots' grid" signature moment:
@@ -27,9 +28,30 @@ export function Hero() {
             ATS Resume Analyser — 100% in-browser
           </p>
           <h1 className="max-w-3xl text-[clamp(2.75rem,7vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink">
-            Know your score{' '}
+            <KineticTextReveal
+              text="Know your score "
+              splitBy="words"
+              direction="up"
+              distance={24}
+              stagger={0.06}
+              blur
+              className="text-ink"
+              segmentClassName="text-ink"
+              aria-label="Know your score"
+            />
             <em className="font-normal italic text-accent">
-              before the robots do.
+              <KineticTextReveal
+                text="before the robots do."
+                splitBy="words"
+                direction="up"
+                distance={24}
+                stagger={0.06}
+                delay={0.36}
+                blur
+                className="text-accent"
+                segmentClassName="text-accent"
+                aria-label="before the robots do."
+              />
             </em>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
