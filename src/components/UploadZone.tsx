@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { FileText, CheckCircle2, AlertTriangle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -53,8 +53,18 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
   const [message, setMessage] = useState('')
   const [result, setResult] = useState<ParsedResume | null>(null)
   const [dragOver, setDragOver] = useState(false)
-  const [pasteOpen, setPasteOpen] = useState(false)
-  const [pasteText, setPasteText] = useState('')
+const [pasteOpen, setPasteOpen] = useState(false)
+const [pasteText, setPasteText] = useState('')
+// Return focus to the "or paste" toggle when the paste dialog closes via
+// Escape or Cancel, so keyboard users aren't dropped back to <body> (Todo 5.2).
+const pasteToggleRef = useRef<HTMLButtonElement>(null)
+const wasOpenRef = useRef(false)
+useEffect(() => {
+  if (wasOpenRef.current && !pasteOpen) {
+    pasteToggleRef.current?.focus()
+  }
+  wasOpenRef.current = pasteOpen
+}, [pasteOpen])
   const inputRef = useRef<HTMLInputElement>(null)
   const zoneRef = useRef<HTMLDivElement>(null)
 
@@ -260,6 +270,7 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
         <div className="mt-4 text-center">
           {!pasteOpen ? (
             <button
+              ref={pasteToggleRef}
               type="button"
               onClick={() => setPasteOpen(true)}
               className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted underline-offset-4 hover:text-ink hover:underline"
@@ -271,6 +282,9 @@ export function UploadZone({ onParsed }: UploadZoneProps) {
               <Textarea
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setPasteOpen(false)
+                }}
                 placeholder="Paste the full text of your resume here…"
                 rows={5}
                 aria-label="Pasted resume text"

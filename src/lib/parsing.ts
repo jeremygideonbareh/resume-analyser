@@ -1,4 +1,3 @@
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import * as mammoth from 'mammoth'
 
@@ -53,15 +52,17 @@ function detectFormat(type: string, name: string): ParsedFormat | null {
   return null
 }
 
-// Browser-only: the real Web Worker needs an explicit src. In Node/Vitest
-// `window` is undefined and pdf.js falls back to its built-in main-thread
-// "fake worker" — setting workerSrc there would make it try to dynamic-import
-// the worker file and fail (path mangling under Vitest's ?url resolution).
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
-}
-
 async function extractPdf(file: File): Promise<string> {
+  // Lazy-load pdf.js only when a PDF is actually analysed (Todo 5.2) so the
+  // library ships as a dynamic chunk instead of inflating the main bundle.
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // Browser-only: the real Web Worker needs an explicit src. In Node/Vitest
+  // `window` is undefined and pdf.js falls back to its built-in main-thread
+  // "fake worker" — setting workerSrc there would make it try to dynamic-import
+  // the worker file and fail (path mangling under Vitest's ?url resolution).
+  if (typeof window !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+  }
   const data = new Uint8Array(await file.arrayBuffer())
   // pdfjs v6: cleanup happens on the LoadingTask (doc.destroy was removed).
   const loadingTask = pdfjsLib.getDocument({ data })

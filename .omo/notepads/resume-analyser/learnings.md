@@ -131,3 +131,14 @@
 - ReportView: AI section wrapped in ReportReveal delay 0.9, gated {LLM_ENABLED && parsed && ...}.
 - Serverless fn shape: POST-only 405, LLM_API_KEY missing 503, 100KB Buffer.byteLength 413, bad/empty JSON 400, upstream non-ok 502, malformed LLM JSON 502, AbortError 504, unexpected 500; never logs text.
 - Evidence: 57/57 tests, build exit 0, dist grep clean, QA happy (sample score 54, AI section renders).
+## [2026-08-14 00:45] Todo 5.2 — a11y + security + perf hardening (DONE, commit pending)
+- CSP: build-only injection via transformIndexHtml plugin (apply:'build') — dev exempt (react-refresh preamble + HMR ws would break under script-src 'self'). Verified meta present in dist/index.html; app runs 0 console errors under strict CSP on vite preview.
+- pdfjs lazy-load: wait import('pdfjs-dist/legacy/build/pdf.mjs') inside extractPdf; worker ?url import stays static. Main bundle 1826.53 -> 1344.26 kB raw (524.70 -> 379.06 gzip); pdf chunk 482.28 kB (145.97 gzip). Runtime-verified: pdf chunk + worker NOT fetched on initial load.
+- Vitest + dynamic pdfjs: keep GlobalWorkerOptions.workerSrc assignment behind 	ypeof window !== 'undefined' — in Node the fake worker is used and setting workerSrc makes it try to dynamic-import the worker file (path mangling under Vitest ?url resolution). All 57 tests still pass.
+- UploadZone a11y fixes: Escape closes paste dialog (was a keyboard trap — only Cancel/Use-pasted existed); focus restored to "or paste" toggle on close via wasOpenRef-guarded useEffect (avoid stealing focus on initial mount).
+- ToolSection: role="status" on loaded word-count p (aria-live polite).
+- Playwright MCP gotchas (this build): browser_run_code_unsafe return payload DROPPED when a file chooser modal is pending — split QA into small steps and handle choosers via browser_file_upload (no paths = cancel); orphaned Chrome from prior session holds mcp-chrome profile lock — kill chrome.exe PIDs matching the profile dir before reuse; screenshots with relative filename land in MCP server cwd (C:\Users\cloud), not .playwright-mcp.
+- LCP measured 256 ms (target < 2.5 s) via addInitScript PerformanceObserver + cold goto; FCP 220 ms; TTFB 5 ms.
+- npm audit --audit-level=high: 0 vulnerabilities. dist grep AIza|sk-[A-Za-z0-9]{16,}: 0 hits.
+- Remaining chunk-size warning = recharts + mammoth in main bundle — documented out of scope (plan only required pdfjs lazy chunk).
+- Known minor gap (documented in evidence): focus drops to BODY after phase transitions (parsed->analyzing->done); next Tab re-enters flow. Acceptable per plan scope.

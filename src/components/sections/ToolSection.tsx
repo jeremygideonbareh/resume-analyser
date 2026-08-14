@@ -120,7 +120,10 @@ export function ToolSection() {
                     <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
                       ✓ {parsed.format.toUpperCase()} loaded
                     </p>
-                    <p className="mt-1 text-sm text-ink-soft">
+                    <p
+                      role="status"
+                      className="mt-1 text-sm text-ink-soft"
+                    >
                       {wordCount(parsed.text)} words ready for analysis.
                     </p>
 

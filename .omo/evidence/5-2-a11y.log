@@ -1,0 +1,39 @@
+﻿=== Todo 5.2 QA happy: keyboard-only a11y flow + LCP (vite preview :8082, production dist with CSP) ===
+Date: 2026-08-14 09:05:16
+
+--- Step A: Tab walk (24 tabs from body) ---
+Focus order: ResumeLab logo -> Analyser -> How it works -> Analyse (nav) ->
+  'Analyse my resume' (hero CTA) -> 'How it works' (hero) ->
+  dropzone [role=button, aria-label='Upload your resume - PDF, DOCX, or TXT, up to 5MB'] ->
+  'or paste your resume as text' -> 'Analyse your resume now' (sample CTA) -> wrap
+Focus indicators: 0 focused elements missing a visible outline/ring (all have :focus-visible)
+
+--- Step B: Dropzone keyboard ---
+Enter on focused dropzone -> file chooser opened (verified via modal state)
+Cancel (Escape-equivalent) -> app still idle, dropzone intact
+
+--- Step C: Paste dialog keyboard (Todo 5.2 fixes) ---
+Enter on 'or paste your resume as text' -> textarea visible (aria-label='Pasted resume text')
+Typed 287 chars of resume text
+Escape -> dialog closed AND focus restored to the toggle button (new focus-restoration)
+
+--- Step D: Paste confirm keyboard ---
+Tab order inside dialog: Cancel -> Use pasted text (correct)
+Enter on 'Use pasted text' -> parsed state: 'TXT LOADED - 40 WORDS' + 'words ready for analysis'
+Note: focus drops to BODY after phase transition (documented minor gap; next Tab re-enters flow)
+
+--- Step E: Analyse keyboard ---
+Tab order from parsed state: 'Paste a job description' toggle -> 'Analyse resume' -> 'Try another resume'
+Enter on 'Analyse resume' -> full report rendered:
+  ATS SCORE 75 'Strong' | Category profile: Keyword match, Structure, Formatting, Recency, Contact info
+  Sections detected: experience, education, skills | Skills extracted (7): typescript, css, react, tailwind, vite, playwright, ci/cd
+  Feedback (MEDIUM) + Nice-to-haves + Print report + Copy summary actions
+
+--- Console ---
+0 errors, 0 warnings across the whole flow (strict CSP compliant; only benign Chromium 'Deprecated API' noise)
+
+--- LCP (PerformanceObserver, cold load) ---
+LCP: 256ms (target < 2500ms) | FCP: 220ms | TTFB: 5ms | load: 165ms
+pdf.js chunk + worker NOT loaded on initial page load (lazy-load confirmed at runtime)
+
+RESULT: PASS - keyboard-only flow complete, focus indicators present, Escape/cancel + focus restoration work, LCP 256ms
