@@ -1,0 +1,32 @@
+FINAL WAVE F4 — SCOPE FIDELITY AUDIT
+====================================
+Date: 2026-08-14
+Auditor: Atlas (orchestrator, direct execution per user directive)
+Plan scope: lines 1-11 (What it will NOT do)
+
+RESULT: APPROVE
+
+1. OUT-OF-SCOPE GREPS (src/, api/, index.html, vercel.json, non-test):
+   - auth (login/signin/password/auth0/clerk): 0 hits ✓
+   - persistence (localStorage/indexedDB/sessionStorage): 0 hits ✓
+   - OCR engine (tesseract/ocr): 0 hits ✓
+   - job-board integration (indeed/adzuna/job board/greenhouse/lever): 2 hits —
+     both literal ATS-guidance copy in SampleReport.tsx ("Workday and Greenhouse
+     parse best when sections are named..."), NOT integration code ✓
+   - client-side API keys (AIza*/sk-*): 0 hits ✓
+
+2. LLM OPTIONALITY (plan: "LLM tier optional hook"):
+   - src/lib/llm.ts: LLM_ENABLED = VITE_ENABLE_LLM === 'true' (default off)
+   - AI_ANALYZE_URL folded to '' when disabled; key server-side only (api/analyze.ts)
+   - ReportView renders AiFeedbackSection only when LLM_ENABLED && parsed ✓
+
+3. IN-SCOPE SURFACE (all present):
+   - Sections: Hero, SkillsMarquee, ToolSection, HowItWorks, SampleReport, Footer ✓
+   - Report: scorecard, radar + bar charts, sections, skills, JD keywords, feedback ✓
+   - Parsing: txt/pdf/docx, paste fallback, scanned-PDF detection ✓
+   - Privacy: "0 uploads · 0 cookies" messaging, no persistence ✓
+
+4. PRIVACY POSTURE (plan core promise):
+   - No resume text persisted anywhere (no storage APIs, no backend save) ✓
+   - Optional LLM call is POST-only, 100KB body limit, 10s timeout, never logged ✓
+   - CSP meta restricts connect-src to 'self' ✓

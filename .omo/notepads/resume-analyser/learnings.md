@@ -151,3 +151,12 @@
 - 6.1 QA happy: preview :8083 smoke - setInputFiles sample.txt -> TXT LOADED -> Analyse -> full report; screenshot 6-1-preview.png (68.5KB).
 - 6.1 QA failure: 0 .env* files present/staged/committed -> 6-1-no-env.log.
 - Playwright note: setInputFiles on the hidden file input is the reliable smoke path (avoids filechooser modal state that drops run_code_unsafe returns). Screenshot relative filenames land in MCP cwd C:\Users\cloud.
+## 2026-08-14 Final Verification Wave (F1-F4) — ALL APPROVE
+- F1 plan compliance: all 12 todos evidence present (1-1..6-1), fresh gates typecheck 0 / lint 0 (3 benign) / test 57/57, fixtures all present. Evidence: final-f1-plan-compliance.log
+- F2 code review: read llm.ts, report-format.ts, App.tsx, ReportView.tsx, KineticLoader.tsx (all clean); red-flag grep 0 hits (only literal phone-regex comment); FOUND + FIXED HANDOFF.md score-band doc bug (was "<60 Needs work · 60-79 Good match · >=80 Strong"; actual code >=70 Strong / >=40 Needs work / <40 Weak per report-format.ts scoreBand). Evidence: final-f2-code-review.log
+- F3 manual QA on vite preview :8084: full journey (sample.txt → analyse → report → print stub triggered, 0 console errors); failure paths: >5MB exact msg, unopenable PDF → "Could not read that file...", blank valid PDF → exact scanned msg "No readable text found — this looks like a scanned/image PDF. Try pasting the text instead.", empty paste disabled; mobile 375px no overflow, strong.txt → 100 Strong; screenshot f3-mobile-report.png (38,012 B). Evidence: final-f3-manual-qa.log
+- F4 scope fidelity: auth/persistence/OCR/job-board/client-keys greps 0 hits (2 SampleReport.tsx hits = literal ATS copy "Workday and Greenhouse parse best", not integration); LLM gate default off; all in-scope sections present. Evidence: final-f4-scope-fidelity.log
+- GOTCHA: PowerShell 5.1 Get-Content displays UTF-8 em-dashes as mojibake (A� / �?"); verify with [System.Text.Encoding]::UTF8.GetString(bytes) — file bytes are correct.
+- GOTCHA: pdf.js recovery-mode console warnings during garbage-PDF parse are expected/benign (getHexString/Indexing all PDF objects).
+- GOTCHA: to test the scanned-PDF path need a VALID blank PDF (pdf.js opens it, extracts 0 text → no-text → scanned msg); random-bytes PDF hits parse-error path instead ("Could not read that file...").
+- Next: commit evidence + HANDOFF fix + plan marks; then surface F1-F4 results to user and WAIT for explicit okay before declaring complete (plan line 52).

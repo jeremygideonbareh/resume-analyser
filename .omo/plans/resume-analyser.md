@@ -179,10 +179,10 @@
 
 Run after ALL todos, in parallel; ALL four must APPROVE before declaring complete; surface results and wait for the user's explicit okay:
 
-- **F1 Plan compliance audit:** every todo's acceptance criteria checked against actual repo state (walk each todo, verify criteria, no skipped verifications).
-- **F2 Code quality review:** whole-branch code review (per `requesting-code-review` / CodeRabbit) — CRITICAL/HIGH issues fixed before approval.
-- **F3 Real manual QA:** open the deployed/preview site in a real browser; full user journey (drag-drop a real resume fixture → analyse → read report → print); test failure paths (too-large file, scanned PDF, empty paste); mobile viewport check.
-- **F4 Scope fidelity:** confirm nothing from Scope OUT was built (no auth, no storage, no OCR, no keys in client) and nothing in Scope was dropped.
+- **F1 Plan compliance audit:** every todo's acceptance criteria checked against actual repo state (walk each todo, verify criteria, no skipped verifications). ✅ DONE — APPROVE (evidence: `.omo/evidence/final-f1-plan-compliance.log`; all 12 todos evidence present, fresh gates typecheck 0 / lint 0 / test 57/57).
+- **F2 Code quality review:** whole-branch code review (per `requesting-code-review` / CodeRabbit) — CRITICAL/HIGH issues fixed before approval. ✅ DONE — APPROVE (evidence: `.omo/evidence/final-f2-code-review.log`; 0 CRITICAL/HIGH; HANDOFF.md score-band doc bug found and fixed).
+- **F3 Real manual QA:** open the deployed/preview site in a real browser; full user journey (drag-drop a real resume fixture → analyse → read report → print); test failure paths (too-large file, scanned PDF, empty paste); mobile viewport check. ✅ DONE — APPROVE (evidence: `.omo/evidence/final-f3-manual-qa.log` + `f3-mobile-report.png`; journey + all 4 failure paths + 375px mobile all green, 0 console errors).
+- **F4 Scope fidelity:** confirm nothing from Scope OUT was built (no auth, no storage, no OCR, no keys in client) and nothing in Scope was dropped. ✅ DONE — APPROVE (evidence: `.omo/evidence/final-f4-scope-fidelity.log`; all Scope OUT greps 0 hits, LLM gate default off, all in-scope sections present).
 
 ## Commit strategy
 

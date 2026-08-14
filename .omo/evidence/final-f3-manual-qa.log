@@ -1,0 +1,30 @@
+FINAL WAVE F3 — REAL MANUAL QA (browser)
+========================================
+Date: 2026-08-14
+QA: Atlas via Playwright MCP against `vite preview` on :8084 (production build)
+
+RESULT: APPROVE
+
+1. FULL USER JOURNEY (sample.txt fixture):
+   - Upload via file input → "words ready for analysis" state ✓
+   - Analyse resume → full report rendered ✓
+   - Report contains: ATS SCORE + band, CATEGORY PROFILE (radar), CATEGORY SCORES (bars), SECTIONS DETECTED, SKILLS EXTRACTED, FEEDBACK, Print report, Copy summary ✓
+   - Print button → window.print() triggered (stubbed) ✓
+   - Console errors: 0 ✓
+
+2. FAILURE PATHS:
+   - >5MB file (5,243,904 bytes) → exact message "File must be under 5MB." ✓
+   - Unopenable PDF (random bytes) → "Could not read that file. Try converting it to text and pasting it instead." ✓
+   - Scanned-style PDF (valid blank PDF, no text layer) → exact message "No readable text found — this looks like a scanned/image PDF. Try pasting the text instead." ✓
+   - Empty paste → "Use pasted text" button disabled ✓
+   - No uncaught errors / crashes on any failure path ✓
+   - Console warnings during garbage-PDF parse: pdf.js recovery-mode warnings only (expected, benign) ✓
+
+3. MOBILE VIEWPORT (375×812):
+   - Home: no horizontal overflow ✓
+   - Full journey on mobile: report renders, no overflow ✓
+   - strong.txt → score 100 "Strong" ✓
+   - Screenshot: .omo/evidence/f3-mobile-report.png (38,012 bytes) ✓
+
+4. KEYBOARD-ONLY FLOW (from Todo 5.2 evidence, re-confirmed):
+   - Tab walk with visible focus indicators, dropzone Enter → file chooser, paste toggle → Enter → textarea, Escape closes + focus restored, full analyse flow ✓

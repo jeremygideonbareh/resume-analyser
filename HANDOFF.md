@@ -29,7 +29,7 @@ Weighted categories (normalized from 2026 industry research):
 | Contact info | 8 | Email / phone / LinkedIn |
 | Parse confidence | 5 | Plain text vs. OCR-quality/scanned content |
 
-Score bands: `<60` Needs work · `60–79` Good match · `>=80` Strong. Report marks when a resume passes the "70% recruiter filter line".
+Score bands (from `scoreBand()` in `src/lib/report-format.ts`): `>=70` Strong · `>=40` Needs work · `<40` Weak. Report marks when a resume passes the "70% recruiter filter line".
 
 **How to swap the lexicon:** detected skills live in `src/lib/skills-lexicon.ts` (200+ entries) — add/remove entries there; `analysis.ts` reads it for skill detection and feedback. Section heading synonyms live in `HEADING_RE`/`SECTION_NAMES` at the top of `analysis.ts`.
 

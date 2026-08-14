@@ -1,0 +1,45 @@
+FINAL WAVE F1 — PLAN COMPLIANCE AUDIT
+=====================================
+Date: 2026-08-14
+Auditor: Atlas (orchestrator, direct execution per user directive)
+Plan: .omo/plans/resume-analyser.md
+
+RESULT: APPROVE
+
+1. TODO COMPLETION (all 12 top-level todos marked ✅ DONE in plan)
+   - 1.1 scaffold + brand: evidence 1-1-* present
+   - 1.2 responsive + a11y: evidence 1-2-* present
+   - 1.3 hero + marquee: evidence 1-3-* present
+   - 2.1 upload + validation: evidence 2-1-* present
+   - 2.2 parsing (txt/pdf/docx): evidence 2-2-* present
+   - 3.1 analysis engine: evidence 3-1-* present
+   - 3.2 report UI: evidence 3-2-* present
+   - 4.1 report polish + charts: evidence 4-1-* present
+   - 4.4 loading treatments: evidence 4-4-* present
+   - 5.1 optional LLM (env-gated): evidence 5-1-* present
+   - 5.2 a11y + security + perf hardening: evidence 5-2-* present
+   - 6.1 deploy config + docs: evidence 6-1-* present
+   All evidence files verified present in .omo/evidence/ (1-1 through 6-1).
+
+2. ACCEPTANCE CRITERIA (per plan lines 59-149) — all met:
+   - 1.1: Vite+React+TS scaffold, brand ResumeLab, dark/light, fonts, no router
+   - 1.2: responsive breakpoints, keyboard nav, focus-visible, reduced-motion, semantic h1-h3
+   - 1.3: hero with CTA, skills marquee (200+ lexicon)
+   - 2.1: drag-drop + click upload, 5MB limit, type allowlist, error states
+   - 2.2: txt/pdf/docx parsing, scanned-PDF detection, word count, paste fallback
+   - 3.1: weighted scoring (keywords 45/structure 17/formatting 12/recency 13/contact 8/parse-confidence 5), feedback items, breakdown
+   - 3.2: report with score, band, charts, sections, skills, JD keywords, feedback
+   - 4.1: radar + bar charts, drill-down, print, copy summary
+   - 4.4: kinetic loading treatments, reduced-motion static equivalents
+   - 5.1: LLM env-gated (VITE_ENABLE_LLM), key server-side only, 10s timeout, graceful degradation
+   - 5.2: CSP meta, lazy pdfjs, Escape closes paste dialog + focus restore, role=status, bundle 1826→1344 kB raw
+   - 6.1: README, HANDOFF, vercel.json, .env.example, .gitignore env protection
+
+3. FRESH GATES (re-run at Final Wave):
+   - npm run typecheck: exit 0
+   - npm run lint: exit 0 (3 benign warnings: ProgressiveBlur.tsx:6:14 + ui/button.tsx:67:18 react(only-export-components) fast-refresh; scripts/make-fixtures.mjs:35:7 unused 'font' var)
+   - npm run test: 57/57 pass (9 files)
+   - Fixtures present: sample.txt/pdf/docx, strong.txt, weak.txt
+
+4. SCOPE (plan lines 1-11): no accounts, no storage/DB, no OCR, no job-board
+   integration, no Chrome extension, LLM optional — confirmed by F4.
