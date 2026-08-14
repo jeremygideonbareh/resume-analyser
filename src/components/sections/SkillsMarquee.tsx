@@ -1,5 +1,6 @@
 import { InfiniteSlider } from '@/components/motion/InfiniteSlider'
 import { ProgressiveBlur } from '@/components/motion/ProgressiveBlur'
+import { ScrollBasedVelocity } from '@/components/ui/scroll-based-velocity'
 
 const SKILLS = [
   'React',
@@ -60,6 +61,13 @@ export function SkillsMarquee() {
             className="pointer-events-none absolute right-0 top-0 h-full w-16"
             direction="right"
             blurIntensity={1}
+          />
+        </div>
+        <div className="mt-8">
+          <ScrollBasedVelocity
+            text="ATS READY · PRIVACY FIRST · SCORE IT ·"
+            default_velocity={5}
+            className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
           />
         </div>
       </div>

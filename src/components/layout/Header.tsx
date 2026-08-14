@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
+import { FlippingWordSwap } from '@/components/ui/flipping-word-swap'
 
 /**
  * Header — sticky ResumeLab masthead.
@@ -40,12 +41,15 @@ export function Header() {
             How it works
           </a>
         </nav>
-        <a
-          href="#tool"
+        <FlippingWordSwap
+          word1="Analyse"
+          word2="Score it"
+          onClick={() =>
+            document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth' })
+          }
           className="rounded-md bg-ink px-3.5 py-1.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
-        >
-          Analyse
-        </a>
+          toClassName="text-paper"
+        />
       </div>
     </motion.header>
   )

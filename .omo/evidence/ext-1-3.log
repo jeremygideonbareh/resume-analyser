@@ -1,0 +1,17 @@
+﻿=== Todo 1.3 QA — ScrollVelocity strip + FlippingWordSwap (2026-08-14) ===
+GATES: typecheck 0 | oxlint 0 (3 pre-existing warnings) | vitest 57/57 | build 0 (pre-existing chunk warning)
+HAPPY (Playwright @ 127.0.0.1:8080):
+  strip transform before wheel: matrix(1,0,0,1,-183.142,0)
+  strip transform after wheel:  matrix(1,0,0,1,-22.6889,0)  -> stripMoved=true
+  CTA aria-label at rest: "Analyse"
+  CTA aria-label on hover: "Score it"  -> flip works
+  console errors: 0
+  screenshot: ext-1-3-velocity.png
+REDUCED-MOTION (emulateMedia reduce):
+  strip transform before: matrix(1,0,0,1,-366.05,0)
+  strip transform after:  matrix(1,0,0,1,-366.05,0)  -> stripStatic=true
+  CTA aria-label: "Analyse" (stable)
+  strip text: present
+  console errors: 0
+  screenshot: ext-1-3-reduced.png
+FILES: src/components/ui/flipping-word-swap.tsx (onClick prop), src/components/layout/Header.tsx (CTA swap), src/components/sections/SkillsMarquee.tsx (velocity strip)

@@ -32,6 +32,8 @@ export interface FlippingWordSwapProps {
   style?: CSSProperties;
   /** Inline styles applied only to the revealed word. */
   toStyle?: CSSProperties;
+  /** Optional click handler (e.g. when the swap doubles as a CTA). */
+  onClick?: () => void;
 }
 
 export function FlippingWordSwap({
@@ -43,6 +45,7 @@ export function FlippingWordSwap({
   toClassName,
   style,
   toStyle,
+  onClick,
 }: FlippingWordSwapProps) {
   const [scope, animate] = useAnimate();
   const swappedRef = useRef(false);
@@ -150,6 +153,7 @@ export function FlippingWordSwap({
         if (event.currentTarget.matches(":focus-visible")) runSwap(true);
       }}
       onBlur={() => runSwap(false)}
+      onClick={onClick}
     >
       <span className="col-start-1 row-start-1 inline-grid overflow-hidden [perspective:800px]">
         <span
