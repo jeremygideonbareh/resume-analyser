@@ -1,3 +1,5 @@
+import { LetterCascade } from '@/components/ui/letter-cascade'
+
 /**
  * Footer — privacy note + brand, with a mono meta row.
  */
@@ -13,13 +15,16 @@ export function Footer() {
             >
               RL
             </span>
-            <span className="font-display text-base font-semibold text-ink">
-              ResumeLab
-            </span>
+            <LetterCascade
+              text="ResumeLab"
+              className="cursor-default justify-start font-display text-base font-semibold text-ink"
+            />
           </div>
           <p className="max-w-md text-xs leading-relaxed text-muted">
-            Privacy first: your resume never leaves your browser. No uploads, no
-            storage, no cookies.
+            <LetterCascade
+              text="Privacy first: your resume never leaves your browser. No uploads, no storage, no cookies."
+              className="flex-wrap cursor-default justify-start"
+            />
           </p>
         </div>
         <div className="border-t border-ink/10 pt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">

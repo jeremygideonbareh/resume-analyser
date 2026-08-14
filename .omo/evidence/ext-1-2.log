@@ -1,0 +1,7 @@
+﻿[2026-08-14T05:25:00Z] Todo 1.2 - LetterCascade in Footer + ToolSection heading
+FOOTER: brand 'ResumeLab' wrapped in LetterCascade (cursor-default justify-start font-display text-base font-semibold text-ink); privacy tagline wrapped in LetterCascade (flex-wrap cursor-default justify-start) inside existing <p> (max-w-md text-xs leading-relaxed text-muted). aria-label on each cascade container exposes full text to AT.
+TOOLSECTION: h2 'Drop your resume in.' -> two LetterCascade segments preserving the <em> accent: 'Drop your resume ' (ink) + 'in.' (letterClassName font-normal italic text-accent). SectionReveal + state machine + skeletons untouched.
+GATES: typecheck 0 | lint 0 (3 pre-existing warnings) | test 57/57 | build 0
+QA HAPPY (Playwright, 127.0.0.1:8080): footer brand hover -> cascade-front transform none|1|none -> matrix3d(rotateX 90)|0|blur(4px) (changed=true); tool h2 hover -> same flip (changed=true); h2 accessible name 'Drop your resume in.'; footer names 'ResumeLab | Privacy first: your resume never leaves your browser. No uploads, no storage, no cookies.'; 118 cascade-front elements; 0 console errors; screenshot ext-1-2-cascade.png
+QA LAYOUT: h2 bounding box x=208.4 w=448 h=39.6 identical before/after animation (y changed only due to scrollIntoView) -> no CLS
+QA REDUCED-MOTION (emulateMedia reduce): hover -> static none|1|none (changed=false); text present; 0 console errors

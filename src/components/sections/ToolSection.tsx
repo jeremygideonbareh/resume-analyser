@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
 import { SectionReveal } from '@/components/motion/SectionReveal'
+import { LetterCascade } from '@/components/ui/letter-cascade'
 import { UploadZone } from '@/components/UploadZone'
 import { ReportView } from '@/components/ReportView'
 import { AnalyzingSkeleton } from '@/components/KineticLoader'
@@ -79,8 +80,15 @@ export function ToolSection() {
               The Analyser
             </p>
             <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-              Drop your resume{' '}
-              <em className="font-normal italic text-accent">in.</em>
+              <LetterCascade
+                text="Drop your resume "
+                className="cursor-default justify-start"
+              />
+              <LetterCascade
+                text="in."
+                letterClassName="font-normal italic text-accent"
+                className="cursor-default justify-start"
+              />
             </h2>
             <p className="mt-4 max-w-md text-ink-soft">
               PDF, DOCX, or plain text — up to 5MB. Parsed entirely in your

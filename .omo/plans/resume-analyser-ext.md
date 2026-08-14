@@ -94,7 +94,7 @@
 - QA failure: `page.emulateMedia({ reducedMotion: 'reduce' })` → headline static (no transform/opacity transition), still fully readable; 0 console errors; evidence `ext-1-1-reduced.log`.
 - Commit: `feat: integrate componentry kinetic text reveal in hero (wave 1)`.
 
-- [ ] **Todo 1.2 — LetterCascade in Footer + ToolSection heading (close the Footer animation gap)**
+- [x] **Todo 1.2 — LetterCascade in Footer + ToolSection heading (close the Footer animation gap)**
 - References: `src/components/layout/Footer.tsx` (currently ZERO animation — the identified gap); `src/components/sections/ToolSection.tsx` (already has SectionReveal ×2 + ScanSkeleton/AnalyzingSkeleton); `componentry.dev/docs/components/letter-cascade`.
 - Steps:
   1. Footer: wrap the "ResumeLab" brand + the privacy tagline in `LetterCascade` (letters scatter in with spring physics, then reassemble) — restyled to tokens; `aria-hidden` on the decorative animation layer with a visually-identical static text fallback for screen readers (or `aria-label` on the container — follow WCAG: text must remain available to AT).
