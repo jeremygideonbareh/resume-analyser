@@ -1,0 +1,38 @@
+TODO 1.4 - KineticTextReveal on HowItWorks + SampleReport headings
+Date: 2026-08-14
+Commit: (pending)
+
+CHANGES
+- src/components/sections/HowItWorks.tsx: h2 heading now 3 KineticTextReveal segments
+  (text="Three steps to a " + em accent "better" delay 0.36 + " resume." delay 0.36),
+  splitBy=words, direction=up, distance=24, stagger=0.06, blur; segmentClassName restyles
+  accent to text-accent. SectionReveal wrapper + StaggeredReveal cards untouched.
+- src/components/sections/SampleReport.tsx: h2 heading now 3 KineticTextReveal segments
+  (text="What a real ATS " + em accent "sees" delay 0.36 + "." delay 0.36), same props.
+  StatCounter + scorecard mock untouched.
+
+GATES (all green)
+- tsc --noEmit: 0 errors
+- oxlint: 0 errors (3 pre-existing warnings: button.tsx:67, make-fixtures.mjs:35, ProgressiveBlur.tsx:6)
+- vitest run: 57/57 passed (9 files)
+- vite build: exit 0 (pre-existing chunk-size warning only)
+
+PLAYWRIGHT QA (happy path, reducedMotion=no-preference)
+- #how-it-works h2: 6 .will-change-transform segments, first="Three"; em accent segment present (1)
+- #sample h2: 6 segments, first="What"; em accent segment present (1)
+- Time-series on first HowItWorks segment (proves animation runs):
+  t=80ms  opacity=0.304  transform=matrix(1,0,0,1,0,14.94)
+  t=220ms opacity=0.891  transform=matrix(1,0,0,1,0,2.58)
+  t=450ms opacity=0.997  transform=matrix(1,0,0,1,0,0.08)
+  t=800ms opacity=1      transform=none
+- Console errors: 0
+- Screenshot: ext-1-4-headings.png
+
+PLAYWRIGHT QA (reduced motion, reducedMotion=reduce)
+- #how-it-works h2 first segment: opacity=1, transform=none (static final state)
+- #sample h2 first segment: opacity=1, transform=none (static final state)
+- Heading text intact: "Three steps to a better resume." / "What a real ATS sees."
+- Console errors: 0
+- Screenshot: ext-1-4-reduced.png
+
+VERDICT: PASS

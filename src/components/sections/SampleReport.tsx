@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { motion, useInView, useReducedMotion, useSpring, useTransform } from 'motion/react'
 import { SectionReveal, StaggeredReveal } from '@/components/motion/SectionReveal'
+import { KineticTextReveal } from '@/components/ui/kinetic-text-reveal'
 
 /**
  * StatCounter — spring count-up that animates when scrolled into view.
@@ -92,8 +93,40 @@ export function SampleReport() {
               Sample analysis
             </p>
             <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-              What a real ATS{' '}
-              <em className="font-normal italic text-accent">sees</em>.
+              <KineticTextReveal
+                text="What a real ATS "
+                splitBy="words"
+                direction="up"
+                distance={24}
+                stagger={0.06}
+                blur
+                className="text-ink"
+                segmentClassName="text-ink"
+              />
+              <em className="font-normal italic text-accent">
+                <KineticTextReveal
+                  text="sees"
+                  splitBy="words"
+                  direction="up"
+                  distance={24}
+                  stagger={0.06}
+                  delay={0.36}
+                  blur
+                  className="text-accent"
+                  segmentClassName="text-accent"
+                />
+              </em>
+              <KineticTextReveal
+                text="."
+                splitBy="words"
+                direction="up"
+                distance={24}
+                stagger={0.06}
+                delay={0.36}
+                blur
+                className="text-ink"
+                segmentClassName="text-ink"
+              />
             </h2>
             <p className="mt-4 max-w-md text-ink-soft">
               Every resume is parsed into fields, scored against the job

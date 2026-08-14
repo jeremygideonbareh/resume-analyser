@@ -132,7 +132,7 @@
 - QA failure: reduced-motion → strip static + CTA name still "Analyse"; evidence `ext-1-3-reduced.log`.
 - Commit: `feat: add scroll velocity strip and flipping word swap (wave 1)`.
 
-- [ ] **Todo 1.4 — KineticTextReveal on HowItWorks + SampleReport headings (complete "every section" coverage)**
+- [x] **Todo 1.4 — KineticTextReveal on HowItWorks + SampleReport headings (complete "every section" coverage)**
 - References: `src/components/sections/HowItWorks.tsx` (SectionReveal + StaggeredReveal on step cards); `src/components/sections/SampleReport.tsx` (SectionReveal + counters); `src/components/motion/SectionReveal.tsx`; `componentry.dev/docs/components/kinetic-text-reveal` (already installed in 1.1 — reuse the same component, no reinstall).
 - Steps:
   1. HowItWorks: replace the section heading's SectionReveal with `KineticTextReveal` (keep the StaggeredReveal on the three step cards — do not touch the cards).

@@ -1,4 +1,5 @@
 import { SectionReveal, StaggeredReveal } from '@/components/motion/SectionReveal'
+import { KineticTextReveal } from '@/components/ui/kinetic-text-reveal'
 
 const STEPS = [
   {
@@ -31,8 +32,40 @@ export function HowItWorks() {
             How it works
           </p>
           <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Three steps to a{' '}
-            <em className="font-normal italic text-accent">better</em> resume.
+            <KineticTextReveal
+              text="Three steps to a "
+              splitBy="words"
+              direction="up"
+              distance={24}
+              stagger={0.06}
+              blur
+              className="text-ink"
+              segmentClassName="text-ink"
+            />
+            <em className="font-normal italic text-accent">
+              <KineticTextReveal
+                text="better"
+                splitBy="words"
+                direction="up"
+                distance={24}
+                stagger={0.06}
+                delay={0.36}
+                blur
+                className="text-accent"
+                segmentClassName="text-accent"
+              />
+            </em>
+            <KineticTextReveal
+              text=" resume."
+              splitBy="words"
+              direction="up"
+              distance={24}
+              stagger={0.06}
+              delay={0.36}
+              blur
+              className="text-ink"
+              segmentClassName="text-ink"
+            />
           </h2>
         </SectionReveal>
         <StaggeredReveal className="mt-12 grid gap-6 sm:grid-cols-3">
