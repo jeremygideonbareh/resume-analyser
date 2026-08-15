@@ -183,7 +183,7 @@
 - QA: `ext-2-2-client.log` (test run output + grep evidence); no browser QA needed.
 - Commit: `feat: add supabase client and reconcile privacy copy (wave 2)`.
 
-- [ ] **Todo 2.3 — Real auth flow in LoginPanel: email OTP + phone OTP (TDD)**
+- [x] **Todo 2.3 — Real auth flow in LoginPanel: email OTP + phone OTP (TDD)**
 - References: `src/components/auth/LoginPanel.tsx` (modal + tabs + validation from original demo design — keep structure); `src/components/UploadZone.tsx` (dialog precedent: focus trap, Escape, focus restore); `src/lib/auth-validation.ts` (validateEmail/validatePhone — KEEP, still used for inline UX); `src/lib/supabase.ts` (client); Supabase Auth JS docs: `supabase.auth.signInWithOtp({ email })`, `supabase.auth.verifyOtp({ email, token, type: 'email' })`, `signInWithOtp({ phone })`, `verifyOtp({ phone, token, type: 'sms' })`.
 - Steps:
   1. TDD first: `src/lib/auth-flow.test.ts` (mock `@supabase/supabase-js` + the supabase module) → `src/lib/auth-flow.ts`:

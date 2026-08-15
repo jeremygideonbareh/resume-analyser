@@ -1,0 +1,78 @@
+TODO 2.3 - Real auth flow in LoginPanel: email OTP + phone OTP (TDD)
+Date: 2026-08-15
+Commit: (pending)
+
+PLAN-VS-REALITY NOTE: Plan spec referenced src/components/auth/LoginPanel.tsx and
+src/lib/auth-validation.ts, but a full tree + `git log --all` check proved neither
+ever existed in the repo (no demo auth UI was built in earlier waves). Deviation
+recorded in .omo/drafts/resume-analyser-ext.md: both files built FRESH per the
+plan's explicit spec. All acceptance criteria remain satisfiable. Real email/phone
+OTP browser verification deferred to Final Wave F3 (needs provisioned project from
+Todo 2.1 + live inbox; plan-sanctioned).
+
+CHANGES
+- src/lib/auth-validation.ts (NEW): validateEmail (permissive regex, stable error
+  strings) + validatePhone (E.164-aware; accepts '+44 7911 123456' / '07911 123456'
+  human formats; 7-15 digits).
+- src/lib/__tests__/auth-flow.test.ts (NEW, TDD contract, 11 tests): mocks
+  @/lib/supabase via vi.hoisted supabaseMock (auth.signInWithOtp/verifyOtp);
+  toggleable supabaseConfig.throwOnGet to exercise the no-.env.local path;
+  authError(message, status?) helper; vi.clearAllMocks() + throwOnGet reset in
+  afterEach.
+- src/lib/auth-flow.ts (NEW): sendEmailOtp/sendPhoneOtp/verifyEmailOtp/
+  verifyPhoneOtp -> all wrap getSupabase().auth.* ONLY here (components never
+  touch supabase.auth.* directly; grep-verifiable). mapAuthError: SMS provider
+  missing (sms_provider/422 -> "Phone sign-in needs an SMS provider - use email
+  for now."), 429/rate-limit, invalid token/expired, generic fallback.
+  handle() takes a FACTORY (() => Promise) so getSupabase() is evaluated INSIDE
+  the try/catch - QA regression: it used to be the argument and a config-missing
+  throw escaped as an uncaught PAGEERROR. Config-missing now maps to friendly
+  "Sign-in isn't set up yet - add your Supabase keys to get started."
+- src/components/auth/LoginPanel.tsx (NEW): controlled { open, onOpenChange };
+  Email/Phone role=tablist tabs; two-step flow (identifier -> 6-digit OTP with
+  inputMode=numeric maxLength=6 pattern=[0-9]{6} aria-label="6-digit verification
+  code" + aria-describedby errors); focus trap (Tab wrap), Escape closes, focus
+  restore to trigger; loading states ("Sending code...", "Verifying..."); sonner
+  toasts; backdrop click closes; motion/AnimatePresence with useReducedMotion.
+- src/components/__tests__/LoginPanel.test.tsx (NEW, jsdom, 12 tests):
+  vi.mock('@/lib/auth-flow') via vi.hoisted authFlowMock; Harness with trigger
+  button + LoginPanel; covers open/close, Escape (waitFor - AnimatePresence keeps
+  the dialog mounted through its exit animation in jsdom), focus restore,
+  tab switch, inline email/phone validation (no flow call), send-email-OTP happy
+  path to OTP step, rate-limit inline, SMS-provider message, verify-success
+  closes modal, verify button disabled until 6 digits.
+- src/App.tsx: temporary SCRATCH QA MOUNT (LoginPanel + open button) added for
+  browser QA, then REVERTED before commit (git status clean for App.tsx). LoginPanel
+  wiring into Header is Todo 2.4.
+
+GATES (all green)
+- vitest run: 83/83 passed (60 pre-existing + 11 auth-flow + 12 LoginPanel)
+- tsc --noEmit: 0 errors
+- oxlint: 0 errors (3 pre-existing warnings: button.tsx:67, make-fixtures.mjs:35,
+  ProgressiveBlur.tsx:6)
+- vite build: exit 0 (pre-existing chunk-size warning only)
+
+BROWSER QA (Playwright, scratch mount on 127.0.0.1:8080)
+- Modal opens; tabs render ["Email","Phone"]; email input present - PASS
+- Invalid email -> inline "That doesn't look like a valid email address.",
+  stays on identifier step, no API call - PASS (ext-2-3-invalid.png)
+- Valid email -> send -> graceful "Sign-in isn't set up yet - add your Supabase
+  keys to get started." (no .env.local yet; Todo 2.1 blocked) - PASS
+- Phone tab -> +44 7911 123456 -> same graceful config message - PASS
+- FIRST RUN CAUGHT REGRESSION: uncaught PAGEERROR "Supabase is not configured..."
+  (getSupabase() threw outside handle()'s try/catch). Fixed via factory arg;
+  regression test added; SECOND RUN: 0 console errors, 0 page errors - PASS
+- Screenshots: ext-2-3-modal-open.png / ext-2-3-invalid.png / ext-2-3-otp.png /
+  ext-2-3-phone-tab.png
+
+GREP EVIDENCE
+- git grep "supabase\.auth" -- src: 0 matches anywhere (auth-flow.ts wraps the
+  client as getSupabase().auth.*, so the literal string never appears) - PASS
+- git grep "\.auth\." -- src/components: 0 matches (exit 1) - components never
+  touch the Supabase auth client directly - PASS
+- rg "auth-flow|auth-validation|LoginPanel" src (non-test): only
+  LoginPanel.tsx imports them - wiring into Header is Todo 2.4 - PASS
+- Real OTP send + verify with live inbox: DEFERRED to Final Wave F3 (needs Todo 2.1
+  provisioned project + user's live email).
+
+VERDICT: PASS

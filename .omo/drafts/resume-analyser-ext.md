@@ -56,3 +56,30 @@ User asked, on a COMPLETED ResumeLab project (all 12 todos done, Final Wave F1â€
 
 ## Notepad / evidence ledger
 - (filled during plan generation)
+## 2026-08-14 SESSION NOTE: Todo 2.3 plan-vs-reality mismatch
+VERIFIED: src/components/auth/LoginPanel.tsx, src/lib/auth-validation.ts, and any demo
+sign-in UI do NOT exist in this repo (checked full tree + git log --all -- they were never
+committed). The plan assumed an "original demo design" LoginPanel to rebuild. None exists.
+DECISION: build LoginPanel + auth-validation FRESH per the plan's explicit spec (modal with
+Email/Phone tabs, 6-digit OTP step, focus trap/Escape/focus-restore, inline validation,
+aria-describedby, loading states, sonner toasts; all Supabase calls through src/lib/auth-flow.ts).
+All acceptance criteria remain satisfiable; component tests (jsdom) cover open/close/Escape/
+focus-restore/tabs/validation/OTP-step/mocked-submit. Real-browser OTP QA deferred to F3
+(plan already allows this - needs a live inbox + provisioned project).
+## 2026-08-15 SESSION NOTE: Todo 2.3 COMPLETE (commit pending)
+- Built fresh: src/lib/auth-validation.ts, src/lib/auth-flow.ts, src/lib/__tests__/auth-flow.test.ts
+  (11 tests), src/components/auth/LoginPanel.tsx, src/components/__tests__/LoginPanel.test.tsx
+  (12 tests). Gates green: typecheck 0, lint 0 (3 pre-existing warnings), vitest 83/83, build 0.
+- Playwright QA (scratch App swap, reverted before commit) caught a REAL bug the mocked unit
+  tests missed: getSupabase() was evaluated as handle()'s argument, so a config-missing throw
+  escaped as an uncaught PAGEERROR (sendResult empty, 1 console error). FIXED: handle() now
+  takes a factory (() => Promise) so client acquisition happens INSIDE the try/catch; config
+  missing maps to friendly "Sign-in isn't set up yet - add your Supabase keys to get started."
+  Regression test added (supabaseConfig.throwOnGet toggle). Re-QA: 0 console errors, 0 page
+  errors, graceful message on both email + phone tabs. Evidence .omo/evidence/ext-2-3-auth-flow.log
+  + 4 screenshots (modal-open/invalid/otp/phone-tab). HANDOFF + plan checkbox updated.
+- LESSON: mocked-module unit tests cannot catch synchronous throws in the setup path of a
+  wrapped call - QA in the real browser (or a throw-on-get toggle in the test double) is
+  required. The toggle is now part of the auth-flow test contract.
+- Next: Todo 2.4 (session + header signed-in + HANDOFF/README) - session.ts/maskIdentifier
+  TDD can proceed mocked; real-browser full flow still blocked on Todo 2.1 (.env.local sbp_ PAT).
