@@ -11,6 +11,7 @@
 - **Optional job-description matching** — paste a JD to compare keyword overlap and see what's missing.
 - **Interactive report** — score gauge, category bars (click for feedback), sections detected, skills extracted, print/summary export.
 - **Kinetic UX** — scroll reveals, magnetic CTAs, count-up score animation, reduced-motion support.
+- **Sign in (Supabase Auth)** — email OTP is live out of the box; phone OTP is wired and shows a graceful "needs an SMS provider" message until a paid provider (e.g. Twilio) is enabled in the Supabase dashboard. The session token lives on your device (localStorage) and is removable by logging out or clearing site data. Optional per-user history/dashboard (see Wave 3).
 - **Optional LLM feedback tier** — env-gated (`VITE_ENABLE_LLM`, default **off**); when enabled, a serverless function calls an OpenAI-compatible LLM with the API key **server-side only**.
 - **Hardened** — strict Content-Security-Policy injected at build time, `npm audit` clean, pdf.js lazy-loaded as a separate chunk (LCP ~256 ms), full keyboard-only flow with visible focus indicators.
 
@@ -56,6 +57,30 @@ VITE_ENABLE_LLM=true
 - With the gate off: the "AI Feedback" section is hidden entirely and the literal `/api/analyze` string is stripped from the built bundle (grep-verified).
 - With the gate on: after analysis, a "Get AI feedback" button appears → POST `{ text }` to `/api/analyze` → the serverless function calls the LLM and returns `{ summary, strengths[], improvements[], suggestions[] }`.
 - The function enforces POST-only (405), a 100 KB body limit (413), a 10 s timeout (504), and never logs or persists resume text. Upstream/malformed responses degrade to a friendly "AI feedback is temporarily unavailable" — the core report is unaffected.
+
+## Sign in (Supabase Auth)
+
+Email OTP is live out of the box; phone OTP is wired and degrades gracefully until a paid SMS provider is enabled.
+
+**1. Create a Supabase project** and note the project URL + anon key (Dashboard → Settings → API):
+
+```bash
+# .env.local (never commit — .gitignore covers it)
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+**2. Enable the email provider** — Auth → Providers → Email → **Enable** (Supabase's built-in emailer sends the 6-digit OTP; no SMTP config needed).
+
+**3. Phone OTP (optional)** — requires a paid SMS provider: Auth → Providers → Phone → enable and configure Twilio (or Vonage/MessageBird/Telefonica). Until one is set, the phone tab shows "Phone sign-in needs an SMS provider — use email for now." instead of a raw error.
+
+**4. Behavior**
+
+- Sign-in is a modal from the header ("Sign in"); the email tab sends a real OTP, then verifies the 6-digit code you receive.
+- The session token is persisted on your device (Supabase's default `localStorage` storage) — a reload keeps you signed in. Log out (header) removes it.
+- No secrets ship in the client: only `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` are used client-side. If the vars are missing, sign-in shows "Sign-in isn't set up yet" — the rest of the app still works (zero-upload analysis is untouched).
+
+**5. Deploy note** — set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the host's env store **before** building/deploying (Vite inlines them at build time).
 
 ## Deployment
 

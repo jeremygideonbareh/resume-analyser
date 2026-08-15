@@ -83,3 +83,21 @@ focus-restore/tabs/validation/OTP-step/mocked-submit. Real-browser OTP QA deferr
   required. The toggle is now part of the auth-flow test contract.
 - Next: Todo 2.4 (session + header signed-in + HANDOFF/README) - session.ts/maskIdentifier
   TDD can proceed mocked; real-browser full flow still blocked on Todo 2.1 (.env.local sbp_ PAT).
+## 2026-08-15 SESSION NOTE: Todo 2.4 COMPLETE (commit pending)
+- src/lib/session.ts + __tests__/session.test.ts (12 tests): useAuthSession wraps
+  onAuthStateChange -> {session,user,signOut}, Supabase default token storage (reload
+  persistence); maskIdentifier built FRESH (plan ref "from demo design" stale - demo UI
+  never existed); degrades to signed-out when .env.local missing (Todo 2.3 lesson:
+  getSupabase() throw caught in effect).
+- Header.tsx now {user,onSignIn,onSignOut}: signed-in = masked id + Log out; signed-out
+  = Sign in - both OUTSIDE hidden sm:flex nav (all breakpoints). Header.test.tsx 6 tests.
+- App.tsx mounts useAuthSession at App level + LoginPanel modal state opened by onSignIn.
+- README + HANDOFF: "Sign in (Supabase Auth)" feature + setup section; HANDOFF new
+  "Supabase Auth (Wave 2)" section (providers, SMS caveat, deploy note, privacy).
+- Gates: typecheck 0, lint 0 (3 pre-existing), vitest 101/101, build 0. Playwright QA
+  (real app): Sign in visible desktop + 375px mobile, modal opens Email/Phone tabs,
+  Escape closes, 0 console errors (ext-2-4-signout.png + ext-2-4-session.log).
+- Secrets gate: sbp_[A-Za-z0-9]{8,} -> 0 hits (no real token values; only masked
+  doc references). Signed-in journey deferred to F3 (Todo 2.1 blocked).
+- Next: Todo 2.1 provisioning BLOCKED (user sbp_ PAT into .env.local) OR Wave 3
+  (3.1 efferd dashboard install can proceed - registry verified 2026-08-14).

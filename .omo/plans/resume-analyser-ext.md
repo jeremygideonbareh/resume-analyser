@@ -203,7 +203,7 @@
 - QA failure: invalid email → inline error; phone tab with no SMS provider → graceful provider-missing message shown (NOT a raw console error); incomplete OTP → submit disabled; evidence `ext-2-3-errors.log`.
 - Commit: `feat: wire real email and phone otp auth flow (wave 2)`.
 
-- [ ] **Todo 2.4 — Session state + header signed-in state + docs (HANDOFF/README)**
+- [x] **Todo 2.4 — Session state + header signed-in state + docs (HANDOFF/README)**
 - References: `src/App.tsx` (session via `supabase.auth.onAuthStateChange`); `src/components/layout/Header.tsx` (signed-in: masked identifier + "Log out"); `src/lib/auth-flow.ts` (maskIdentifier from demo design — KEEP: email → `j***@example.com`, phone → `+44 **** 789`); `HANDOFF.md`; `README.md`.
 - Steps:
   1. TDD first: `src/lib/session.test.ts` (mock supabase) → `src/lib/session.ts`: `useAuthSession()` hook wrapping `supabase.auth.onAuthStateChange` → `{ session, user, signOut }`; `maskIdentifier` tests (email/phone masking, edge cases: empty local part, `+` in phone).

@@ -1,12 +1,27 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { FlippingWordSwap } from '@/components/ui/flipping-word-swap'
+import { maskIdentifier, type AuthUser } from '@/lib/session'
+
+interface HeaderProps {
+  /** Signed-in user from useAuthSession(), or null when signed out. */
+  user: AuthUser | null
+  /** Opens the LoginPanel modal (signed-out affordance). */
+  onSignIn: () => void
+  /** Calls supabase signOut (signed-in affordance). */
+  onSignOut: () => void
+}
 
 /**
  * Header — sticky ResumeLab masthead.
  * Logo mark: a small scorecard glyph (mono "RL" in a ruled box).
+ * Right side: auth control (Sign in / masked id + Log out) + Analyse CTA.
  */
-export function Header() {
+export function Header({ user, onSignIn, onSignOut }: HeaderProps) {
   const reduce = useReducedMotion()
+
+  const masked = user
+    ? maskIdentifier(user.email ?? user.phone ?? '')
+    : ''
 
   return (
     <motion.header
@@ -41,15 +56,42 @@ export function Header() {
             How it works
           </a>
         </nav>
-        <FlippingWordSwap
-          word1="Analyse"
-          word2="Score it"
-          onClick={() =>
-            document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth' })
-          }
-          className="rounded-md bg-ink px-3.5 py-1.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
-          toClassName="text-paper"
-        />
+        <div className="flex items-center gap-2">
+          {user ? (
+            <div className="flex items-center gap-2.5">
+              <span
+                className="font-mono text-xs text-ink-soft"
+                title="Signed in"
+              >
+                {masked}
+              </span>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+            >
+              Sign in
+            </button>
+          )}
+          <FlippingWordSwap
+            word1="Analyse"
+            word2="Score it"
+            onClick={() =>
+              document.getElementById('tool')?.scrollIntoView({ behavior: 'smooth' })
+            }
+            className="rounded-md bg-ink px-3.5 py-1.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
+            toClassName="text-paper"
+          />
+        </div>
       </div>
     </motion.header>
   )

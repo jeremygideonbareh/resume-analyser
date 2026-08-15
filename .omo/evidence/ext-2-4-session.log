@@ -1,0 +1,66 @@
+TODO 2.4 - Session state + header signed-in state + docs (HANDOFF/README)
+Date: 2026-08-15
+Commit: (pending)
+
+CHANGES
+- src/lib/session.ts (NEW, TDD): useAuthSession() hook wrapping
+  supabase.auth.onAuthStateChange -> { session, user, signOut }; persisted via
+  Supabase default token storage (localStorage, real-auth reload persistence).
+  maskIdentifier (built FRESH per plan spec - "from demo design" reference was
+  stale, demo UI never existed per Todo 2.3 finding): email -> j***@example.com,
+  phone -> +44 **** 456 (country code + last 3), edge cases: empty local part
+  (***@example.com), no leading plus (07 **** 456), too-short (****), empty ('').
+  When .env.local is missing, getSupabase() throws -> hook degrades to signed-out
+  WITHOUT crashing (Todo 2.3 lesson applied; throw caught in the effect).
+- src/lib/__tests__/session.test.ts (NEW, 12 tests): mocked @/lib/supabase via
+  vi.hoisted supabaseAuthMock (onAuthStateChange/subscription.unsubscribe/signOut)
+  + toggleable supabaseConfig.throwOnGet; maskIdentifier 6 cases; hook subscribes/
+  unsubscribes, updates on SIGNED_IN, clears on SIGNED_OUT, signOut calls + clears,
+  config-missing degrades, signOut swallows config errors.
+- src/components/layout/Header.tsx: now accepts { user, onSignIn, onSignOut }.
+  Signed in -> masked identifier (mono, title="Signed in") + "Log out" button
+  (calls onSignOut). Signed out -> "Sign in" button. Both next to the always-
+  visible "Analyse" CTA, OUTSIDE the hidden sm:flex nav (visible on all
+  breakpoints - acceptance criterion).
+- src/components/__tests__/Header.test.tsx (NEW, 6 tests): signed-out shows Sign
+  in + no Log out/masked id, click calls onSignIn; signed-in shows masked email
+  (j***@example.com) + Log out + no Sign in, phone masking (+44 **** 456), click
+  calls onSignOut.
+- src/App.tsx: mounts useAuthSession() at App level; { user, signOut } -> Header;
+  LoginPanel now mounted here with { open, onOpenChange } from local state,
+  opened by Header's onSignIn.
+- README.md: "Sign in (Supabase Auth)" feature bullet + full setup section
+  (project URL + anon key in .env.local, enable email provider, phone OTP needs
+  paid SMS provider + steps, session persistence + log out, no secrets in client,
+  deploy note: set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY before build).
+- HANDOFF.md: new "Supabase Auth (Wave 2)" section - client wiring, session,
+  providers (email built-in, phone paid), provisioning pending (Todo 2.1),
+  Vercel deploy note, privacy (token on-device, raw resume text never stored).
+
+GATES (all green)
+- vitest run: 101/101 passed (83 + 12 session + 6 Header)
+- tsc --noEmit: 0 errors
+- oxlint: 0 errors (3 pre-existing warnings: button.tsx:67, make-fixtures.mjs:35,
+  ProgressiveBlur.tsx:6)
+- vite build: exit 0 (pre-existing chunk-size warning only)
+
+BROWSER QA (Playwright, real app - no scratch mount needed, Header is wired)
+- Signed-out state: "Sign in" button visible (desktop AND 375px mobile viewport);
+  no "Log out" / no masked id; click opens modal with tabs ["Email","Phone"];
+  Escape closes cleanly; 0 console errors, 0 page errors - PASS
+  (screenshot ext-2-4-signout.png)
+- Signed-in journey (Sign in -> email -> OTP -> masked header -> reload persists ->
+  Log out): DEFERRED to Final Wave F3 - needs real Supabase project from Todo 2.1
+  (still blocked: .env.local sbp_ PAT missing) + live email inbox. Plan-sanctioned.
+
+GREP EVIDENCE
+- git grep -nE "sbp_[A-Za-z0-9]{8,}": 0 hits - NO real token VALUES anywhere
+  (only masked documentation references "the user's sbp_ PAT" in HANDOFF.md +
+  .omo/drafts/resume-analyser-ext.md - no secret material committed) - PASS
+- git grep "sbp_\|service_role" -- src README.md HANDOFF.md: only the masked
+  wording in HANDOFF.md (2 lines: provisioning note + session log) - no secrets - PASS
+- git status: no .env* files staged - PASS
+- rg "supabase\.auth" src (non-test): only src/lib/auth-flow.ts + src/lib/session.ts
+  (the wrappers) - components never touch the client directly - PASS
+
+VERDICT: PASS
