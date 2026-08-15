@@ -57,7 +57,7 @@ export function Hero() {
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
             Upload your resume and get an instant ATS score with a category
             breakdown, detected sections, and actionable feedback — all in your
-            browser. Nothing is uploaded, nothing is stored.
+            browser. Nothing is uploaded, no analysis storage.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <MagneticButton

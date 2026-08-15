@@ -1,0 +1,46 @@
+TODO 2.2 - Supabase client + env wiring + privacy copy reconciliation (TDD)
+Date: 2026-08-14
+Commit: (pending)
+
+NOTE: Executed before Todo 2.1 (provisioning) because .env.local was still missing
+the sbp_ PAT. All Supabase calls mocked; no real credentials needed. Plan deviation
+recorded: 2.2 acceptance criteria only require mocked tests, which pass.
+
+CHANGES
+- src/lib/supabase.ts (NEW): getSupabase() module-singleton createClient(
+  import.meta.env.VITE_SUPABASE_URL!, VITE_SUPABASE_ANON_KEY!); throws clear
+  Error naming both vars when missing. Lazy init, cached in module-scope var.
+- src/lib/__tests__/supabase.test.ts (NEW, orchestrator-written TDD contract):
+  3 tests - missing-env throws / client created with right URL+anon key (mocked) /
+  singleton identity (createClient called once). vi.mock('@supabase/supabase-js')
+  factory; vi.clearAllMocks() in afterEach (mock call-count leaks between tests).
+- src/vite-env.d.ts: + VITE_SUPABASE_URL? / VITE_SUPABASE_ANON_KEY? typed.
+- src/components/layout/Footer.tsx (INTERIM privacy copy):
+  LetterCascade line: "Privacy first: no uploads, no analysis storage, no cookies.
+  Sign-in keeps a session token on your device - removable any time by logging out
+  or clearing site data." Mono row: "Privacy first - no uploads, no analysis
+  storage, no cookies"
+- README.md: line 3 + Privacy section line 87 updated to same truthful wording.
+- src/components/sections/Hero.tsx: stale "Nothing is uploaded, nothing is stored"
+  -> "Nothing is uploaded, no analysis storage." (grep-consistency, acceptance
+  criterion #3). HowItWorks.tsx:8 "It never leaves your browser" retained - still
+  accurate for the local analyser (upload behavior, not storage).
+
+DEPENDENCY
+- @supabase/supabase-js v2.112.3 installed (npm install; 0 vulnerabilities).
+
+GATES (all green)
+- vitest run: 60/60 passed (57 pre-existing + 3 new supabase tests)
+- tsc --noEmit: 0 errors
+- oxlint: 0 errors (3 pre-existing warnings: button.tsx:67, make-fixtures.mjs:35, ProgressiveBlur.tsx:6)
+- vite build: exit 0 (pre-existing chunk-size warning only)
+
+GREP EVIDENCE
+- stale "no storage / nothing is stored / never leaves your browser" in src+README:
+  only HowItWorks.tsx:8 (accurate upload-behavior claim) - PASS
+- git grep VITE_SUPABASE -- src: only src/vite-env.d.ts (typings) - .env.local
+  untracked/absent; src/lib/supabase.ts reads env via import.meta.env (grep for
+  literal 'VITE_SUPABASE' in supabase.ts is indirect - env accessed dynamically).
+- git status: no .env* files present/tracked.
+
+VERDICT: PASS

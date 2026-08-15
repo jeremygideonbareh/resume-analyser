@@ -167,7 +167,7 @@
 - QA: Management API responses recorded (redacted) in `ext-2-1-provision.log`; `git status` + grep evidence appended; no browser QA needed.
 - Commit: `chore: provision supabase project and enable auth (wave 2)`.
 
-- [ ] **Todo 2.2 — Supabase client + env wiring + privacy copy reconciliation (TDD)**
+- [x] **Todo 2.2 — Supabase client + env wiring + privacy copy reconciliation (TDD)**
 - References: `package.json` (add `@supabase/supabase-js`); `src/lib/` (existing utils); `src/components/layout/Footer.tsx` privacy line; `README.md` privacy bullet; `.env.local` (from 2.1); Vite env typing (`src/vite-env.d.ts` or `vite.config` — `import.meta.env` typing).
 - Steps:
   1. TDD first: `src/lib/supabase.test.ts` → `src/lib/supabase.ts`: `getSupabase()` returns a single `createClient(import.meta.env.VITE_SUPABASE_URL!, import.meta.env.VITE_SUPABASE_ANON_KEY!)` instance (module singleton; tests mock `@supabase/supabase-js` so no real calls). Tests assert: singleton identity, missing-env throws a clear error, client is created with the right URL/anon key (mocked).

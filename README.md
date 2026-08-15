@@ -1,6 +1,6 @@
 # ResumeLab — ATS Resume Analyser
 
-**Privacy-first ATS resume analyser.** Drop in a PDF, DOCX, or TXT resume and get an instant ATS score with a category breakdown, detected sections, and actionable feedback — **100% in your browser**. Nothing is uploaded, nothing is stored, no cookies.
+**Privacy-first ATS resume analyser.** Drop in a PDF, DOCX, or TXT resume and get an instant ATS score with a category breakdown, detected sections, and actionable feedback — **100% in your browser**. No uploads, no analysis storage, no cookies. Sign-in keeps a session token on your device — removable any time by logging out or clearing site data.
 
 > Brand name: **ResumeLab** (chosen in Todo 1.2 — see `HANDOFF.md` for the rationale).
 
@@ -84,4 +84,4 @@ src/
 ## Privacy
 
 - Resume text never leaves the browser unless **you** enable the LLM tier, in which case it is sent only to your own `api/analyze` function and only when a user clicks "Get AI feedback".
-- No analytics, no cookies, no storage. See `HANDOFF.md` for the full design rationale.
+- No analytics, no cookies, no analysis storage. Sign-in keeps a session token on your device — removable any time by logging out or clearing site data. See `HANDOFF.md` for the full design rationale.
