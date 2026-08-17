@@ -16,23 +16,9 @@ import {
 } from "@/components/ui/chart";
 import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { DashboardCard } from "@/components/dashboard-card";
-
-/** Placeholder: last 7 analyses'"'"' ATS scores (Todo 3.3 wires real history). */
-const scoresLast7 = [
-	{ day: "Mon", score: 61 },
-	{ day: "Tue", score: 64 },
-	{ day: "Wed", score: 58 },
-	{ day: "Thu", score: 71 },
-	{ day: "Fri", score: 69 },
-	{ day: "Sat", score: 74 },
-	{ day: "Sun", score: 78 },
-] as const;
-
-const chartRows = scoresLast7.map((row) => ({ ...row }));
-
-const firstScore = scoresLast7[0].score;
-const lastScore = scoresLast7.at(-1)?.score ?? firstScore;
-const trendPct = (((lastScore - firstScore) / firstScore) * 100).toFixed(1);
+import { scoreTrend } from "@/lib/dashboard-data";
+import { formatChartAxisTick } from "@/components/formater";
+import type { AnalysisHistoryRow } from "@/lib/history";
 
 const chartConfig = {
 	score: {
@@ -79,7 +65,24 @@ function CustomGradientBar(
 	);
 }
 
-export function ScoreTrendChart() {
+/** Score trend — real history, last 7 analyses, oldest→newest (chart order). */
+export function ScoreTrendChart({
+	rows,
+}: {
+	rows: readonly AnalysisHistoryRow[];
+}) {
+	const trend = scoreTrend(rows, 7);
+	const chartRows = trend.map((point) => ({
+		day: formatChartAxisTick(point.created_at, 7),
+		score: point.score,
+	}));
+
+	const firstScore = trend[0]?.score ?? 0;
+	const lastScore = trend.at(-1)?.score ?? firstScore;
+	const trendPct = firstScore > 0
+		? (((lastScore - firstScore) / firstScore) * 100).toFixed(1)
+		: "0.0";
+
 	return (
 		<DashboardCard className="gap-0 md:col-span-2">
 			<CardHeader className="gap-2">

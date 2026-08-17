@@ -1,0 +1,67 @@
+# Todo 3.4 — Auth-gated personal dashboard view (wave 3)
+
+Date: 2026-08-17
+Branch: feat/resume-analyser
+Commit: (pending — see git log)
+
+## Scope delivered
+- `src/lib/dashboard-data.ts` (NEW) — pure data derivation: `kpiStats`,
+  `scoreTrend`, `sectionBreakdown`, `recentRows`, `activityItems`. All helpers
+  consume `AnalysisHistoryRow[]` (newest-first from `loadHistory`); charts
+  reverse to oldest→newest; `sectionBreakdown` normalizes earned points to
+  0–100 (keywords weight 45, structure 17) and emits date-only strings so
+  `formatDate`/`parseIsoCalendarDate` (formater.ts) never see an Invalid Date.
+- `src/lib/__tests__/dashboard-data.test.ts` (NEW) — 15 tests (empty history,
+  single/multi-row KPIs, divide-by-zero guard, window clipping, ordering,
+  format uppercasing, missing category keys).
+- Dashboard components wired to real rows: `stats.tsx` (kpiStats + truthful
+  footers "vs first analysis"/"all time"), `score-trend-chart.tsx`,
+  `section-breakdown-chart.tsx`, `recent-analyses.tsx` (recentRows + "Back to
+  analyser" → landing), `recent-activity.tsx` (activityItems + formatDate),
+  `dashboard-empty.tsx` (onNavigate → landing).
+- `src/components/dashboard.tsx` — `Dashboard({ userId, onNavigate })` loads
+  via `loadHistory(getSupabase(), userId)` in useEffect; `getSupabase()` is
+  wrapped in try/catch (throws without `.env.local` — Todo 2.3 lesson);
+  loading / error / empty (DashboardEmpty full-width) / data states.
+- `src/components/layout/Header.tsx` — optional `view`/`onNavigate` props
+  (defaults keep existing consumers/tests valid); signed-in "Dashboard" link
+  next to the Analyse CTA (same pattern as Sign in); nav links + Analyse CTA
+  + logo switch back to landing and scroll via `goToSection`.
+- `src/App.tsx` — `view` state ('landing' default); effect redirects
+  signed-out users away from 'dashboard'; render guard `view === 'dashboard'
+  && user` prevents a dashboard flash with no user.
+- `src/components/__tests__/Header.test.tsx` — +4 tests (no Dashboard link
+  signed out; Dashboard link shown signed in; click → onNavigate('dashboard');
+  aria-current="page" when dashboard view active).
+
+## Gates
+- `npx tsc --noEmit` → 0 errors
+- `npx oxlint src` → 0 errors; 4 pre-existing benign `only-export-components`
+  warnings (button, ProgressiveBlur, sidebar, badge — baseline, untouched)
+- `npx vitest run` → 16 files / 128 tests passed (baseline was 15/109;
+  +15 dashboard-data, +4 Header)
+- `npx vite build` → built in ~3s; chunk-size warning pre-existing
+  (pdf.worker + recharts), not introduced here
+
+## QA — guest path (unblocked, dev server :5201)
+- Signed out → header shows "Sign in" + "Analyse" only; NO "Dashboard" link
+  (verified via Playwright accessibility snapshot; the only "Dashboard" text
+  on the page is the Footer privacy copy, which is expected).
+- Landing renders; console: 0 errors, 1 warning (pre-existing).
+- Screenshot: `.omo/evidence/ext-3-4-signedout-header.png`.
+- Forced-dashboard redirect: covered by the App effect + render guard
+  (`view === 'dashboard' && user`); signed-out users cannot render the
+  dashboard view.
+
+## QA — signed-in happy path (DEFERRED — blocked on Todo 2.1)
+- Full journey (sign in → Dashboard link → dashboard with KPI/charts/table,
+  screenshot `ext-3-4-dashboard.png`) requires a live Supabase project:
+  `.env.local` is missing (Todo 2.1 provisioning). `getSupabase()` throws
+  without `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, so the dashboard
+  degrades to the error state until provisioned.
+- Empty-history empty-state render also requires a signed-in session.
+- Re-run when Todo 2.1 is provisioned (user supplies `sbp_` PAT + env vars).
+
+## Notes
+- No router added (plan default: App-level view state); zero new deps.
+- Raw resume text is never stored; dashboard shows metrics + filename only.

@@ -271,7 +271,7 @@
 - QA failure: signed out → analysis completes with NO save attempt (no console error, no toast); guest privacy promise holds; evidence `ext-3-3-guest.log`.
 - Commit: `feat: persist analysis history for signed-in users (wave 3)`.
 
-- [ ] **Todo 3.4 — Dashboard route + auth gating + header nav (signed-in users get the dashboard)**
+- [x] **Todo 3.4 — Dashboard route + auth gating + header nav (signed-in users get the dashboard)**
 - References: `src/App.tsx` (view switch — NO router added; zero new deps, recorded default); `src/components/layout/Header.tsx` (signed-in state from 2.4); `src/lib/session.ts`; `src/lib/history.ts` (3.3); pulled `src/components/dashboard.tsx` + siblings (3.1–3.2).
 - Steps:
   1. App-level view state `'landing' | 'dashboard'` (useState at `App`; default `'landing'`). Signed-out users rendering dashboard → automatically redirected to `'landing'` (effect on session).

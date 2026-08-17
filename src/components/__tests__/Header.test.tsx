@@ -39,6 +39,11 @@ describe('Header — signed-out state', () => {
     expect(screen.queryByRole('button', { name: /log out/i })).toBeNull()
     expect(screen.queryByText(/j\*\*\*@example\.com/)).toBeNull()
   })
+
+  it('does not show a Dashboard link when signed out (landing only)', () => {
+    render(<Header user={null} onSignIn={vi.fn()} onSignOut={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: /dashboard/i })).toBeNull()
+  })
 })
 
 describe('Header — signed-in state', () => {
@@ -59,5 +64,39 @@ describe('Header — signed-in state', () => {
     render(<Header user={emailUser} onSignIn={vi.fn()} onSignOut={onSignOut} />)
     fireEvent.click(screen.getByRole('button', { name: /log out/i }))
     expect(onSignOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a Dashboard link when signed in', () => {
+    render(<Header user={emailUser} onSignIn={vi.fn()} onSignOut={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /dashboard/i })).toBeInTheDocument()
+  })
+
+  it('calls onNavigate with "dashboard" when the Dashboard link is clicked', () => {
+    const onNavigate = vi.fn()
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        onNavigate={onNavigate}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /dashboard/i }))
+    expect(onNavigate).toHaveBeenCalledWith('dashboard')
+  })
+
+  it('marks the Dashboard link as current when the dashboard view is active', () => {
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        view="dashboard"
+      />,
+    )
+    expect(screen.getByRole('button', { name: /dashboard/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 })

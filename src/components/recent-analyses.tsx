@@ -18,40 +18,21 @@ import {
 } from "@/components/ui/table";
 import { DashboardCard } from "@/components/dashboard-card";
 import { ArrowRightIcon } from "lucide-react";
+import { recentRows } from "@/lib/dashboard-data";
+import type { AnalysisHistoryRow } from "@/lib/history";
 
-/** Placeholder rows — Todo 3.3 wires real saved analyses (metrics + filename only). */
-const analyses = [
-	{
-		id: "1",
-		filename: "senior-frontend-2026.pdf",
-		format: "PDF",
-		score: 78,
-		date: "2026-08-14",
-	},
-	{
-		id: "2",
-		filename: "backend-engineer.docx",
-		format: "DOCX",
-		score: 64,
-		date: "2026-08-11",
-	},
-	{
-		id: "3",
-		filename: "product-manager.txt",
-		format: "TXT",
-		score: 71,
-		date: "2026-08-09",
-	},
-	{
-		id: "4",
-		filename: "data-scientist.pdf",
-		format: "PDF",
-		score: 82,
-		date: "2026-08-06",
-	},
-] as const;
+type AppView = "landing" | "dashboard";
 
-export function RecentAnalyses() {
+/** Recent analyses — real saved rows (metrics + filename only), newest first. */
+export function RecentAnalyses({
+	rows,
+	onNavigate,
+}: {
+	rows: readonly AnalysisHistoryRow[];
+	onNavigate: (view: AppView) => void;
+}) {
+	const analyses = recentRows(rows, 4);
+
 	return (
 		<DashboardCard className="relative gap-0 md:col-span-2">
 			<CardHeader className="border-b">
@@ -90,11 +71,13 @@ export function RecentAnalyses() {
 				</Table>
 			</CardContent>
 			<div className="mask-t-from-30% absolute inset-x-0 bottom-0 flex h-1/5 items-center justify-center bg-background">
-				<Button asChild className="relative" variant="ghost">
-					<a href="/#">
-						View All
-						<ArrowRightIcon aria-hidden="true" />
-					</a>
+				<Button
+					className="relative"
+					variant="ghost"
+					onClick={() => onNavigate("landing")}
+				>
+					Back to analyser
+					<ArrowRightIcon aria-hidden="true" />
 				</Button>
 			</div>
 		</DashboardCard>

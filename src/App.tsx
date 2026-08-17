@@ -1,17 +1,27 @@
-import { useState } from 'react'
-import { Header } from '@/components/layout/Header'
+import { useEffect, useState } from 'react'
+import { Header, type AppView } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/sections/Hero'
 import { SkillsMarquee } from '@/components/sections/SkillsMarquee'
 import { ToolSection } from '@/components/sections/ToolSection'
 import { HowItWorks } from '@/components/sections/HowItWorks'
 import { SampleReport } from '@/components/sections/SampleReport'
+import { Dashboard } from '@/components/dashboard'
 import { LoginPanel } from '@/components/auth/LoginPanel'
 import { useAuthSession } from '@/lib/session'
 
 function App() {
   const { user, signOut } = useAuthSession()
   const [loginOpen, setLoginOpen] = useState(false)
+  const [view, setView] = useState<AppView>('landing')
+
+  // Todo 3.4 — signed-out users can never land on the dashboard: any forced
+  // 'dashboard' state (e.g. a stale link after sign-out) is redirected to the
+  // landing view. The render guard below also prevents a flash of a dashboard
+  // with no user.
+  useEffect(() => {
+    if (!user && view === 'dashboard') setView('landing')
+  }, [user, view])
 
   return (
     <>
@@ -19,13 +29,21 @@ function App() {
         user={user}
         onSignIn={() => setLoginOpen(true)}
         onSignOut={signOut}
+        view={view}
+        onNavigate={setView}
       />
       <main>
-        <Hero />
-        <SkillsMarquee />
-        <ToolSection user={user} />
-        <HowItWorks />
-        <SampleReport />
+        {view === 'dashboard' && user ? (
+          <Dashboard userId={user.id} onNavigate={setView} />
+        ) : (
+          <>
+            <Hero />
+            <SkillsMarquee />
+            <ToolSection user={user} />
+            <HowItWorks />
+            <SampleReport />
+          </>
+        )}
       </main>
       <Footer />
       <LoginPanel open={loginOpen} onOpenChange={setLoginOpen} />

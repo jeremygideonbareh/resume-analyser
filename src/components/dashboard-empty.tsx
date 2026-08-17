@@ -16,7 +16,17 @@ import {
 import { DashboardCard } from "@/components/dashboard-card";
 import { FileTextIcon, ArrowRightIcon } from "lucide-react";
 
-export function DashboardEmpty() {
+type AppView = "landing" | "dashboard";
+
+/**
+ * Empty state for a user with no saved analyses yet. The "Analyse a resume"
+ * CTA jumps back to the landing view (the analyser is the hub — plan 3.4.4).
+ */
+export function DashboardEmpty({
+	onNavigate,
+}: {
+	onNavigate: (view: AppView) => void;
+}) {
 	return (
 		<DashboardCard className="gap-0">
 			<CardHeader className="border-b">
@@ -38,11 +48,9 @@ export function DashboardEmpty() {
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent>
-						<Button asChild variant="ghost">
-							<a href="#tool">
-								Analyse a resume
-								<ArrowRightIcon aria-hidden="true" />
-							</a>
+						<Button variant="ghost" onClick={() => onNavigate("landing")}>
+							Analyse a resume
+							<ArrowRightIcon aria-hidden="true" />
 						</Button>
 					</EmptyContent>
 				</Empty>
