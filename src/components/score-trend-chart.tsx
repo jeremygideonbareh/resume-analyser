@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type * as React from "react";
 import { Bar, BarChart, XAxis } from "recharts";
@@ -17,27 +17,27 @@ import {
 import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { DashboardCard } from "@/components/dashboard-card";
 
-/** Demo: last 7 days. */
-const salesDaily7 = [
-	{ day: "Mon", sales: 3200 },
-	{ day: "Tue", sales: 3001 },
-	{ day: "Wed", sales: 3780 },
-	{ day: "Thu", sales: 4100 },
-	{ day: "Fri", sales: 4520 },
-	{ day: "Sat", sales: 4004 },
-	{ day: "Sun", sales: 5340 },
+/** Placeholder: last 7 analyses'"'"' ATS scores (Todo 3.3 wires real history). */
+const scoresLast7 = [
+	{ day: "Mon", score: 61 },
+	{ day: "Tue", score: 64 },
+	{ day: "Wed", score: 58 },
+	{ day: "Thu", score: 71 },
+	{ day: "Fri", score: 69 },
+	{ day: "Sat", score: 74 },
+	{ day: "Sun", score: 78 },
 ] as const;
 
-const chartRows = salesDaily7.map((row) => ({ ...row }));
+const chartRows = scoresLast7.map((row) => ({ ...row }));
 
-const firstDay = salesDaily7[0].sales;
-const lastDay = salesDaily7.at(-1)?.sales ?? firstDay;
-const growthPct = (((lastDay - firstDay) / firstDay) * 100).toFixed(1);
+const firstScore = scoresLast7[0].score;
+const lastScore = scoresLast7.at(-1)?.score ?? firstScore;
+const trendPct = (((lastScore - firstScore) / firstScore) * 100).toFixed(1);
 
 const chartConfig = {
-	sales: {
-		label: "Sales",
-		color: "var(--chart-2)",
+	score: {
+		label: "Score",
+		color: "var(--chart-1)",
 	},
 } satisfies ChartConfig;
 
@@ -53,7 +53,7 @@ function CustomGradientBar(
 		y = 0,
 		width = 0,
 		height = 0,
-		dataKey = "sales",
+		dataKey = "score",
 		index = 0,
 	} = props;
 	const gid = `gradient-bar-${String(dataKey)}-${index}`;
@@ -79,18 +79,18 @@ function CustomGradientBar(
 	);
 }
 
-export function NetRevenueChart() {
+export function ScoreTrendChart() {
 	return (
 		<DashboardCard className="gap-0 md:col-span-2">
 			<CardHeader className="gap-2">
 				<div className="flex flex-wrap items-center gap-2">
-					<CardTitle>Net revenue</CardTitle>
-					<Delta value={Number(growthPct)} variant="badge">
+					<CardTitle>Score trend</CardTitle>
+					<Delta value={Number(trendPct)} variant="badge">
 						<DeltaIcon variant="trend" />
 						<DeltaValue />
 					</Delta>
 				</div>
-				<CardDescription>Daily net sales, last 7 days.</CardDescription>
+				<CardDescription>ATS scores, last 7 analyses.</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<ChartContainer
@@ -111,8 +111,8 @@ export function NetRevenueChart() {
 							cursor={false}
 						/>
 						<Bar
-							dataKey="sales"
-							fill="var(--color-sales)"
+							dataKey="score"
+							fill="var(--color-online)"
 							shape={<CustomGradientBar />}
 						/>
 					</BarChart>

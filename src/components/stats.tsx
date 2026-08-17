@@ -13,25 +13,26 @@ type Stat = {
 	delta: number;
 };
 
+// Placeholder values until Todo 3.3 wires real per-user history.
 const stats: Stat[] = [
 	{
-		label: "Active users",
-		value: "847",
+		label: "Analyses run",
+		value: "12",
 		delta: 3.1,
 	},
 	{
-		label: "Revenue",
-		value: "$18,290",
+		label: "Average ATS score",
+		value: "71",
+		delta: 4.2,
+	},
+	{
+		label: "Skills detected",
+		value: "184",
 		delta: 12.4,
 	},
 	{
-		label: "Conversion Rate",
-		value: "3.28%",
-		delta: -0.4,
-	},
-	{
-		label: "New signups",
-		value: "142",
+		label: "Best score",
+		value: "78",
 		delta: 8.7,
 	},
 ] as const;
@@ -42,7 +43,7 @@ export function DashboardStats() {
 			{stats.map((s) => (
 				<DashboardCard className="" key={s.label}>
 					<CardHeader className="flex flex-row items-center justify-between">
-						<CardTitle className="font-normal text-xs tracking-wide">
+						<CardTitle className="font-mono font-normal text-xs tracking-wide">
 							{s.label}
 						</CardTitle>
 					</CardHeader>

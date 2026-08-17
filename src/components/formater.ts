@@ -89,7 +89,7 @@ export function formatInteger(value: number) {
 	}).format(value);
 }
 
-/** Percentage with fixed decimal places (e.g. conversion rate). */
+/** Percentage with fixed decimal places (e.g. score delta). */
 export function formatPercent(value: number, fractionDigits = 2) {
 	return `${value.toFixed(fractionDigits)}%`;
 }

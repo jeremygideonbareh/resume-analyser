@@ -1,53 +1,58 @@
-import {
+﻿import {
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import { DashboardCard } from "@/components/dashboard-card";
-import { CreditCardIcon, UserPlusIcon, FileTextIcon, RocketIcon } from "lucide-react";
+import {
+	FileTextIcon,
+	TrendingUpIcon,
+	BadgeCheckIcon,
+	SparklesIcon,
+} from "lucide-react";
 
 const items = [
 	{
-		title: "Invoice #1045 marked paid",
+		title: "Analysed senior-frontend-2026.pdf",
 		time: "About 2 hours ago",
-		icon: (
-			<CreditCardIcon
-			/>
-		),
-	},
-	{
-		title: "Jordan joined the team",
-		time: "This morning",
-		icon: (
-			<UserPlusIcon
-			/>
-		),
-	},
-	{
-		title: "Weekly summary exported",
-		time: "Yesterday",
 		icon: (
 			<FileTextIcon
 			/>
 		),
 	},
 	{
-		title: "Dashboard v2 shipped to prod",
+		title: "Score improved to 78",
+		time: "This morning",
+		icon: (
+			<TrendingUpIcon
+			/>
+		),
+	},
+	{
+		title: "Skills detected: 184",
+		time: "Yesterday",
+		icon: (
+			<BadgeCheckIcon
+			/>
+		),
+	},
+	{
+		title: "Formatting tips applied",
 		time: "2 days ago",
 		icon: (
-			<RocketIcon
+			<SparklesIcon
 			/>
 		),
 	},
 ] as const;
 
-export function DashboardActivity() {
+export function RecentActivity() {
 	return (
 		<DashboardCard className="gap-0">
 			<CardHeader className="border-b">
 				<CardTitle>Activity</CardTitle>
-				<CardDescription>Latest updates in your workspace.</CardDescription>
+				<CardDescription>Latest analysis activity.</CardDescription>
 			</CardHeader>
 			<CardContent className="px-0">
 				<ul className="flex flex-col divide-y divide-border">

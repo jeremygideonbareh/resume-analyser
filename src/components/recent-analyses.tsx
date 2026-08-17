@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,65 +19,70 @@ import {
 import { DashboardCard } from "@/components/dashboard-card";
 import { ArrowRightIcon } from "lucide-react";
 
-const invoices = [
+/** Placeholder rows — Todo 3.3 wires real saved analyses (metrics + filename only). */
+const analyses = [
 	{
-		id: "1045",
-		customer: "Northwind Labs",
-		amount: "$2,400.00",
-		status: "Paid",
+		id: "1",
+		filename: "senior-frontend-2026.pdf",
+		format: "PDF",
+		score: 78,
+		date: "2026-08-14",
 	},
 	{
-		id: "1044",
-		customer: "Blue River Co.",
-		amount: "$890.00",
-		status: "Pending",
+		id: "2",
+		filename: "backend-engineer.docx",
+		format: "DOCX",
+		score: 64,
+		date: "2026-08-11",
 	},
 	{
-		id: "1043",
-		customer: "Oak Street Studio",
-		amount: "$5,120.00",
-		status: "Paid",
+		id: "3",
+		filename: "product-manager.txt",
+		format: "TXT",
+		score: 71,
+		date: "2026-08-09",
 	},
 	{
-		id: "1042",
-		customer: "Harbor Freight LLC",
-		amount: "$310.50",
-		status: "Overdue",
+		id: "4",
+		filename: "data-scientist.pdf",
+		format: "PDF",
+		score: 82,
+		date: "2026-08-06",
 	},
 ] as const;
 
-export function DashboardInvoices() {
+export function RecentAnalyses() {
 	return (
 		<DashboardCard className="relative gap-0 md:col-span-2">
 			<CardHeader className="border-b">
-				<CardTitle className="text-base">Recent invoices</CardTitle>
-				<CardDescription>Open amounts and payment status.</CardDescription>
+				<CardTitle className="text-base">Recent analyses</CardTitle>
+				<CardDescription>Your latest resume scores.</CardDescription>
 			</CardHeader>
 			<CardContent className="mask-b-from-50% mask-b-to-100% px-0">
 				<Table>
 					<TableCaption className="sr-only">
-						Recent invoices with customer, amount, and status.
+						Recent analyses with filename, format, score, and date.
 					</TableCaption>
 					<TableHeader>
 						<TableRow>
-							<TableHead className="ps-6">Customer</TableHead>
-							<TableHead>Invoice</TableHead>
+							<TableHead className="ps-6">Filename</TableHead>
+							<TableHead>Format</TableHead>
 							<TableHead className="pe-6 text-right tabular-nums">
-								Amount
+								Score
 							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{invoices.map((inv) => (
-							<TableRow className="h-12" key={inv.id}>
+						{analyses.map((a) => (
+							<TableRow className="h-12" key={a.id}>
 								<TableCell className="max-w-40 truncate ps-6 font-medium">
-									{inv.customer}
+									{a.filename}
 								</TableCell>
 								<TableCell className="text-muted-foreground tabular-nums">
-									#{inv.id}
+									{a.format}
 								</TableCell>
 								<TableCell className="pe-6 text-right tabular-nums">
-									{inv.amount}
+									{a.score}
 								</TableCell>
 							</TableRow>
 						))}

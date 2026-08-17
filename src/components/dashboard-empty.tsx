@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/button";
 import {
 	CardContent,
 	CardDescription,
@@ -14,32 +14,33 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { DashboardCard } from "@/components/dashboard-card";
-import { CircleCheckIcon, ArrowRightIcon } from "lucide-react";
+import { FileTextIcon, ArrowRightIcon } from "lucide-react";
 
-export function BillingHealth() {
+export function DashboardEmpty() {
 	return (
 		<DashboardCard className="gap-0">
 			<CardHeader className="border-b">
-				<CardTitle className="text-balance text-base">Billing health</CardTitle>
+				<CardTitle className="text-balance text-base">Your dashboard</CardTitle>
 				<CardDescription className="text-pretty">
-					Nothing urgent needs your attention.
+					No analyses yet — start with your first resume.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex h-full items-center px-0">
 				<Empty>
 					<EmptyHeader>
 						<EmptyMedia variant="icon">
-							<CircleCheckIcon aria-hidden="true" />
+							<FileTextIcon aria-hidden="true" />
 						</EmptyMedia>
-						<EmptyTitle>You're caught up.</EmptyTitle>
+						<EmptyTitle>No analyses yet.</EmptyTitle>
 						<EmptyDescription className="text-xs">
-							Balances and payouts look fine. nothing overdue in this snapshot.
+							Upload your first resume to see your ATS score and category
+							breakdown here.
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent>
 						<Button asChild variant="ghost">
-							<a href="/#">
-								Review open invoices
+							<a href="#tool">
+								Analyse a resume
 								<ArrowRightIcon aria-hidden="true" />
 							</a>
 						</Button>
