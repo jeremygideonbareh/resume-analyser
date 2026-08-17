@@ -92,6 +92,7 @@ describe('report-format helpers', () => {
         text: 'hello world',
         format: 'txt',
         warnings: [],
+        filename: 'resume.txt',
       })
       expect(s).toContain('ATS Score: 54/100 (Needs work)')
       expect(s).toContain('TXT · 2 words')

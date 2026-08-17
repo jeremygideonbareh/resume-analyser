@@ -254,7 +254,7 @@
 - QA failure: reduced-motion emulation → dashboard renders identically (no animation-dependent content); evidence `ext-3-2-static.log`.
 - Commit: `feat: re-theme dashboard to resume analysis domain (wave 3)`.
 
-- [ ] **Todo 3.3 — Per-user analysis history persistence (Supabase table + RLS + save/load, TDD)**
+- [x] **Todo 3.3 — Per-user analysis history persistence (Supabase table + RLS + save/load, TDD)** — client-side DONE; migration RUN + signed-in QA BLOCKED on Todo 2.1 (no `.env.local` / `sbp_` PAT). Evidence: `.omo/evidence/ext-3-3-history.log`.
 - References: `src/lib/supabase.ts` (Todo 2.2 client); `src/lib/session.ts` (Todo 2.4 `useAuthSession`); `src/lib/analysis.ts` (`AnalysisResult`); `src/components/sections/ToolSection.tsx` (`handleAnalyse`); Supabase docs: RLS policies, `supabase-js` `from('resume_analyses').insert/select/delete`; `.env.local` `SUPABASE_SERVICE_ROLE_KEY` (server-only, never in client).
 - Preconditions: Wave 2 auth complete (Todo 2.4 done); `service_role` key present in `.env.local` only.
 - Steps:

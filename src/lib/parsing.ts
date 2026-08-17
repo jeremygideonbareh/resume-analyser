@@ -12,6 +12,8 @@ export interface ParsedResume {
   text: string
   format: ParsedFormat
   warnings: string[]
+  /** Original file name (Todo 3.3: persisted with history, never the text). */
+  filename: string
 }
 
 export type ParsingErrorCode =
@@ -141,5 +143,5 @@ export async function extractTextFromFile(file: File): Promise<ParsedResume> {
   }
 
   const warnings = trimmed.length < LOW_CONFIDENCE_CHARS ? ['possible-scanned'] : []
-  return { text: trimmed, format, warnings }
+  return { text: trimmed, format, warnings, filename: file.name }
 }

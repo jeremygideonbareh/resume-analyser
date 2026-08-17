@@ -1,6 +1,6 @@
 # ResumeLab — ATS Resume Analyser
 
-**Privacy-first ATS resume analyser.** Drop in a PDF, DOCX, or TXT resume and get an instant ATS score with a category breakdown, detected sections, and actionable feedback — **100% in your browser**. No uploads, no analysis storage, no cookies. Sign-in keeps a session token on your device — removable any time by logging out or clearing site data.
+**Privacy-first ATS resume analyser.** Drop in a PDF, DOCX, or TXT resume and get an instant ATS score with a category breakdown, detected sections, and actionable feedback — **100% in your browser**. No uploads, no cookies — parsing runs entirely on your device. Analyses run while signed in are saved to your account so you can review them in your dashboard; your resume text is never stored. Sign out or delete your history any time.
 
 > Brand name: **ResumeLab** (chosen in Todo 1.2 — see `HANDOFF.md` for the rationale).
 
@@ -11,7 +11,7 @@
 - **Optional job-description matching** — paste a JD to compare keyword overlap and see what's missing.
 - **Interactive report** — score gauge, category bars (click for feedback), sections detected, skills extracted, print/summary export.
 - **Kinetic UX** — scroll reveals, magnetic CTAs, count-up score animation, reduced-motion support.
-- **Sign in (Supabase Auth)** — email OTP is live out of the box; phone OTP is wired and shows a graceful "needs an SMS provider" message until a paid provider (e.g. Twilio) is enabled in the Supabase dashboard. The session token lives on your device (localStorage) and is removable by logging out or clearing site data. Optional per-user history/dashboard (see Wave 3).
+- **Sign in (Supabase Auth)** — email OTP is live out of the box; phone OTP is wired and shows a graceful "needs an SMS provider" message until a paid provider (e.g. Twilio) is enabled in the Supabase dashboard. The session token lives on your device (localStorage) and is removable by logging out or clearing site data. Signed-in analyses are saved to your account (metrics + filename only — never the resume text) so you can review them in your personal dashboard; sign out or delete your history any time.
 - **Optional LLM feedback tier** — env-gated (`VITE_ENABLE_LLM`, default **off**); when enabled, a serverless function calls an OpenAI-compatible LLM with the API key **server-side only**.
 - **Hardened** — strict Content-Security-Policy injected at build time, `npm audit` clean, pdf.js lazy-loaded as a separate chunk (LCP ~256 ms), full keyboard-only flow with visible focus indicators.
 
@@ -77,7 +77,7 @@ VITE_SUPABASE_ANON_KEY=<your-anon-key>
 **4. Behavior**
 
 - Sign-in is a modal from the header ("Sign in"); the email tab sends a real OTP, then verifies the 6-digit code you receive.
-- The session token is persisted on your device (Supabase's default `localStorage` storage) — a reload keeps you signed in. Log out (header) removes it.
+- The session token is persisted on your device (Supabase's default `localStorage` storage) — a reload keeps you signed in. Log out (header) removes it. Analyses run while signed in are saved to your account (metrics + filename only) so you can review them in your dashboard; your resume text is never stored.
 - No secrets ship in the client: only `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` are used client-side. If the vars are missing, sign-in shows "Sign-in isn't set up yet" — the rest of the app still works (zero-upload analysis is untouched).
 
 **5. Deploy note** — set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the host's env store **before** building/deploying (Vite inlines them at build time).
@@ -109,4 +109,4 @@ src/
 ## Privacy
 
 - Resume text never leaves the browser unless **you** enable the LLM tier, in which case it is sent only to your own `api/analyze` function and only when a user clicks "Get AI feedback".
-- No analytics, no cookies, no analysis storage. Sign-in keeps a session token on your device — removable any time by logging out or clearing site data. See `HANDOFF.md` for the full design rationale.
+- No analytics, no cookies. Resume text never leaves the browser unless **you** enable the LLM tier. Analyses run while signed in are saved to your account (metrics + filename only — never the resume text) so you can review them in your dashboard; sign out or delete your history any time. Guests: nothing is stored. See `HANDOFF.md` for the full design rationale.

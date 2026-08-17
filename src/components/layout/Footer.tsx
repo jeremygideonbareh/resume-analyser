@@ -22,7 +22,7 @@ export function Footer() {
           </div>
           <p className="max-w-md text-xs leading-relaxed text-muted">
             <LetterCascade
-              text="Privacy first: no uploads, no analysis storage, no cookies. Sign-in keeps a session token on your device — removable any time by logging out or clearing site data."
+              text="Privacy first: no uploads, no cookies — parsing runs entirely in your browser. Analyses run while signed in are saved to your account so you can review them in your dashboard. Your resume text is never stored. Sign out or delete your history any time."
               className="flex-wrap cursor-default justify-start"
             />
           </p>
@@ -31,7 +31,7 @@ export function Footer() {
           <div className="flex flex-wrap gap-x-8 gap-y-2">
             <span>© 2026 ResumeLab</span>
             <span>v0.1.0</span>
-            <span>Privacy first — no uploads, no analysis storage, no cookies</span>
+            <span>Privacy first — no uploads, no cookies, no resume-text storage</span>
           </div>
         </div>
       </div>

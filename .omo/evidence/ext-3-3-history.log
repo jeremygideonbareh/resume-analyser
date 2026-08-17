@@ -1,0 +1,62 @@
+# Todo 3.3 — Per-user analysis history (client-side) — evidence log
+Date: 2026-08-17
+Status: CLIENT-SIDE COMPLETE; migration RUN + signed-in QA BLOCKED on Todo 2.1 (no .env.local / no sbp_ PAT)
+
+## What was built (TDD)
+- `src/lib/history.test.ts` (NEW) — 8 tests, mocked supabase client via free-standing `makeClient()`:
+  - insert success: asserts payload equals exactly `{user_id, filename, format, score, section_scores, skills, keyword_match}` and has NO `text` key (RAW RESUME TEXT IS NEVER STORED)
+  - insert failure (RLS denial) rejects
+  - load: orders `created_at` desc, scoped to `user_id`
+  - load empty array, load error
+  - delete: scoped to `id` + `user_id`
+  - delete error
+  - RLS-not-bypassable string check (no service-role path in module)
+- `src/lib/history.ts` (NEW) — `AnalysisHistoryRow`, `HistoryClient = Pick<SupabaseClient,'from'>`,
+  `saveAnalysis(client, userId, result, parsed)`, `loadHistory(client, userId)`, `deleteAnalysis(client, userId, id)`.
+  `section_scores` from `result.breakdown` (`Object.fromEntries(b.id → b.earned)`); `keyword_match` = `{present, missing}` or null.
+- `src/lib/parsing.ts` — `ParsedResume` gained `filename: string`; `extractTextFromFile` returns `filename: file.name`.
+  (Additive deviation, recorded: parsing pipeline only, NOT analyser-core.)
+- `src/components/sections/ToolSection.tsx` — new `{ user }: { user: AuthUser | null }` prop; after `setResult(r); setPhase('done')`,
+  fire-and-forget `saveAnalysis(getSupabase(), user.id, r, parsed)` when `user && parsed`; failure → sonner toast
+  `"Couldn't save this analysis — you're still signed out of history"` (plan-exact copy). Guests: no save, no toast, no console noise.
+- `src/App.tsx` — `<ToolSection user={user} />`.
+- Test literals updated: `UploadZone.test.tsx` SAMPLE_PARSED + `report-format.test.ts` buildCopySummary gained `filename: 'resume.txt'`.
+
+## Migration (written, NOT run — blocked)
+- `.omo/scripts/migrate-resume-analyses.mjs` (gitignored via `.gitignore` `.omo/scripts/`; NEVER committed).
+  Creates `resume_analyses` (id uuid pk, user_id uuid refs auth.users on delete cascade, created_at, filename, format,
+  score int, section_scores jsonb, skills jsonb, keyword_match jsonb) + enables RLS + select/insert/delete policies
+  where `auth.uid() = user_id`.
+- Mechanism deviation (recorded): plan said "executed with SUPABASE_SERVICE_ROLE_KEY", but supabase-js data API cannot run DDL.
+  Script uses the Supabase Management API `database/query` endpoint with the `sbp_` PAT (Todo 2.1). SQL identical to plan schema.
+- RUN BLOCKED: `.env.local` missing (no `SUPABASE_ACCESS_TOKEN`, no `VITE_SUPABASE_URL`). Requires user to supply Todo 2.1 credentials.
+
+## Privacy copy FINAL (reconciled)
+- `src/components/layout/Footer.tsx` (paragraph + meta row)
+- `src/components/sections/Hero.tsx` (line 60 stale "no analysis storage" → FINAL)
+- `README.md` (lines 3, 14, 80, 112)
+- `HANDOFF.md` (line 13 stale "No server, no storage, no cookies" → FINAL)
+- FINAL wording: "Analyses run while signed in are saved to your account so you can review them in your dashboard.
+  Your resume text is never stored. Sign out or delete your history any time." Guests: zero storage.
+- Grep verified: no stale "no analysis storage" / "nothing is ever stored" claims remain in `src/`.
+
+## Gates (all green)
+- `rtk npx tsc --noEmit` → TypeScript: No errors found
+- `rtk npx oxlint src` → 0 errors (4 pre-existing benign `react(only-export-components)` warnings — baseline, not touched)
+- `rtk npx vitest run` → 15 files passed, 109 tests passed (was 101/14 baseline; +8 new history tests)
+- `rtk npx vite build` → ✓ built (2.36s; chunk-size warning pre-existing)
+
+## QA — guest flow (signed out) — PASS
+- Playwright on dev server :5201: loaded page (0 console errors), uploaded `src/test/fixtures/strong.txt` (89 words),
+  ran analysis → ATS Score 100 "Strong", sections/skills/feedback rendered.
+- Console: 0 errors (5 warnings: reduced-motion + recharts width — pre-existing benign).
+- NO save attempt: no toast, no console error — `if (user && parsed)` guard holds. Guest privacy promise intact.
+
+## QA — signed-in happy path — BLOCKED
+- Requires provisioned Supabase project (Todo 2.1): sign in → run analysis → reload → history row in dashboard.
+  Cannot run until `.env.local` exists.
+
+## Decisions
+- `filename` added to `ParsedResume` (additive, parsing pipeline only).
+- Migration mechanism: Management API + PAT (deviation from plan's service_role assumption — infeasible for DDL).
+- No new deps: `sonner` already present; `@supabase/supabase-js` already present.

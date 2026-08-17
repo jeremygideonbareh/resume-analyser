@@ -33,6 +33,7 @@ const SAMPLE_PARSED: ParsedResume = {
   text: 'React TypeScript SQL AWS',
   format: 'txt',
   warnings: [],
+  filename: 'resume.txt',
 }
 
 beforeEach(() => {

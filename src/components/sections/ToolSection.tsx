@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
 import { SectionReveal } from '@/components/motion/SectionReveal'
 import { LetterCascade } from '@/components/ui/letter-cascade'
 import { UploadZone } from '@/components/UploadZone'
 import { ReportView } from '@/components/ReportView'
 import { AnalyzingSkeleton } from '@/components/KineticLoader'
 import { analyzeResume, type AnalysisResult } from '@/lib/analysis'
+import { saveAnalysis } from '@/lib/history'
+import { getSupabase } from '@/lib/supabase'
+import type { AuthUser } from '@/lib/session'
 import type { ParsedResume } from '@/lib/parsing'
 
 type ToolPhase = 'idle' | 'parsed' | 'analyzing' | 'done'
@@ -25,9 +29,11 @@ function wordCount(text: string): number {
  * UploadZone (Todo 2.2); analysis is client-side via analyzeResume
  * (Todo 3.1); the result renders in ReportView (Todo 3.2 minimal,
  * upgraded with graphs in Todo 4.1). Every transition has a kinetic
- * treatment (Todo 4.4). No server calls anywhere.
+ * treatment (Todo 4.4). No server calls anywhere — except Todo 3.3:
+ * when signed in, the analysis is persisted to the user's history
+ * (fire-and-forget; failures toast and never block the report).
  */
-export function ToolSection() {
+export function ToolSection({ user }: { user: AuthUser | null }) {
   const reduce = useReducedMotion()
   const [phase, setPhase] = useState<ToolPhase>('idle')
   const [parsed, setParsed] = useState<ParsedResume | null>(null)
@@ -57,6 +63,20 @@ export function ToolSection() {
     }
     setResult(r)
     setPhase('done')
+
+    // Todo 3.3 — persist history for signed-in users (fire-and-forget).
+    // Guest flow is untouched: no save attempt, no toast, no console noise.
+    if (user && parsed) {
+      void (async () => {
+        try {
+          await saveAnalysis(getSupabase(), user.id, r, parsed)
+        } catch {
+          toast.error(
+            "Couldn't save this analysis — you're still signed out of history",
+          )
+        }
+      })()
+    }
   }
 
   const handleReset = () => {

@@ -23,7 +23,7 @@ function App() {
       <main>
         <Hero />
         <SkillsMarquee />
-        <ToolSection />
+        <ToolSection user={user} />
         <HowItWorks />
         <SampleReport />
       </main>
