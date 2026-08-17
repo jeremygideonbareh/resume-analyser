@@ -288,7 +288,7 @@
 
 ### Wave 4 — Final verification wave
 
-- [ ] **Todo 4.1 — F1–F4 final verification (same protocol as original build)**
+- [x] **Todo 4.1 — F1–F4 final verification (same protocol as original build)** — F1/F2/F4 APPROVE; F3 unblocked portion APPROVE, signed-in journey DEFERRED pending Todo 2.1 provision (recorded evidence gap). Evidence: `.omo/evidence/ext-final-f1..f4-*.log`. User's explicit okay PENDING (plan line 52).
 - References: original plan lines 178–185 (F1–F4 definitions); `.omo/evidence/final-f1..f4-*.log` (original exemplars).
 - Steps:
   1. F1 plan compliance: walk EVERY todo above against repo state (evidence files present, acceptance criteria met, no skipped verifications); fresh gates: typecheck 0, lint 0, `npm run test` (57 + new, all green), build 0.

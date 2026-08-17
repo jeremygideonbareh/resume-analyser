@@ -1,0 +1,52 @@
+# F3 — Real manual QA (extension wave, production build)
+
+Date: 2026-08-17
+Branch: feat/resume-analyser
+Head: 2927a28
+Build: `npx vite build` (4.75s) → `npx vite preview --port 5203` (HTTP 200)
+
+## Verified (production build, real browser)
+- All 7 sections render: Header (ResumeLab logo, Analyser/How-it-works nav,
+  Sign in + Analyse buttons), Hero (kinetic h1 "Know your score before the
+  robots do."), SkillsMarquee (200+ skills, ATS READY velocity strip),
+  ToolSection (upload zone), HowItWorks (3 steps), SampleReport (ATS score
+  78 + guidance cards), Footer (privacy copy + © 2026 ResumeLab v0.1.0).
+- Console: 0 errors, 0 warnings across the whole session.
+- Signed-out header: NO Dashboard link (only Sign in + Analyse) — correct
+  auth gating; the only "Dashboard" text on the page is the Footer privacy
+  copy ("review them in your dashboard"), which is expected.
+- Mobile viewport 375×812: no horizontal overflow (scrollWidth 360 =
+  clientWidth 360); header collapses to logo + Sign in (nav hidden — the
+  `hidden sm:flex` pattern).
+- Reduced-motion emulation (`prefers-reduced-motion: reduce`): h1 static
+  (opacity 1, transform none) — kinetic reveal collapses to final state;
+  no overflow.
+- Sign-in modal (Email/Phone tabs):
+  - Invalid email "not-an-email" → inline alert "That doesn't look like a
+    valid email address." + textbox `[invalid]`.
+  - Phone tab, valid E.164 "+44 7911 123456" → graceful config error
+    "Sign-in isn't set up yet — add your Supabase keys to get started."
+    (Todo 2.3 path: `getSupabase()` throws without `.env.local`, mapped to
+    friendly message; textbox `[invalid]`).
+  - Escape with focus inside dialog → closes (exit animation completes,
+    dialog removed) + focus restored to the "Sign in" trigger. (Escape only
+    fires when focus is inside the panel — correct modal behavior; the
+    focus trap keeps focus inside.)
+
+## DEFERRED — blocked on Todo 2.1 (user must supply `sbp_` PAT + env vars)
+- Full signed-in journey: Sign in → email → REAL OTP from a live inbox →
+  signed in → masked identifier in header → reload → still signed in →
+  Dashboard link → dashboard with real KPI/charts/table → Log out.
+- Failure paths requiring a live backend: incomplete OTP (6-digit check is
+  client-side and unit-tested; server-side invalid-token path needs a real
+  project), SMS-provider-missing phone error (needs a provisioned project
+  with phone provider disabled).
+- Empty-history dashboard empty-state render (needs a signed-in session).
+- Screenshot `ext-3-4-dashboard.png` (signed-in dashboard).
+
+## Evidence gap note
+This is a recorded deferral (external dependency: user credentials), not a
+skipped verification. Re-run this section once `.env.local` is provisioned.
+
+## Verdict
+APPROVE (unblocked portion) — signed-in journey pending Todo 2.1.

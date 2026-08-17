@@ -1,0 +1,41 @@
+# F1 — Plan compliance audit (extension wave)
+
+Date: 2026-08-17
+Branch: feat/resume-analyser
+Head: 2927a28
+
+## Fresh gates (run 2026-08-17, after Todo 3.4 commit)
+- `npx tsc --noEmit` → 0 errors
+- `npx oxlint src` → 0 errors; 4 pre-existing benign `only-export-components`
+  warnings (button, ProgressiveBlur, sidebar, badge — baseline, untouched)
+- `npx vitest run` → 16 files / 128 tests passed (baseline 15/109; +15
+  dashboard-data, +4 Header)
+- `npx vite build` → built in 4.75s; chunk-size warning pre-existing
+  (pdf.worker + recharts), not introduced here
+
+## Todo walk (extension plan)
+- Todo 1.1 Componentry integration → evidence `ext-1-1.log`, commit `c1a1c87`
+- Todo 1.2 LetterCascade → `ext-1-2.log`, commit `75cb6c1`
+- Todo 1.3 ScrollBasedVelocity + FlippingWordSwap → `ext-1-3.log`, commit `9a4813c`
+- Todo 1.4 KineticTextReveal headings → `ext-1-4.log`, commit `e722f30`
+- Todo 2.2 supabase client + privacy copy → `ext-2-2-client.log`, commit `a1fc242`
+- Todo 2.3 auth flow + LoginPanel → `ext-2-3-auth-flow.log`, commit `916e4db`
+- Todo 2.4 session + header signed-in → `ext-2-4-session.log`, commit `06bd0ba`
+- Todo 3.1 efferd dashboard install + tokens → `ext-3-1-install.log`, commit `cd54238`
+- Todo 3.2 dashboard re-theme → `ext-3-2-retheme.log`, commit `1508e91`
+- Todo 3.3 history persistence → `ext-3-3-history.log`, commit `7511be5`
+- Todo 3.4 dashboard route + auth gating → `ext-3-4-gate.log`, commit `2927a28`
+- Todo 2.1 provisioning → BLOCKED (user must supply `sbp_` PAT + env vars;
+  see F3 note). Migration script ready, never committed (gitignored).
+
+## Acceptance criteria spot-checks
+- Signed out → no Dashboard link (verified in browser, ext-3-4-gate.log);
+  forced dashboard state → landing (App effect + render guard reviewed).
+- Privacy copy truthful: "Analyses run while signed in are saved to your
+  account... Your resume text is never stored." (Footer + Hero verified in
+  production build snapshot).
+- No router added, zero new deps in 3.4 (package.json diff empty at HEAD).
+
+## Verdict
+APPROVE (with F3 signed-in journey deferred pending Todo 2.1 provision —
+recorded evidence gap, not a skipped verification).

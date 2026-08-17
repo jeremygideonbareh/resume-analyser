@@ -1,0 +1,46 @@
+# F2 — Code quality review (extension wave)
+
+Date: 2026-08-17
+Branch: feat/resume-analyser
+Head: 2927a28
+
+## Secret-leak grep (tracked files)
+- `git grep -n -E "sbp_|service_role"` → hits ONLY in `.omo/plans/` and
+  `.omo/drafts/` (policy documentation, masked `sbp_…` references — no real
+  token values). 0 hits in `src/`.
+- `git ls-files | grep .env` → only `.env.example` (template). `.env.local`
+  NOT tracked. `git status` clean of `.env*` at every commit.
+- Hardcoded key patterns (`eyJ…`, `supabase.co` in src) → only test fixtures
+  (`https://abcdef.supabase.co` in supabase.test.ts — fake URL, expected).
+
+## Red-flag grep
+- `TODO|FIXME|console.log|as any` in `src/**` → 0 hits.
+
+## Whole-branch review scope (new code since wave 1)
+- Componentry adaptations (KineticTextReveal, LetterCascade,
+  ScrollBasedVelocity, FlippingWordSwap): all rewritten to `motion/react`,
+  reduced-motion guards present, no gsap/framer-motion deps.
+- `src/lib/supabase.ts`: module-singleton `getSupabase()`, throws clear error
+  when env missing (TDD, 3 tests).
+- `src/lib/auth-validation.ts` + `auth-flow.ts`: validation + all Supabase
+  auth calls isolated; `handle()` evaluates `getSupabase()` inside try
+  (config error → graceful message, regression-tested).
+- `src/lib/session.ts`: `useAuthSession()` wraps onAuthStateChange, persists
+  via Supabase token storage, degrades to signed-out without crashing.
+- `src/components/auth/LoginPanel.tsx`: focus trap, Escape close, focus
+  restore, inline validation, loading states, reduced-motion.
+- `src/lib/history.ts`: `saveAnalysis` NEVER stores `parsed.text` (asserted
+  in test); RLS-not-bypassable string check in test.
+- `src/lib/dashboard-data.ts`: pure helpers, date-only contract, 0-guards.
+- `src/components/dashboard.tsx`: `getSupabase()` in try/catch, loading/
+  error/empty/data states.
+- `src/components/layout/Header.tsx`: optional view/onNavigate props,
+  defaults preserve existing consumers.
+
+## Deps check
+- package.json diff at HEAD (3.4): empty. Only `@supabase/supabase-js`
+  (2.2), `radix-ui` consolidated + `recharts` (3.1) added across the wave.
+  No `framer-motion`, no `gsap`.
+
+## Verdict
+APPROVE — no CRITICAL/HIGH issues; secret-leak gate 0 real hits.

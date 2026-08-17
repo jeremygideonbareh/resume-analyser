@@ -1,0 +1,47 @@
+# F4 — Scope fidelity audit (extension wave)
+
+Date: 2026-08-17
+Branch: feat/resume-analyser
+Head: 2927a28
+
+## Scope OUT — nothing built (grep-verified)
+- Raw resume-text storage: `git grep "parsed.text"` in `src/lib/history.ts`
+  → only a doc comment ("never touches `parsed.text`"). `saveAnalysis`
+  payload = metrics + filename only (asserted in history.test.ts).
+- Guest storage: `saveAnalysis` call sites → only `ToolSection.tsx:72`,
+  gated by `user.id` (signed-in only). Guests: no save, no toast, no
+  console noise (verified in ext-3-3 QA).
+- Analytics: `git grep -i "gtag|segment|plausible|analytics"` in `src/**` →
+  only false positives (app-breadcrumbs "Analytics" nav label from the
+  efferd template, ProgressiveBlur `segmentSize` math, Hero
+  `segmentClassName`). No analytics code.
+- Serverless: no new serverless functions added in the extension wave
+  (original `api/analyze.ts` LLM tier untouched, env-gated).
+- WebGL/particle components: none (grep clean).
+- Analyser core: untouched (only additive `filename` on ParsedResume in the
+  parsing pipeline).
+- `service_role` in client code: 0 hits in `src/` (only plan/draft policy
+  docs mention it).
+- Extra deps: package.json diff at HEAD empty; wave added only
+  `@supabase/supabase-js` (2.2) + `radix-ui` consolidated + `recharts`
+  (3.1). No `framer-motion`, no `gsap`.
+
+## Scope IN — all delivered
+- All 7 landing sections kinetic (Componentry: KineticTextReveal ×3,
+  LetterCascade ×2, ScrollBasedVelocity, FlippingWordSwap) — provenance in
+  HANDOFF.
+- Real Supabase Auth: email OTP + phone OTP (graceful provider-missing),
+  session persistence, signed-in header state, Log out — client-side
+  complete; live end-to-end pending Todo 2.1 provision.
+- Per-user dashboard + history: `resume_analyses` table + RLS (migration
+  script ready, never committed), dashboard view with KPI/charts/table/
+  empty state, auth-gated (signed-out → landing).
+- Docs: HANDOFF (Componentry provenance, Supabase setup, dashboard/history
+  notes), README (real-auth feature + updated privacy wording), `.env.example`.
+- Privacy copy truthful: "Analyses run while signed in are saved to your
+  account so you can review them in your dashboard. Your resume text is
+  never stored. Sign out or delete your history any time." — verified in
+  production build (Footer + Hero).
+
+## Verdict
+APPROVE — scope OUT clean, scope IN delivered.
