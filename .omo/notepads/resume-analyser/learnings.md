@@ -160,3 +160,12 @@
 - GOTCHA: pdf.js recovery-mode console warnings during garbage-PDF parse are expected/benign (getHexString/Indexing all PDF objects).
 - GOTCHA: to test the scanned-PDF path need a VALID blank PDF (pdf.js opens it, extracts 0 text → no-text → scanned msg); random-bytes PDF hits parse-error path instead ("Could not read that file...").
 - Next: commit evidence + HANDOFF fix + plan marks; then surface F1-F4 results to user and WAIT for explicit okay before declaring complete (plan line 52).
+## 2026-08-17 Wave 3 + Wave 4 (Todo 3.1-3.4 + F1-F4) - session learnings
+- Date-only contract: supabase created_at is a full ISO timestamp; ormater.ts appends T12:00:00 -> parseIsoCalendarDate yields Invalid Date on full ISO strings. Any component rendering a DB timestamp must slice(0,10) FIRST (dashboard-data.ts scoreTrend/sectionBreakdown/activityItems all do this).
+- Windows file-lock gotcha: git checkout -- <file> fails with "unable to unlink old: Invalid argument" while ANY process holds the file open. A cmd /c npx vite preview --port X > logfile redirect keeps the target logfile locked by the node child even after the cmd wrapper is killed. Kill the exact node PID (Get-CimInstance Win32_Process filter CommandLine like '*vite preview*') before restoring. Redirect preview/dev logs to a FRESH file, never an existing evidence log.
+- PowerShell Set-Content -Encoding UTF8 writes a BOM; git commit -F from such a file puts the BOM into the commit subject (git log shows it as a leading glyph). Pre-existing behavior across all wave commits; cosmetic only.
+- tk wrapper prints "[rtk] No hook installed" on stderr on every invocation - benign, stdout is the real result.
+- Escape-to-close in LoginPanel only fires when focus is inside the panel (onKeyDown on the panel div). Playwright must focus an in-dialog element before pressing Escape, else focus is on BODY and nothing happens - correct modal behavior, not a bug.
+- vitest forks-worker pool timeout flake (Todo 3.2) - retry clean; also pdfjs stderr noise in parsing tests is benign (standardFontDataUrl / Indexing warnings).
+- Header signed-in Dashboard link must be OUTSIDE the hidden sm:flex nav (same pattern as Sign in button) so it shows at all breakpoints; ria-current="page" when dashboard view active.
+- Plan's "57/57 tests" baseline was stale (actual 109 at wave-3 start, 128 at end); F1 verified against actual repo state, deviation noted in evidence.
