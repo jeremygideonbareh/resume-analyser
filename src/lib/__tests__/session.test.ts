@@ -5,9 +5,15 @@ import { maskIdentifier, useAuthSession } from '@/lib/session'
 
 const { supabaseAuthMock, supabaseConfig } = vi.hoisted(() => ({
   supabaseAuthMock: {
-    onAuthStateChange: vi.fn(() => ({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    })),
+    onAuthStateChange: vi.fn(
+      // Typed callback param so mock.calls[0][0] is callable (the real
+      // supabase-js signature is (callback: AuthChangeCallback) => …).
+      // A zero-arg implementation would type mock.calls as [][] and make
+      // mock.calls[0][0] an empty-tuple index error under tsc -b.
+      (_callback: (event: string, session: unknown) => void) => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+    ),
     signOut: vi.fn(() => Promise.resolve({ error: null })),
   },
   // When true, getSupabase() throws like it does without .env.local — the

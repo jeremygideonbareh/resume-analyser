@@ -29,6 +29,63 @@
 
   /* Radius */
   --radius-card: 0.75rem;
+
+  /* ─────────────────────────────────────────────
+     Chart + series colors (Todo 3.1 — efferd
+     dashboard block). Referenced directly at
+     runtime via var(--chart-N) / var(--color-*)
+     in the recharts configs. Mapped to the
+     ink/paper/accent token set per plan step 4.
+     ───────────────────────────────────────────── */
+  --chart-1: var(--color-accent);
+  --chart-2: var(--color-ink);
+  --color-online: var(--color-accent);
+  --color-retail: var(--color-ink);
+  --color-sales: var(--color-accent-strong);
+
+  /* Legacy bare aliases the efferd button uses in
+     color-mix() hover (v3-style var names). */
+  --secondary: var(--color-surface);
+  --foreground: var(--color-ink);
+}
+
+/* ─────────────────────────────────────────────
+   shadcn semantic aliases (Todo 3.1 — efferd
+   dashboard block). The block's classes
+   (bg-background, text-foreground, border-border,
+   bg-card, bg-primary, sidebar-* …) require these
+   --color-* tokens; the project previously never
+   defined them (all call sites passed explicit
+   custom classes instead). Map to the ink/paper/
+   accent set — existing --color-muted is KEPT as
+   the project's dark-gray text token (42 usages);
+   shadcn's muted-surface role is covered by
+   --color-muted-foreground below.
+   ───────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-paper);
+  --color-card-foreground: var(--color-ink);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-paper);
+  --color-secondary: var(--color-surface);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted-foreground: var(--color-muted);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-paper);
+  --color-border: oklch(0.16 0 0 / 0.12);
+  --color-input: oklch(0.16 0 0 / 0.15);
+  --color-ring: var(--color-accent);
+  --color-sidebar: var(--color-paper);
+  --color-sidebar-foreground: var(--color-ink);
+  --color-sidebar-primary: var(--color-accent);
+  --color-sidebar-primary-foreground: var(--color-paper);
+  --color-sidebar-accent: var(--color-accent-soft);
+  --color-sidebar-accent-foreground: var(--color-ink);
+  --color-sidebar-border: oklch(0.16 0 0 / 0.1);
+  --color-sidebar-ring: var(--color-accent);
 }
 
 /* Base */

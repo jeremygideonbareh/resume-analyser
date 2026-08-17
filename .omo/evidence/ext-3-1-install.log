@@ -1,0 +1,141 @@
+Todo 3.1 — Install efferd dashboard-2 block + deps (no re-theme yet)
+=====================================================================
+Date: 2026-08-17 | Branch: feat/resume-analyser | Executor: Atlas (direct; task() billing-dead)
+
+STEP 1 — components.json registry
+----------------------------------
+- Added "@efferd" registry. DEVIATION from plan text: plan said
+  "https://efferd.com/r/{name}.json", but the shadcn CLI + efferd docs require a
+  {style} segment; both default and new-york serve identical valid dashboard-2
+  JSON (verified server ignores the slug). components.json now has:
+    "@componentry": "https://componentry.fun/r/{name}.json",
+    "@efferd": "https://efferd.com/r/{style}/{name}.json"
+
+STEP 2 — Install command
+------------------------
+  rtk npx --yes shadcn@latest add "@efferd/dashboard-2" --yes --overwrite
+- SUCCESS. 40 files created.
+- KNOWN WINDOWS PATH BUG hit exactly as predicted (same as Todo 1.1): files
+  landed in a stray ".\@\components" dir at project root (+ .\@\hooks\use-mobile.ts)
+  and one file in ".\components\custom-sidebar-trigger.tsx".
+- Relocated via Get-ChildItem loop:
+    .\@\components\*.tsx            -> src\components\  (dashboard, stats,
+       net-revenue-chart, channel-sales-chart, dashboard-invoices,
+       billing-health, dashboard-activity, dashboard-card, delta, app-shell,
+       app-sidebar, app-header, app-breadcrumbs, app-shared, nav-group,
+       nav-user, logo, decor-icon, latest-change, dashboard-skeleton,
+       custom-sidebar-trigger, formater)
+    .\@\components\ui\*.tsx         -> src\components\ui\  (chart, table,
+       badge, empty, sidebar, avatar, dropdown-menu, separator, collapsible,
+       breadcrumb, sheet, skeleton, kbd, tooltip)
+    .\@\hooks\use-mobile.ts         -> src\hooks\use-mobile.ts
+    .\components\custom-sidebar-trigger.tsx -> src\components\ (already
+       relocated above; stray .\components dir removed)
+- Stray ".\@" and ".\components" dirs deleted. Verified: no stray @/ dir remains.
+- File contents verified to use clean "@/..." imports (no "@\" inside files).
+- PLACEMENT DEVIATION (recorded): plan predicted formater.ts -> src/lib/formater.ts;
+  CLI placed it at src/components/formater.ts and the importer
+  (channel-sales-chart.tsx) imports "@/components/formater" — consistent, build
+  resolves. Also plan's predicted ui set (chart, table, badge, empty) was
+  extended by the app-shell-2 dependency tree (sidebar, avatar, dropdown-menu,
+  separator, collapsible, breadcrumb, sheet, skeleton, kbd, tooltip) — all
+  shadcn wrappers, all imported from consolidated radix-ui.
+
+STEP 3 — Import inspection / dependency decision
+------------------------------------------------
+- Grep across all 40 pulled files for "@radix-ui/react-(avatar|separator|
+  collapsible|dropdown-menu)": ZERO hits.
+- DECISION: consolidated "radix-ui" ^1.6.7 (already installed) covers every
+  radix primitive used. The four individual @radix-ui/react-* packages from the
+  user-supplied install list were NOT installed — nothing imports them.
+- recharts + lucide-react already installed (no reinstall).
+- package.json change ONLY: recharts ^3.10.1 -> ^3.8.0 (efferd registry pin).
+  No new dependencies added at all.
+- button.tsx / card.tsx / input.tsx "overwrite" by efferd = NO-OP: efferd
+  templates are byte-identical to the existing tracked files (git diff empty).
+  No blast radius on wave-1 UI. (Earlier hash mismatch was a PS5.1 Out-File BOM
+  artifact, not a content difference.)
+
+STEP 4 — CSS tokens (index.css)
+-------------------------------
+Ground truth discovered: project NEVER defined shadcn semantic tokens. Built dist
+CSS had NO .bg-primary / .bg-background / .text-foreground / .text-muted-foreground
+/ .border-border (only custom .bg-ink/.text-paper). Existing app works because
+call sites pass explicit custom classes that override the no-op shadcn template
+defaults via cn()/tailwind-merge. The efferd block requires these tokens, so:
+- Added to existing @theme (plain, so vars ARE emitted to :root):
+    --chart-1: var(--color-accent);
+    --chart-2: var(--color-ink);
+    --color-online: var(--color-accent);
+    --color-retail: var(--color-ink);
+    --color-sales: var(--color-accent);
+    --secondary: var(--color-surface);      (legacy bare alias, button.tsx hover)
+    --foreground: var(--color-ink);         (legacy bare alias, button.tsx color-mix)
+- New @theme inline block with shadcn semantic aliases:
+    background -> paper | foreground -> ink | card -> paper | card-foreground -> ink
+    primary -> accent | primary-foreground -> paper | secondary -> surface
+    secondary-foreground -> ink | muted-foreground -> muted | accent-foreground -> ink
+    destructive -> danger | destructive-foreground -> paper | border | input
+    ring -> accent | sidebar -> paper | sidebar-foreground -> ink
+    sidebar-primary -> accent | sidebar-accent -> accent-soft | sidebar-border | sidebar-ring
+- --color-muted deliberately NOT remapped: it is the project's dark-gray TEXT
+  token (oklch(0.45 0 0), 42 text-muted usages); shadcn's muted-SURFACE role is
+  covered by mapping --color-muted-foreground -> var(--color-muted) instead.
+- --card-spacing: self-contained in card.tsx inline ([--card-spacing:--spacing(4)])
+  — no action needed.
+- Verified in built dist CSS: .bg-background/.text-foreground/.text-muted-foreground/
+  .border-border/.divide-border/.bg-card/.bg-primary/.text-primary-foreground/
+  .bg-sidebar/.text-sidebar-foreground/.bg-muted/.bg-secondary/.text-destructive/
+  .bg-destructive/.border-input ALL PRESENT; runtime vars --chart-1/--chart-2/
+  --color-online/--color-retail/--color-sales/--secondary/--foreground/--radius-md/
+  --sidebar-width/--sidebar-width-icon/--sidebar-border/--sidebar-accent ALL emitted.
+  (--color-background/--color-sidebar absent is EXPECTED: @theme inline inlines
+  values into utilities instead of emitting vars, and nothing references them at
+  runtime as var().)
+
+GATES (after token edit)
+------------------------
+- typecheck: rtk npx tsc -b --noEmit -> 0 errors  (fix below)
+- lint:     rtk npx oxlint src -> 0 errors (4 benign only-export-components
+  warnings: button.tsx:67, ProgressiveBlur.tsx:6, sidebar.tsx:699, badge.tsx:49)
+- test:     rtk npx vitest run -> 101/101 passed (14 files)
+- build:    rtk npx vite build -> exit 0 (pre-existing chunk-size warning only)
+
+LATENT TYPECHECK BUG FIXED (recorded — collateral of this todo)
+---------------------------------------------------------------
+- After install, typecheck FAILED in src/lib/__tests__/session.test.ts (7 errors:
+  TS2493 at 91/105/116, TS2722 at 93/107/108/118) on
+  supabaseAuthMock.onAuthStateChange.mock.calls[0][0].
+- Root cause: vi.fn(() => ({...})) with a ZERO-ARG implementation types
+  mock.calls as [][] (empty tuples) -> [0][0] is an empty-tuple index error.
+  The file was byte-identical to HEAD (06bd0ba) and vitest/tsconfig unchanged —
+  the error was LATENT: tsc -b incremental tsbuildinfo skipped a full recheck at
+  06bd0ba; the install's npm churn invalidated it, forcing a full recheck.
+- Fix: typed the mock's callback parameter per the real supabase-js signature:
+    onAuthStateChange: vi.fn(
+      (_callback: (event: string, session: unknown) => void) => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+    )
+  so mock.calls[0][0] resolves to the callback type. Runtime behavior unchanged;
+  all 101 tests still green (session + auth-flow included).
+
+VISUAL SMOKE (regression check for the global token change)
+-----------------------------------------------------------
+- vite preview of the production build on :5199 -> HTTP 200, title "ResumeLab —
+  ATS Resume Analyser", root div present.
+- Playwright: full landing page renders (header/logo/Sign in, hero, skills
+  marquee, analyser dropzone, how-it-works, sample analysis, footer) with
+  0 console errors. Semantic utilities now generated (bg-primary etc.) but
+  call-site explicit classes + tailwind-merge dedupe keep visuals unchanged.
+
+ACCEPTANCE CRITERIA
+-------------------
+- [x] Block files under src/components/ + src/components/ui/ + src/hooks/; NO stray @/ dir
+- [x] npm run build exit 0 (imports resolve); 101/101 tests green
+- [x] git grep "efferd" -> plan/draft files + components.json entry only (no secrets)
+- [x] Dependency decision recorded: NO @radix-ui/react-* installed (consolidated radix-ui covers all); recharts pinned ^3.8.0 by efferd
+- [x] .env* never staged (no secrets involved in this todo)
+
+RESULT: PASS — Todo 3.1 complete. Block installed, deps decision made, tokens in
+place, all gates green, smoke test clean. Ready for Todo 3.2 re-theme.
