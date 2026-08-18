@@ -148,9 +148,9 @@
 
 ### Wave 2 — Real Supabase Auth (email OTP + phone OTP)
 
-- [ ] **Todo 2.1 — Provision Supabase project via Management API + enable auth (no code)**
+- [ ] **Todo 2.1 — Provision Supabase project via Management API + enable auth (no code)** — **DEVIATION RECORDED 2026-08-18:** user provided an **EXISTING project** (ref `mhkieytinkgouhvwrmbp`, dashboard URL shared in chat) plus their `sbp_` PAT (chat, 2026-08-18 — NEVER commit; lives ONLY in `.env.local`). **SKIP project creation (steps 2–4 below).** Executor instead: (a) write the PAT to `.env.local` as `SUPABASE_PAT` (user-supplied value; do not echo it), (b) `GET /v1/projects/mhkieytinkgouhvwrmbp/api-keys` → `VITE_SUPABASE_URL=https://mhkieytinkgouhvwrmbp.supabase.co` + `VITE_SUPABASE_ANON_KEY` (+ `SUPABASE_SERVICE_ROLE_KEY` server-only) into `.env.local`, (c) verify/enable Email OTP + Phone auth on the project (Management API `PATCH /v1/projects/{ref}/config/auth` or dashboard), (d) then run the Todo 3.3 migration (create `resume_analyses` + RLS). F3's deferred signed-in journey is thereby UNBLOCKED (re-run after migration, per Todo 4.1 update).
 - References: Supabase Management API (`supabase.com/docs/reference/api`): `GET /v1/organizations`, `POST /v1/projects`, `GET /v1/projects/{ref}`, `GET /v1/projects/{ref}/api-keys`; Supabase Auth settings (`supabase.com/docs/guides/auth`): email OTP + phone auth; `supabase.com/docs/guides/auth/phone-login` (SMS provider requirements).
-- Preconditions (VERIFY FIRST, evidence): `.gitignore` contains `.env.local` / `*.env*` — if not, append and commit the gitignore change BEFORE any secrets are written; record `git check-ignore .env.local` output in evidence.
+- Preconditions (VERIFY FIRST, evidence): `.gitignore` contains `.env.local` / `*.env*` — VERIFIED ALREADY (`.gitignore` lines 18–23: `.env`, `.env.*`, `!.env.example`) — record `git check-ignore .env.local` output in evidence anyway.
 - Steps:
   1. Read `SUPABASE_PAT` from `.env.local` (user supplies the `sbp_` value once into `.env.local`; executor never types it into commands that get logged — use `$env:SUPABASE_PAT = (Get-Content .env.local | Where-Object { $_ -like 'SUPABASE_PAT=*' }).Replace('SUPABASE_PAT=','')` then pass as `-Headers @{ Authorization = "Bearer $env:SUPABASE_PAT" }`; NEVER echo it).
   2. `GET /v1/organizations` → pick org id (if exactly one, use it; if none, error with recovery steps).
@@ -288,7 +288,23 @@
 
 ### Wave 4 — Final verification wave
 
-- [x] **Todo 4.1 — F1–F4 final verification (same protocol as original build)** — F1/F2/F4 APPROVE; F3 unblocked portion APPROVE, signed-in journey DEFERRED pending Todo 2.1 provision (recorded evidence gap). Evidence: `.omo/evidence/ext-final-f1..f4-*.log`. User's explicit okay PENDING (plan line 52).
+- [x] **Todo 4.1 — F1–F4 final verification (same protocol as original build)** — F1/F2/F4 APPROVE; F3 unblocked portion APPROVE, signed-in journey DEFERRED pending Todo 2.1 provision (recorded evidence gap). Evidence: `.omo/evidence/ext-final-f1..f4-*.log`. User's explicit okay PENDING (plan line 52). **UPDATE 2026-08-18:** Todo 2.1 credentials received (existing project `mhkieytinkgouhvwrmbp` + user PAT) → the F3 signed-in journey is UNBLOCKED; after the migration runs (Todo 3.3), re-run the F3 signed-in journey (real OTP → reload persists → Dashboard real data → Log out; screenshot `ext-3-4-dashboard.png`) and re-verify before final approval.
+
+- [ ] **Todo 4.2 — Push branch to GitHub (user-requested 2026-08-18)**
+- References: remote target `https://github.com/jeremygideonbareh/resume-analyser` (VERIFIED to exist and be EMPTY via GitHub API `GET /repos/jeremygideonbareh/resume-analyser` → "This repository is empty" 2026-08-18 — so `git push` to it will be the initial push; first push sets the default branch); local branch `feat/resume-analyser` (all 13+ wave commits); original plan line 48 constraint "never push to `main` without explicit user consent" — user consent NOW EXPLICITLY GIVEN in chat ("push to this github"), and the target repo is a brand-new empty one, so pushing is the entire deliverable.
+- Steps:
+  1. Add remote: `git remote add origin https://github.com/jeremygideonbareh/resume-analyser.git` (if a remote `origin` already exists pointing elsewhere, use `git remote set-url origin ...` and record which; DO NOT overwrite a remote the user didn't ask about — here the user named this exact repo, so origin = this repo).
+  2. Pre-push secret gate (MANDATORY, evidence): `git grep -n "sbp_\|service_role"` → 0 hits in tracked files; `git status --porcelain` → clean (nothing uncommitted, NO `.env.local` staged — `.gitignore` lines 18–23 cover it; verify `git check-ignore .env.local`); confirm `git ls-files | grep -i env` shows ONLY `.env.example`.
+  3. Push: `git push -u origin feat/resume-analyser` (initial push → GitHub sets default branch to `feat/resume-analyser`). If the user's intent is for the project's main/default branch to be the deliverable, note in evidence that `feat/resume-analyser` became default on this empty repo, and record the option to open a PR/merge to `main` later — DO NOT push to `main` unilaterally beyond what the user asked ("push to this github" = push the branch; the repo is empty so the branch becomes the default).
+  4. Verify: `git ls-remote origin` shows the pushed ref; optionally `webfetch https://github.com/jeremygideonbareh/resume-analyser` → repo page renders with files (evidence note).
+  5. Record evidence `.omo/evidence/ext-4-2-push.log` (remote add/set-url decision, secret-gate output, push output, ls-remote refs — PAT/keys NEVER echoed, only names).
+- Acceptance criteria:
+  - `git ls-remote origin` shows `refs/heads/feat/resume-analyser` (and `HEAD` → it) after push.
+  - Secret gate: 0 hits for `sbp_|service_role` in tracked files; `.env.local` NOT on the remote (it's gitignored; `git ls-files` proves it's untracked).
+  - Repo page reachable at `github.com/jeremygideonbareh/resume-analyser` showing the project files (README present).
+  - Gates: no code changes needed (push-only todo); if any incidental change is required (e.g. README link), gates typecheck/lint/test/build all still 0/green before committing it.
+- Commit: `chore: push branch to github (wave 4.2)` — only for the evidence file (`.omo/evidence/ext-4-2-push.log`, force-added); the push itself is not a commit.
+- QA: after push, `webfetch` the repo page to confirm it lists the pushed files (README, src/); evidence `ext-4-2-push.log` records this.
 - References: original plan lines 178–185 (F1–F4 definitions); `.omo/evidence/final-f1..f4-*.log` (original exemplars).
 - Steps:
   1. F1 plan compliance: walk EVERY todo above against repo state (evidence files present, acceptance criteria met, no skipped verifications); fresh gates: typecheck 0, lint 0, `npm run test` (57 + new, all green), build 0.
