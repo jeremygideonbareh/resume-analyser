@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import path from 'node:path'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -9,18 +9,28 @@ import tailwindcss from '@tailwindcss/vite'
  * Dev is exempt: Vite's react-refresh preamble and HMR websocket would be
  * blocked by a strict policy, so the meta is applied at build time via
  * transformIndexHtml instead of being hardcoded in index.html.
+ *
+ * connect-src is derived from VITE_SUPABASE_URL at build time so the
+ * production build can reach the Supabase auth/rest API (F3 finding
+ * 2026-08-18: static `connect-src 'self'` blocked all Supabase calls).
  */
-const CSP_META = `<meta
-    http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'"
-  />`
-
 function cspMetaPlugin(): Plugin {
+  let supabaseOrigin = ''
   return {
     name: 'inject-csp-meta',
     apply: 'build',
+    configResolved(config) {
+      const env = loadEnv(config.mode, config.root, '')
+      const supabaseUrl = env.VITE_SUPABASE_URL
+      supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : ''
+    },
     transformIndexHtml(html) {
-      return html.replace('</head>', `${CSP_META}\n  </head>`)
+      const connectSrc = `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ''}`
+      const csp = `<meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; ${connectSrc}"
+      />`
+      return html.replace('</head>', `${csp}\n  </head>`)
     },
   }
 }

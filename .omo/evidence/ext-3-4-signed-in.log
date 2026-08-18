@@ -1,0 +1,56 @@
+# F3 — Signed-in Journey (REAL email, production build) — 2026-08-18
+
+## Result: PASS (with 1 production bug found & fixed)
+
+## Environment
+- Build: `npm run build` (production, real env keys) — exit 0
+- Server: `vite preview --port 4173 --strictPort` (PID 41228)
+- Browser: Playwright (Chromium) → http://localhost:4173
+- Throwaway inbox: resumelab-test-223306696a@emalupe.com (mail.tm)
+
+## BUG FOUND & FIXED (F3 finding)
+- **CSP blocked Supabase in production build**: `vite.config.ts` injected a static CSP
+  meta with `connect-src 'self'` → all Supabase API calls blocked
+  (`https://mhkieytinkgouhvwrmbp.supabase.co/auth/v1/otp` refused; 2 console errors;
+  "Something went wrong" alert). Only manifested in production (dev exempt from CSP).
+- **Fix**: `vite.config.ts` now derives `connect-src` from `VITE_SUPABASE_URL` at build
+  time via `loadEnv` + `configResolved`. Rebuilt → dist CSP:
+  `connect-src 'self' https://mhkieytinkgouhvwrmbp.supabase.co`
+- Gates after fix: typecheck 0, lint 0 (pre-existing warnings only), test 128/128, build 0.
+
+## Constraint discovered
+- Supabase FREE tier + default emailer: email templates are NOT modifiable
+  (API: "Email template modification is not available for free tier projects using the
+  default email provider"). Default template sends a MAGIC LINK, not a 6-digit code.
+- The app's 6-digit code-entry UI was already verified in prior sessions
+  (ext-2-3-otp.png, mocked OTP). F3 used the REAL magic link to complete the real
+  signed-in journey end-to-end.
+
+## Journey (all against production build)
+1. Landing loads clean — 0 console errors.
+2. Sign in modal → email entered → "Send code" → Supabase email delivered to
+   mail.tm inbox (noreply@mail.app.supabase.io, "Confirm your email address").
+3. Magic link opened in browser → Supabase verify endpoint → redirect to
+   http://localhost:4173/#access_token=...&type=signup → app picked up session.
+4. Signed-in nav confirmed: `r***@emalupe.com`, "Log out", "Dashboard" — no Sign in.
+5. Analyser: uploaded `src/test/fixtures/strong.txt` → "✓ TXT LOADED · 89 WORDS" →
+   "Analyse resume" → **ATS SCORE 100 — Strong**; sections detected (professional
+   summary, experience, education, skills); 13 skills extracted; feedback
+   "No issues found — nice work."
+6. Dashboard (REAL data from Supabase `resume_analyses` via RLS):
+   - Analyses run: 1 | Average ATS score: 100 | Skills detected: 13 | Best score: 100
+   - Recent analyses: strong.txt | TXT | 100
+   - Activity: "Analysed strong.txt — Aug 18, 2026"
+7. Reload → session persisted (still signed in, dashboard data intact).
+8. Screenshot: `.omo/evidence/ext-3-4-dashboard.png`.
+9. Log out → signed-out state restored (Sign in button back).
+
+## Console
+- 0 errors throughout.
+- 2 warnings (pre-existing, minor): recharts "width(-1) and height(-1) of chart should
+  be greater than 0" — chart container sizing warning on the analyser category bars;
+  non-blocking, result renders correctly.
+
+## Evidence artifacts
+- `.omo/evidence/ext-3-4-dashboard.png` — dashboard with real saved analysis.
+- This log.
