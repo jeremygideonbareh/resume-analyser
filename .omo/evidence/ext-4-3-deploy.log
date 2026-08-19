@@ -1,0 +1,43 @@
+# Todo 4.3 — Deploy to GitHub Pages — 2026-08-19
+
+## Result: SUCCESS — LIVE at https://jeremygideonbareh.github.io/resume-analyser/
+
+## Steps executed
+1. **vite.config.ts**: added `base: '/resume-analyser/'` (GitHub Pages subpath). CSP plugin unchanged —
+   `connect-src` already derives the Supabase origin at build time (F3 fix, commit 6391aad).
+2. **Supabase redirect config** (Management API PATCH /v1/projects/mhkieytinkgouhvwrmbp/config/auth):
+   - `site_url` → `https://jeremygideonbareh.github.io/resume-analyser` (verified in response)
+   - `uri_allow_list` → `https://jeremygideonbareh.github.io/resume-analyser,http://localhost:3000,http://localhost:4173` (verified)
+   - Rationale: `sendEmailOtp` passes no `emailRedirectTo` → Supabase uses `site_url` for magic-link redirects.
+3. **Gates**: typecheck 0 / lint 0 (pre-existing warnings only) / tests 128/128 / build 0.
+4. **Build output verified**: assets base-prefixed (`/resume-analyser/assets/index-zsH45I3j.js`,
+   `index-_TWRp-a4.css`, `favicon.svg`); CSP meta = `connect-src 'self' https://mhkieytinkgouhvwrmbp.supabase.co`;
+   dist secret gate 0 hits (`sbp_|service_role|SUPABASE_PAT|SUPABASE_ACCESS_TOKEN|SUPABASE_SERVICE_ROLE_KEY`);
+   no `.env*` in dist.
+5. **Deploy**: `npx gh-pages -d dist` FAILED (its git subprocess can't authenticate — bash `/dev/tty` +
+   "could not read Username"; the Windows Credential Manager isn't wired for its git context). FALLBACK USED
+   (per plan): orphan-branch dance in a detached temp worktree (`%TEMP%\resumelab-ghpages`):
+   `git worktree add --detach` → `git checkout --orphan gh-pages` → `git rm -rf .` → copy `dist/*` + `.nojekyll`
+   to root → commit `deploy: resume analyser to github pages (2026-08-19)` → push with `$env:GH_TOKEN`
+   (credential-manager `gho_` token; plain git push from PowerShell DOES use it — the gh-pages npm package
+   does not). Pushed: `0cb92a4` → `refs/heads/gh-pages`. Worktree removed; main tree back on `feat/resume-analyser`.
+6. **Enable Pages** (GitHub API): `POST /repos/jeremygideonbareh/resume-analyser/pages` → 409 "already enabled"
+   (Pages was pre-enabled); `GET /pages` → `status: built`, `html_url: https://jeremygideonbareh.github.io/resume-analyser/`,
+   `branch: gh-pages`, `path: /`.
+
+## Verification (deployed site)
+- `GET https://jeremygideonbareh.github.io/resume-analyser/` → 200; index.html references base-prefixed assets.
+- JS asset 200, CSS asset 200, favicon 200 (no 404s).
+- Playwright (Chromium): landing renders (hero "ATS RESUME ANALYSER — 100% IN-BROWSER"), Sign in button present,
+  Analyse CTA present, sign-in modal opens with Email tab; **0 console errors**.
+- Screenshot: `.omo/evidence/ext-4-3-ghpages.png`.
+
+## Security (PUBLIC repo)
+- dist secret gate: 0 hits (only public-safe anon key + Supabase URL ship).
+- gh-pages branch tree: no `.env*`, no PAT/service_role values (built from dist only).
+- `.env.local` remains untracked/gitignored.
+
+## Notes
+- Magic links on the deployed site now redirect to the deployed origin (site_url updated).
+- Local preview still works (localhost:3000/4173 in uri_allow_list).
+- HANDOFF.md deploy note updated (GitHub Pages replaces the Vercel note).

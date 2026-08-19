@@ -37,6 +37,9 @@ function cspMetaPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves the app under /resume-analyser/ — assets must be
+  // base-prefixed or they 404 on the deployed site (Todo 4.3, 2026-08-19).
+  base: '/resume-analyser/',
   plugins: [react(), tailwindcss(), cspMetaPlugin()],
   resolve: {
     alias: {
