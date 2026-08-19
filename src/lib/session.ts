@@ -23,6 +23,8 @@ export type AuthUser = {
 export type AuthSession = {
   session: Session | null
   user: AuthUser | null
+  /** True while a PASSWORD_RECOVERY session is active (reset-password flow). */
+  isRecovery: boolean
   signOut: () => Promise<void>
 }
 
@@ -65,6 +67,7 @@ function toAuthUser(
 export function useAuthSession(): AuthSession {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<AuthUser | null>(null)
+  const [isRecovery, setIsRecovery] = useState(false)
 
   useEffect(() => {
     let supabase: ReturnType<typeof getSupabase>
@@ -74,7 +77,10 @@ export function useAuthSession(): AuthSession {
       // Not configured (no .env.local) — stay signed out, no crash.
       return
     }
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // PASSWORD_RECOVERY fires when the user follows a reset-password link —
+      // the app shows the new-password form until the password is updated.
+      setIsRecovery(event === 'PASSWORD_RECOVERY')
       if (!nextSession?.user) {
         setSession(null)
         setUser(null)
@@ -94,7 +100,8 @@ export function useAuthSession(): AuthSession {
     }
     setSession(null)
     setUser(null)
+    setIsRecovery(false)
   }, [])
 
-  return { session, user, signOut }
+  return { session, user, isRecovery, signOut }
 }

@@ -14,23 +14,29 @@ import { LoginPanel } from '@/components/auth/LoginPanel'
 
 const { authFlowMock } = vi.hoisted(() => ({
   authFlowMock: {
-    sendEmailOtp: vi.fn(),
-    sendPhoneOtp: vi.fn(),
-    verifyEmailOtp: vi.fn(),
-    verifyPhoneOtp: vi.fn(),
+    signUpWithEmail: vi.fn(),
+    signInWithPassword: vi.fn(),
+    sendPasswordResetEmail: vi.fn(),
+    updatePasswordFromRecovery: vi.fn(),
   },
 }))
 
 vi.mock('@/lib/auth-flow', () => authFlowMock)
 
-function Harness({ initialOpen = true }: { initialOpen?: boolean }) {
+function Harness({
+  initialOpen = true,
+  isRecovery = false,
+}: {
+  initialOpen?: boolean
+  isRecovery?: boolean
+}) {
   const [open, setOpen] = useState(initialOpen)
   return (
     <>
       <button type="button" onClick={() => setOpen(true)}>
         Open sign-in
       </button>
-      <LoginPanel open={open} onOpenChange={setOpen} />
+      <LoginPanel open={open} onOpenChange={setOpen} isRecovery={isRecovery} />
     </>
   )
 }
@@ -44,11 +50,14 @@ afterEach(() => {
 })
 
 describe('LoginPanel — open / close / a11y', () => {
-  it('renders the dialog with tabs when open', () => {
+  it('renders the dialog with Sign in / Create account tabs when open', () => {
     render(<Harness />)
     expect(screen.getByRole('dialog', { name: /sign in/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /email/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /phone/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /sign in/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('tab', { name: /create account/i }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /phone/i })).toBeNull()
   })
 
   it('renders nothing when closed', () => {
@@ -75,12 +84,12 @@ describe('LoginPanel — open / close / a11y', () => {
     expect(trigger).toHaveFocus()
   })
 
-  it('switches between email and phone tabs', () => {
+  it('switches between Sign in and Create account tabs', () => {
     render(<Harness />)
-    fireEvent.click(screen.getByRole('tab', { name: /phone/i }))
-    expect(screen.getByLabelText(/phone number in e\.164 format/i)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('tab', { name: /email/i }))
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: /create account/i }))
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: /sign in/i }))
+    expect(screen.queryByLabelText(/confirm password/i)).toBeNull()
   })
 })
 
@@ -89,116 +98,164 @@ describe('LoginPanel — validation errors', () => {
     const user = userEvent.setup()
     render(<Harness />)
     await user.type(screen.getByLabelText(/email address/i), 'not-an-email')
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-    expect(
-      await screen.findByRole('alert'),
-    ).toHaveTextContent(/valid email/i)
-    expect(authFlowMock.sendEmailOtp).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/valid email/i)
+    expect(authFlowMock.signInWithPassword).not.toHaveBeenCalled()
   })
 
-  it('shows an inline error for an invalid phone number', async () => {
+  it('shows an inline error for a short password', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    fireEvent.click(screen.getByRole('tab', { name: /phone/i }))
-    await user.type(screen.getByLabelText(/phone number/i), '12')
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/valid phone/i)
-    expect(authFlowMock.sendPhoneOtp).not.toHaveBeenCalled()
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'short7')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /at least 8 characters/i,
+    )
+    expect(authFlowMock.signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it('shows an inline error when the password confirmation does not match', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('tab', { name: /create account/i }))
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.type(screen.getByLabelText('Confirm password'), 'secret124')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/don't match/i)
+    expect(authFlowMock.signUpWithEmail).not.toHaveBeenCalled()
   })
 })
 
-describe('LoginPanel — OTP flow', () => {
-  it('sends an email OTP and shows the code step after a valid email', async () => {
+describe('LoginPanel — sign in', () => {
+  it('signs in with email + password and closes the modal on success', async () => {
     const user = userEvent.setup()
-    authFlowMock.sendEmailOtp.mockResolvedValue({ error: null })
+    authFlowMock.signInWithPassword.mockResolvedValue({ error: null })
     render(<Harness />)
-    await user.type(
-      screen.getByLabelText(/email address/i),
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    expect(authFlowMock.signInWithPassword).toHaveBeenCalledWith(
       'me@example.com',
-    )
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-
-    expect(authFlowMock.sendEmailOtp).toHaveBeenCalledWith('me@example.com')
-    expect(await screen.findByLabelText(/6-digit verification code/i)).toBeInTheDocument()
-    expect(screen.getByText(/check your inbox/i)).toBeInTheDocument()
-  })
-
-  it('surfaces a send failure inline instead of advancing', async () => {
-    const user = userEvent.setup()
-    authFlowMock.sendEmailOtp.mockResolvedValue({
-      error: 'Too many requests — you\'ve hit the rate limit. Wait a minute and try again.',
-    })
-    render(<Harness />)
-    await user.type(
-      screen.getByLabelText(/email address/i),
-      'me@example.com',
-    )
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(/rate limit/i)
-    expect(
-      screen.queryByLabelText(/6-digit verification code/i),
-    ).toBeNull()
-  })
-
-  it('shows the graceful SMS-provider message on the phone tab', async () => {
-    const user = userEvent.setup()
-    authFlowMock.sendPhoneOtp.mockResolvedValue({
-      error: 'Phone sign-in needs an SMS provider — use email for now.',
-    })
-    render(<Harness />)
-    fireEvent.click(screen.getByRole('tab', { name: /phone/i }))
-    await user.type(
-      screen.getByLabelText(/phone number/i),
-      '+44 7911 123456',
-    )
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      /sms provider/i,
-    )
-  })
-
-  it('verifies the code and closes the modal on success', async () => {
-    const user = userEvent.setup()
-    authFlowMock.sendEmailOtp.mockResolvedValue({ error: null })
-    authFlowMock.verifyEmailOtp.mockResolvedValue({ error: null })
-    render(<Harness />)
-    await user.type(
-      screen.getByLabelText(/email address/i),
-      'me@example.com',
-    )
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-    await user.type(
-      await screen.findByLabelText(/6-digit verification code/i),
-      '123456',
-    )
-    await user.click(screen.getByRole('button', { name: /verify code/i }))
-
-    await waitFor(() =>
-      expect(authFlowMock.verifyEmailOtp).toHaveBeenCalledWith(
-        'me@example.com',
-        '123456',
-      ),
+      'secret123',
     )
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
-  it('keeps the verify button disabled until the code is 6 digits', async () => {
+  it('surfaces a wrong-credentials error inline', async () => {
     const user = userEvent.setup()
-    authFlowMock.sendEmailOtp.mockResolvedValue({ error: null })
+    authFlowMock.signInWithPassword.mockResolvedValue({
+      error: 'Incorrect email or password.',
+    })
     render(<Harness />)
-    await user.type(
-      screen.getByLabelText(/email address/i),
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'wrongpass')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /incorrect email or password/i,
+    )
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+})
+
+describe('LoginPanel — create account', () => {
+  it('creates an account and closes the modal on success', async () => {
+    const user = userEvent.setup()
+    authFlowMock.signUpWithEmail.mockResolvedValue({ error: null })
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('tab', { name: /create account/i }))
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.type(screen.getByLabelText('Confirm password'), 'secret123')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authFlowMock.signUpWithEmail).toHaveBeenCalledWith(
+      'me@example.com',
+      'secret123',
+    )
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('surfaces a duplicate-account error inline', async () => {
+    const user = userEvent.setup()
+    authFlowMock.signUpWithEmail.mockResolvedValue({
+      error: 'An account with that email already exists — sign in instead.',
+    })
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('tab', { name: /create account/i }))
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.type(screen.getByLabelText('Confirm password'), 'secret123')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already exists/i)
+  })
+})
+
+describe('LoginPanel — forgot password', () => {
+  it('sends a reset link and shows the check-your-email state', async () => {
+    const user = userEvent.setup()
+    authFlowMock.sendPasswordResetEmail.mockResolvedValue({ error: null })
+    render(<Harness />)
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    expect(authFlowMock.sendPasswordResetEmail).toHaveBeenCalledWith(
       'me@example.com',
     )
-    await user.click(screen.getByRole('button', { name: /send code/i }))
-    await user.type(
-      await screen.findByLabelText(/6-digit verification code/i),
-      '12',
+    expect(await screen.findByText(/check your email/i)).toBeInTheDocument()
+  })
+
+  it('surfaces a reset-send failure inline', async () => {
+    const user = userEvent.setup()
+    authFlowMock.sendPasswordResetEmail.mockResolvedValue({
+      error: 'Too many requests — you\'ve hit the rate limit. Wait a minute and try again.',
+    })
+    render(<Harness />)
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.type(screen.getByLabelText(/email address/i), 'me@example.com')
+    await user.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/rate limit/i)
+    expect(screen.queryByText(/check your email/i)).toBeNull()
+  })
+})
+
+describe('LoginPanel — recovery view', () => {
+  it('shows the new-password form when isRecovery is true', () => {
+    render(<Harness isRecovery />)
+    expect(screen.getByRole('dialog', { name: /set a new password/i }))
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /sign in/i })).toBeNull()
+  })
+
+  it('updates the password and closes the modal on success', async () => {
+    const user = userEvent.setup()
+    authFlowMock.updatePasswordFromRecovery.mockResolvedValue({ error: null })
+    render(<Harness isRecovery />)
+    await user.type(screen.getByLabelText('Password'), 'newpass123')
+    await user.type(screen.getByLabelText('Confirm password'), 'newpass123')
+    await user.click(screen.getByRole('button', { name: /set new password/i }))
+
+    expect(authFlowMock.updatePasswordFromRecovery).toHaveBeenCalledWith(
+      'newpass123',
     )
-    expect(
-      screen.getByRole('button', { name: /verify code/i }),
-    ).toBeDisabled()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('shows an inline error when the new password confirmation does not match', async () => {
+    const user = userEvent.setup()
+    render(<Harness isRecovery />)
+    await user.type(screen.getByLabelText('Password'), 'newpass123')
+    await user.type(screen.getByLabelText('Confirm password'), 'newpass124')
+    await user.click(screen.getByRole('button', { name: /set new password/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/don't match/i)
+    expect(authFlowMock.updatePasswordFromRecovery).not.toHaveBeenCalled()
   })
 })

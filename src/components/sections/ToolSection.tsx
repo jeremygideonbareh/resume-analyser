@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { SectionReveal } from '@/components/motion/SectionReveal'
 import { LetterCascade } from '@/components/ui/letter-cascade'
@@ -33,7 +33,13 @@ function wordCount(text: string): number {
  * when signed in, the analysis is persisted to the user's history
  * (fire-and-forget; failures toast and never block the report).
  */
-export function ToolSection({ user }: { user: AuthUser | null }) {
+export function ToolSection({
+  user,
+  onSignIn,
+}: {
+  user: AuthUser | null
+  onSignIn: () => void
+}) {
   const reduce = useReducedMotion()
   const [phase, setPhase] = useState<ToolPhase>('idle')
   const [parsed, setParsed] = useState<ParsedResume | null>(null)
@@ -132,7 +138,37 @@ export function ToolSection({ user }: { user: AuthUser | null }) {
                   exit={reduce ? undefined : { opacity: 0, y: -8 }}
                   transition={phaseTransition}
                 >
-                  <UploadZone onParsed={handleParsed} />
+                  {user ? (
+                    <UploadZone onParsed={handleParsed} />
+                  ) : (
+                    <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+                      <div className="flex items-start gap-4">
+                        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/10 bg-surface text-accent">
+                          <Lock className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <div>
+                          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+                            Sign in to analyse
+                          </p>
+                          <h3 className="mt-1 text-lg font-semibold tracking-tight text-ink">
+                            Your resume stays on your device.
+                          </h3>
+                          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                            Parsing runs 100% in your browser — files never
+                            leave your computer. Sign in to save results to
+                            your account and revisit them anytime.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={onSignIn}
+                            className="mt-5 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/90"
+                          >
+                            Sign in to continue
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 

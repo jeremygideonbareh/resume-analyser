@@ -147,3 +147,37 @@ describe('useAuthSession', () => {
     })
   })
 })
+
+describe('useAuthSession — recovery flag', () => {
+  it('sets isRecovery true on the PASSWORD_RECOVERY event', () => {
+    const { result } = renderHook(() => useAuthSession())
+    const callback = supabaseAuthMock.onAuthStateChange.mock.calls[0][0]
+    act(() => {
+      callback('PASSWORD_RECOVERY', fakeSession())
+    })
+    expect(result.current.isRecovery).toBe(true)
+    expect(result.current.user).not.toBeNull()
+  })
+
+  it('resets isRecovery false on a later SIGNED_IN event', () => {
+    const { result } = renderHook(() => useAuthSession())
+    const callback = supabaseAuthMock.onAuthStateChange.mock.calls[0][0]
+    act(() => {
+      callback('PASSWORD_RECOVERY', fakeSession())
+      callback('SIGNED_IN', fakeSession())
+    })
+    expect(result.current.isRecovery).toBe(false)
+  })
+
+  it('resets isRecovery false on signOut', async () => {
+    const { result } = renderHook(() => useAuthSession())
+    const callback = supabaseAuthMock.onAuthStateChange.mock.calls[0][0]
+    act(() => {
+      callback('PASSWORD_RECOVERY', fakeSession())
+    })
+    await act(async () => {
+      await result.current.signOut()
+    })
+    expect(result.current.isRecovery).toBe(false)
+  })
+})

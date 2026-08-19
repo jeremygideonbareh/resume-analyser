@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const { supabaseMock, supabaseConfig } = vi.hoisted(() => ({
   supabaseMock: {
     auth: {
-      signInWithOtp: vi.fn(),
-      verifyOtp: vi.fn(),
+      signUp: vi.fn(),
+      signInWithPassword: vi.fn(),
+      resetPasswordForEmail: vi.fn(),
+      updateUser: vi.fn(),
     },
   },
   // When true, getSupabase() throws like it does without .env.local —
@@ -23,12 +25,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }))
 
-import {
-  sendEmailOtp,
-  sendPhoneOtp,
-  verifyEmailOtp,
-  verifyPhoneOtp,
-} from '@/lib/auth-flow'
+import * as authFlow from '@/lib/auth-flow'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -40,23 +37,103 @@ function authError(message: string, status?: number) {
   return { error: { message, status } }
 }
 
-describe('sendEmailOtp', () => {
-  it('calls signInWithOtp({ email }) and resolves with no error on success', async () => {
-    supabaseMock.auth.signInWithOtp.mockResolvedValue({ error: null })
-    const result = await sendEmailOtp('me@example.com')
-    expect(supabaseMock.auth.signInWithOtp).toHaveBeenCalledWith({
+describe('auth-flow exports (OTP removal)', () => {
+  it('no longer exports the OTP functions', () => {
+    const flow = authFlow as unknown as Record<string, unknown>
+    expect(flow.sendEmailOtp).toBeUndefined()
+    expect(flow.verifyEmailOtp).toBeUndefined()
+    expect(flow.sendPhoneOtp).toBeUndefined()
+    expect(flow.verifyPhoneOtp).toBeUndefined()
+  })
+
+  it('exports the email + password functions', () => {
+    expect(typeof authFlow.signUpWithEmail).toBe('function')
+    expect(typeof authFlow.signInWithPassword).toBe('function')
+    expect(typeof authFlow.sendPasswordResetEmail).toBe('function')
+    expect(typeof authFlow.updatePasswordFromRecovery).toBe('function')
+  })
+})
+
+describe('signUpWithEmail', () => {
+  it('calls auth.signUp({ email, password }) and resolves with no error on success', async () => {
+    supabaseMock.auth.signUp.mockResolvedValue({ error: null })
+    const result = await authFlow.signUpWithEmail('me@example.com', 'secret123')
+    expect(supabaseMock.auth.signUp).toHaveBeenCalledWith({
       email: 'me@example.com',
+      password: 'secret123',
     })
     expect(result).toEqual({ error: null })
   })
 
-  it('passes emailRedirectTo = origin + pathname in a browser (GitHub Pages fix)', async () => {
-    // Regression (2026-08-19, live): supabase-js defaults the magic-link
-    // redirect to window.location.origin alone, which on GitHub Pages lands on
-    // the github.io ROOT (404 "Site not found") instead of /resume-analyser/.
-    // The fix pins emailRedirectTo to origin + pathname so the link lands on
-    // the app and the session in the URL hash is detected.
-    supabaseMock.auth.signInWithOtp.mockResolvedValue({ error: null })
+  it('maps a duplicate-account error to a user-facing string', async () => {
+    supabaseMock.auth.signUp.mockResolvedValue(
+      authError('User already registered'),
+    )
+    const result = await authFlow.signUpWithEmail('me@example.com', 'secret123')
+    expect(result.error).toMatch(/already exists/i)
+    expect(result.error).toMatch(/sign in instead/i)
+  })
+
+  it('maps a rate-limit error to a user-facing string', async () => {
+    supabaseMock.auth.signUp.mockResolvedValue(
+      authError('Email rate limit exceeded', 429),
+    )
+    const result = await authFlow.signUpWithEmail('me@example.com', 'secret123')
+    expect(result.error).toMatch(/rate limit/i)
+  })
+
+  it('degrades gracefully when Supabase is not configured (no .env.local)', async () => {
+    supabaseConfig.throwOnGet = true
+    const result = await authFlow.signUpWithEmail('me@example.com', 'secret123')
+    expect(result.error).toMatch(/set up yet/i)
+    expect(supabaseMock.auth.signUp).not.toHaveBeenCalled()
+  })
+})
+
+describe('signInWithPassword', () => {
+  it('calls auth.signInWithPassword({ email, password }) and resolves on success', async () => {
+    supabaseMock.auth.signInWithPassword.mockResolvedValue({ error: null })
+    const result = await authFlow.signInWithPassword(
+      'me@example.com',
+      'secret123',
+    )
+    expect(supabaseMock.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'me@example.com',
+      password: 'secret123',
+    })
+    expect(result).toEqual({ error: null })
+  })
+
+  it('maps invalid credentials to a user-facing string', async () => {
+    supabaseMock.auth.signInWithPassword.mockResolvedValue(
+      authError('Invalid login credentials'),
+    )
+    const result = await authFlow.signInWithPassword(
+      'me@example.com',
+      'wrongpass',
+    )
+    expect(result.error).toMatch(/incorrect email or password/i)
+  })
+
+  it('surfaces a thrown exception as a graceful string', async () => {
+    supabaseMock.auth.signInWithPassword.mockRejectedValue(
+      new Error('network'),
+    )
+    const result = await authFlow.signInWithPassword(
+      'me@example.com',
+      'secret123',
+    )
+    expect(result.error).toBeTruthy()
+  })
+})
+
+describe('sendPasswordResetEmail', () => {
+  it('calls resetPasswordForEmail with redirectTo = origin + pathname in a browser', async () => {
+    // Regression pattern (2026-08-19, live): supabase-js defaults the redirect
+    // to window.location.origin alone, which on GitHub Pages lands on the
+    // github.io ROOT (404) instead of /resume-analyser/. The recovery link
+    // must redirect back to the app so the PASSWORD_RECOVERY event fires.
+    supabaseMock.auth.resetPasswordForEmail.mockResolvedValue({ error: null })
     const g = globalThis as Record<string, unknown>
     const originalWindow = g.window
     g.window = {
@@ -66,110 +143,43 @@ describe('sendEmailOtp', () => {
       },
     }
     try {
-      const result = await sendEmailOtp('me@example.com')
-      expect(supabaseMock.auth.signInWithOtp).toHaveBeenCalledWith({
-        email: 'me@example.com',
-        options: {
-          emailRedirectTo: 'https://jeremygideonbareh.github.io/resume-analyser/',
+      const result = await authFlow.sendPasswordResetEmail('me@example.com')
+      expect(supabaseMock.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        'me@example.com',
+        {
+          redirectTo: 'https://jeremygideonbareh.github.io/resume-analyser/',
         },
-      })
+      )
       expect(result).toEqual({ error: null })
     } finally {
       g.window = originalWindow
     }
   })
 
-  it('maps a Supabase error to a user-facing string', async () => {
-    supabaseMock.auth.signInWithOtp.mockResolvedValue(
-      authError('Email rate limit exceeded', 429),
-    )
-    const result = await sendEmailOtp('me@example.com')
-    expect(result.error).toMatch(/try again/i)
-    expect(result.error).toMatch(/rate/i)
-  })
-
-  it('surfaces a thrown exception as a graceful string', async () => {
-    supabaseMock.auth.signInWithOtp.mockRejectedValue(new Error('network'))
-    const result = await sendEmailOtp('me@example.com')
-    expect(result.error).toBeTruthy()
-  })
-
-  it('degrades gracefully when Supabase is not configured (no .env.local)', async () => {
-    // Regression: getSupabase() used to throw OUTSIDE the try/catch (it was
-    // evaluated as handle()'s argument), escaping as an uncaught page error.
-    supabaseConfig.throwOnGet = true
-    const result = await sendEmailOtp('me@example.com')
-    expect(result.error).toMatch(/set up yet/i)
-    expect(supabaseMock.auth.signInWithOtp).not.toHaveBeenCalled()
-  })
-})
-
-describe('sendPhoneOtp', () => {
-  it('calls signInWithOtp({ phone }) and resolves with no error on success', async () => {
-    supabaseMock.auth.signInWithOtp.mockResolvedValue({ error: null })
-    const result = await sendPhoneOtp('+447911123456')
-    expect(supabaseMock.auth.signInWithOtp).toHaveBeenCalledWith({
-      phone: '+447911123456',
-    })
-    expect(result).toEqual({ error: null })
-  })
-
-  it('returns the graceful SMS-provider message when the provider is missing', async () => {
-    supabaseMock.auth.signInWithOtp.mockResolvedValue(
-      authError('sms_provider disabled', 422),
-    )
-    const result = await sendPhoneOtp('+447911123456')
-    expect(result.error).toMatch(/SMS provider/i)
-    expect(result.error).toMatch(/use email for now/i)
-  })
-
-  it('surfaces other Supabase errors as user-facing strings', async () => {
-    supabaseMock.auth.signInWithOtp.mockResolvedValue(
-      authError('Phone rate limit exceeded', 429),
-    )
-    const result = await sendPhoneOtp('+447911123456')
-    expect(result.error).toMatch(/try again/i)
-  })
-})
-
-describe('verifyEmailOtp', () => {
-  it('calls verifyOtp({ email, token, type: "email" }) and resolves on success', async () => {
-    supabaseMock.auth.verifyOtp.mockResolvedValue({ error: null })
-    const result = await verifyEmailOtp('me@example.com', '123456')
-    expect(supabaseMock.auth.verifyOtp).toHaveBeenCalledWith({
-      email: 'me@example.com',
-      token: '123456',
-      type: 'email',
-    })
-    expect(result).toEqual({ error: null })
-  })
-
   it('maps an invalid-token error to a user-facing string', async () => {
-    supabaseMock.auth.verifyOtp.mockResolvedValue(
+    supabaseMock.auth.resetPasswordForEmail.mockResolvedValue(
       authError('Token has expired or is invalid'),
     )
-    const result = await verifyEmailOtp('me@example.com', '999999')
-    expect(result.error).toMatch(/code/i)
+    const result = await authFlow.sendPasswordResetEmail('me@example.com')
+    expect(result.error).toMatch(/link/i)
   })
 })
 
-describe('verifyPhoneOtp', () => {
-  it('calls verifyOtp({ phone, token, type: "sms" }) and resolves on success', async () => {
-    supabaseMock.auth.verifyOtp.mockResolvedValue({ error: null })
-    const result = await verifyPhoneOtp('+447911123456', '123456')
-    expect(supabaseMock.auth.verifyOtp).toHaveBeenCalledWith({
-      phone: '+447911123456',
-      token: '123456',
-      type: 'sms',
+describe('updatePasswordFromRecovery', () => {
+  it('calls auth.updateUser({ password }) and resolves on success', async () => {
+    supabaseMock.auth.updateUser.mockResolvedValue({ error: null })
+    const result = await authFlow.updatePasswordFromRecovery('newpass123')
+    expect(supabaseMock.auth.updateUser).toHaveBeenCalledWith({
+      password: 'newpass123',
     })
     expect(result).toEqual({ error: null })
   })
 
-  it('maps an invalid-token error to a user-facing string', async () => {
-    supabaseMock.auth.verifyOtp.mockResolvedValue(
-      authError('Token has expired or is invalid'),
+  it('maps a short-password error to a user-facing string', async () => {
+    supabaseMock.auth.updateUser.mockResolvedValue(
+      authError('Password should be at least 6 characters'),
     )
-    const result = await verifyPhoneOtp('+447911123456', '999999')
-    expect(result.error).toMatch(/code/i)
+    const result = await authFlow.updatePasswordFromRecovery('short')
+    expect(result.error).toMatch(/at least 6 characters/i)
   })
 })

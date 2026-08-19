@@ -1,47 +1,58 @@
 import { getSupabase } from '@/lib/supabase'
 
 /**
- * Real Supabase OTP auth flow (Todo 2.3).
+ * Real Supabase email + password auth flow (authwave).
  *
  * All Supabase calls live here — components never touch `supabase.auth.*`
  * directly (grep-verifiable acceptance criterion). Each function returns
  * `{ error: string | null }`; `null` means success. Supabase error codes are
- * mapped to user-facing strings (rate limit, invalid code, missing SMS
- * provider).
+ * mapped to user-facing strings (rate limit, duplicate account, bad
+ * credentials).
+ *
+ * Sessions persist via Supabase's default token storage (localStorage) — a
+ * signed-in user stays signed in across reloads until they log out.
  */
 
 export type AuthResult = { error: string | null }
 
 /** Maps a Supabase auth error to a user-facing string. */
-function mapAuthError(
-  error: { message?: string; status?: number },
-  context: 'email' | 'phone',
-): string {
+function mapAuthError(error: { message?: string; status?: number }): string {
   const message = (error.message ?? '').toLowerCase()
   const status = error.status
-
-  // Missing SMS provider — phone OTP can't be delivered without one.
-  if (
-    context === 'phone' &&
-    (message.includes('sms_provider') ||
-      message.includes('provider') ||
-      status === 422)
-  ) {
-    return 'Phone sign-in needs an SMS provider — use email for now.'
-  }
 
   // Rate limiting (Supabase: 429 or "rate limit" messaging).
   if (status === 429 || message.includes('rate limit')) {
     return 'Too many requests — you\'ve hit the rate limit. Wait a minute and try again.'
   }
 
-  // Invalid / expired OTP code.
+  // Duplicate account on sign-up.
+  if (
+    message.includes('already registered') ||
+    message.includes('already exists')
+  ) {
+    return 'An account with that email already exists — sign in instead.'
+  }
+
+  // Bad credentials on sign-in.
+  if (
+    message.includes('invalid login credentials') ||
+    message.includes('invalid credentials')
+  ) {
+    return 'Incorrect email or password.'
+  }
+
+  // Password too short (Supabase default minimum is 6).
+  if (message.includes('password should be at least')) {
+    return 'Password must be at least 6 characters.'
+  }
+
+  // Invalid / expired recovery token.
   if (
     message.includes('token') ||
     message.includes('expired') ||
     message.includes('invalid')
   ) {
-    return 'That code didn\'t work — check it and try again.'
+    return 'That link didn\'t work — request a new one and try again.'
   }
 
   return 'Something went wrong — please try again.'
@@ -55,11 +66,10 @@ async function handle(
   action: () => Promise<{
     error: { message?: string; status?: number } | null
   }>,
-  context: 'email' | 'phone',
 ): Promise<AuthResult> {
   try {
     const { error } = await action()
-    if (error) return { error: mapAuthError(error, context) }
+    if (error) return { error: mapAuthError(error) }
     return { error: null }
   } catch (err) {
     // Config missing (getSupabase threw) — tell the user setup is incomplete.
@@ -72,48 +82,53 @@ async function handle(
   }
 }
 
-/** Sends a 6-digit OTP to an email address via Supabase. */
-export function sendEmailOtp(email: string): Promise<AuthResult> {
-  return handle(() => {
-    const request: { email: string; options?: { emailRedirectTo: string } } = {
-      email,
-    }
-    // Magic-link redirect must land on THIS app (origin + pathname), not the
-    // bare origin: supabase-js defaults to window.location.origin alone, which
-    // on GitHub Pages points at the github.io root (404) instead of
-    // /resume-analyser/. Verified live 2026-08-19 — the default redirect 404'd.
-    if (typeof window !== 'undefined') {
-      request.options = {
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
-      }
-    }
-    return getSupabase().auth.signInWithOtp(request)
-  }, 'email')
-}
-
-/** Sends a 6-digit OTP to a phone number via Supabase. */
-export function sendPhoneOtp(phone: string): Promise<AuthResult> {
-  return handle(() => getSupabase().auth.signInWithOtp({ phone }), 'phone')
-}
-
-/** Verifies an email OTP code. */
-export function verifyEmailOtp(
+/**
+ * Creates an account and signs in immediately (Supabase `mailer_autoconfirm`
+ * is enabled for this project — no confirmation email required).
+ */
+export function signUpWithEmail(
   email: string,
-  token: string,
+  password: string,
 ): Promise<AuthResult> {
-  return handle(
-    () => getSupabase().auth.verifyOtp({ email, token, type: 'email' }),
-    'email',
+  return handle(() => getSupabase().auth.signUp({ email, password }))
+}
+
+/** Signs in with email + password. */
+export function signInWithPassword(
+  email: string,
+  password: string,
+): Promise<AuthResult> {
+  return handle(() =>
+    getSupabase().auth.signInWithPassword({ email, password }),
   )
 }
 
-/** Verifies a phone (SMS) OTP code. */
-export function verifyPhoneOtp(
-  phone: string,
-  token: string,
+/**
+ * Sends a password-reset email. The recovery link must redirect back to THIS
+ * app (origin + pathname), not the bare origin: supabase-js defaults to
+ * window.location.origin alone, which on GitHub Pages points at the github.io
+ * root (404) instead of /resume-analyser/. Same fix as the magic-link flow
+ * (verified live 2026-08-19).
+ */
+export function sendPasswordResetEmail(email: string): Promise<AuthResult> {
+  return handle(() => {
+    const options: { redirectTo: string } = {
+      redirectTo:
+        typeof window !== 'undefined'
+          ? `${window.location.origin}${window.location.pathname}`
+          : '',
+    }
+    return getSupabase().auth.resetPasswordForEmail(email, options)
+  })
+}
+
+/**
+ * Sets a new password from the recovery flow. The app detects the
+ * `PASSWORD_RECOVERY` event (via useAuthSession) and shows the new-password
+ * form; this completes it.
+ */
+export function updatePasswordFromRecovery(
+  password: string,
 ): Promise<AuthResult> {
-  return handle(
-    () => getSupabase().auth.verifyOtp({ phone, token, type: 'sms' }),
-    'phone',
-  )
+  return handle(() => getSupabase().auth.updateUser({ password }))
 }
