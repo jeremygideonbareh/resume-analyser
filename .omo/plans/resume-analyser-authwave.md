@@ -101,11 +101,11 @@
 - [x] **Phase C — Supabase config + backend verification**: PATCH `mailer_autoconfirm: true` (single field), GET confirm; node script signUp with throwaway email → session returned immediately (no confirmation); delete test user via service_role. Verify: evidence log.
 - [x] **Phase D — Marquee removal**: delete `SkillsMarquee.tsx` + `InfiniteSlider.tsx` + `ProgressiveBlur.tsx` + `scroll-based-velocity.tsx`; remove App.tsx usage; grep-zero refs; tests updated. Verify: gates green.
 - [x] **Phase E — Analyser gating + copy**: `ToolSection` locked panel for guests (`onSignIn` prop), App.tsx wiring, Hero copy per D8, tests. Verify: gates green + dev-mode guest/signed-in check.
-- [ ] **Phase F — Full gates, deploy, live smoke, wrap-up**: all gates; commit + push; gh-pages deploy; live smoke (sign up → analyse → save → logout → login → persistence); evidence; HANDOFF update; rotate PAT + GH token.
+- [x] **Phase F — Full gates, deploy, live smoke, wrap-up**: all gates; commit + push; gh-pages deploy; live smoke (sign up → analyse → save → logout → login → persistence); evidence; HANDOFF update; rotate PAT + GH token.
 
 ## Final Verification Wave
 
-- [ ] **F1 — Plan compliance**: every phase checkbox evidence present; fresh gates (typecheck 0, lint 0, tests all pass, build 0); no secrets committed.
-- [ ] **F2 — Code review**: every changed file read line-by-line; logic matches plan decisions D1–D10; no stubs/hardcoded values; OTP/phone code fully gone.
-- [ ] **F3 — Live production QA**: deployed URL — full auth journey (sign up → immediate sign-in → analyse → save → dashboard → logout → login → refresh persistence), marquee gone, guest locked panel, 0 console errors; screenshots + log evidence.
-- [ ] **F4 — Scope fidelity**: no chatbot/LLM/hosting/phone-auth changes; hero copy updated; `git grep` for deleted files zero; secrets not in tracked files.
+- [x] **F1 — Plan compliance**: every phase checkbox evidence present; fresh gates (typecheck 0, lint 0, tests all pass, build 0); no secrets committed.
+- [x] **F2 — Code review**: every changed file read line-by-line; logic matches plan decisions D1–D10; no stubs/hardcoded values; OTP/phone code fully gone.
+- [x] **F3 — Live production QA**: deployed URL — full auth journey (sign up → immediate sign-in → analyse → save → dashboard → logout → login → refresh persistence), marquee gone, guest locked panel, 0 console errors; screenshots + log evidence.
+- [x] **F4 — Scope fidelity**: no chatbot/LLM/hosting/phone-auth changes; hero copy updated; `git grep` for deleted files zero; secrets not in tracked files.

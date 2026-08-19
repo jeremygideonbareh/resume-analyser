@@ -1,0 +1,27 @@
+# Phase F — Live Production Smoke Test (ext-5-f-smoke.log)
+Date: 2026-08-19
+URL: https://jeremygideonbareh.github.io/resume-analyser/
+Bundle verified live: index-DzQ3Gf9o.js (HTTP 200)
+Test account: smoke-authwave-20260819@emalupe.com (throwaway, deleted after test)
+
+## Verification points (all PASSED)
+
+1. SITE LIVE — HTTP 200, new authwave bundle served (index-DzQ3Gf9o.js).
+2. HERO COPY (D8) — badge "100% local parse"; subline "Files never leave your browser. Sign in to save results to your account."
+3. MARQUEE GONE — no "Detects 200+ skills" marquee section on page.
+4. GUEST GATE — logged-out analyser shows locked panel: "Sign in to analyse" / "Your resume stays on your device." / "Sign in to continue" button.
+5. SIGN-IN DIALOG — header "Sign in" opens dialog with Sign in / Create account tabs, email+password fields, forgot-password link; NO phone tab.
+6. ACCOUNT CREATION — Create account tab → filled email/password/confirm → submitted → immediately signed in (mailer_autoconfirm=true): header shows "Signed in s***@emalupe.com" + Log out + Dashboard buttons.
+7. GATING RELEASED — UploadZone ("Upload your resume — PDF, DOCX, or TXT, up to 5MB") replaces the locked panel when signed in.
+8. UPLOAD + PARSE — uploaded src/test/fixtures/strong.txt via file chooser → "✓ TXT loaded · 89 words".
+9. ANALYSIS — clicked "Analyse resume" → ATS Score 100 (Strong); category profile (Keyword match, Structure, Formatting, Recency, Contact info); sections detected (professional summary, experience, education, skills); skills extracted (13: javascript, typescript, html, css, graphql, react, next.js, jest, node.js, aws, docker, a/b testing, figma); feedback "No issues found — nice work."
+10. SAVE TO ACCOUNT — Dashboard shows: Analyses run 1, Average ATS score 100, Skills detected 13, Best score 100; Recent analyses table row "strong.txt TXT 100"; Activity "Analysed strong.txt" Aug 19, 2026.
+11. LOGOUT — header reverts to "Sign in"; guest locked panel restored in analyser section.
+12. LOGIN AGAIN — signed back in with same credentials → UploadZone visible again; Dashboard still shows the saved analysis (Analyses run 1, Best score 100, Skills detected 13) — persistence across logout/login confirmed.
+13. REFRESH PERSISTENCE — page reload → still "Signed in s***@emalupe.com" + Dashboard button + UploadZone visible — session survives reload.
+
+## Console
+- 0 errors throughout the entire journey (2 benign warnings, pre-existing).
+
+## Result
+PASS — full auth journey (sign up → immediate sign-in → analyse → save → dashboard → logout → login → refresh persistence) verified live in production.

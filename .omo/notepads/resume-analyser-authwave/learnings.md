@@ -13,3 +13,12 @@
 - Old test account resumelab-test-223306696a@emalupe.com has NO password → unusable after switch (D5, no migration).
 ## [2026-08-19 14:30] BILLING BLOCK - DIRECT EXECUTION MODE
 task() subagent dispatch returned: 'No payment method. Add a payment method here: https://opencode.ai/workspace/wrk_01KX04WJHPA6XBQ85ZEDFYGQXR/billing' (both Phase A and Phase C dispatches). Same block as prior wave (learnings line 28). Precedent: plan pins direct-execution fallback + user directive 'do all the work yourself and verify yourself'. Proceeding with DIRECT implementation by orchestrator. All verification still performed by orchestrator.
+
+## [2026-08-19] Authwave Phases A-F COMPLETE - FINAL WRAP
+- HANDOFF.md had UTF-8 BOM + cp1252 double-encoded mojibake (aT' = ->, aEUR" = -, aEUR| = ..., aT = <-, A. = .). edit tool fails on mojibake matching; PowerShell inline Replace chain hits ENAMETOOLONG (command too long). FIX: write a temp .cjs script under .omo/scripts/ (gitignored) that reads file, strips BOM, applies codepoint-exact replacements (longest-first), writes back with BOM. Diagnostic first: node script printing all non-ASCII codepoints + context.
+- Plan file .omo/plans/*.md is clean UTF-8 (no BOM) - edit tool works directly on it.
+- Evidence logs *.log are gitignored - commit with `git add -f`.
+- Live smoke test pattern: upload fixture -> analyse -> save -> dashboard -> logout -> login -> refresh; verify persistence across logout/login AND reload. Console errors = 0.
+- Throwaway account cleanup: service_role DELETE via Management API, then VERIFY user gone (list users).
+- Final gates: typecheck 0 / oxlint 0 (pre-existing warnings only) / vitest 151/151 (18 files) / build 0; bundle hash matches live deploy.
+- Secrets to rotate after wave: Supabase PAT (sbp_...) + GH token (gho_...) - both used against PUBLIC repo.
