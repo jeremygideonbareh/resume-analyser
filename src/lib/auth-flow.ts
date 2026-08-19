@@ -74,7 +74,21 @@ async function handle(
 
 /** Sends a 6-digit OTP to an email address via Supabase. */
 export function sendEmailOtp(email: string): Promise<AuthResult> {
-  return handle(() => getSupabase().auth.signInWithOtp({ email }), 'email')
+  return handle(() => {
+    const request: { email: string; options?: { emailRedirectTo: string } } = {
+      email,
+    }
+    // Magic-link redirect must land on THIS app (origin + pathname), not the
+    // bare origin: supabase-js defaults to window.location.origin alone, which
+    // on GitHub Pages points at the github.io root (404) instead of
+    // /resume-analyser/. Verified live 2026-08-19 — the default redirect 404'd.
+    if (typeof window !== 'undefined') {
+      request.options = {
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
+      }
+    }
+    return getSupabase().auth.signInWithOtp(request)
+  }, 'email')
 }
 
 /** Sends a 6-digit OTP to a phone number via Supabase. */

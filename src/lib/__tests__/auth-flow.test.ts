@@ -50,6 +50,35 @@ describe('sendEmailOtp', () => {
     expect(result).toEqual({ error: null })
   })
 
+  it('passes emailRedirectTo = origin + pathname in a browser (GitHub Pages fix)', async () => {
+    // Regression (2026-08-19, live): supabase-js defaults the magic-link
+    // redirect to window.location.origin alone, which on GitHub Pages lands on
+    // the github.io ROOT (404 "Site not found") instead of /resume-analyser/.
+    // The fix pins emailRedirectTo to origin + pathname so the link lands on
+    // the app and the session in the URL hash is detected.
+    supabaseMock.auth.signInWithOtp.mockResolvedValue({ error: null })
+    const g = globalThis as Record<string, unknown>
+    const originalWindow = g.window
+    g.window = {
+      location: {
+        origin: 'https://jeremygideonbareh.github.io',
+        pathname: '/resume-analyser/',
+      },
+    }
+    try {
+      const result = await sendEmailOtp('me@example.com')
+      expect(supabaseMock.auth.signInWithOtp).toHaveBeenCalledWith({
+        email: 'me@example.com',
+        options: {
+          emailRedirectTo: 'https://jeremygideonbareh.github.io/resume-analyser/',
+        },
+      })
+      expect(result).toEqual({ error: null })
+    } finally {
+      g.window = originalWindow
+    }
+  })
+
   it('maps a Supabase error to a user-facing string', async () => {
     supabaseMock.auth.signInWithOtp.mockResolvedValue(
       authError('Email rate limit exceeded', 429),

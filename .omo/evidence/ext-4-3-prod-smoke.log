@@ -1,0 +1,81 @@
+================================================================================
+EXT-4-3 PRODUCTION AUTH SMOKE TEST — LIVE GitHub Pages (2026-08-19 ~04:50 UTC)
+================================================================================
+Context: Todo 4.3 deploy was verified (ext-4-3-deploy.log). This log records a
+SECOND, deeper verification: the full signed-in journey on the LIVE deployed
+site, which uncovered and fixed a REAL production bug (magic-link redirect).
+
+--------------------------------------------------------------------------------
+BUG FOUND (live, 2026-08-19 04:37 UTC)
+--------------------------------------------------------------------------------
+- sendEmailOtp passed NO emailRedirectTo -> supabase-js defaults the magic-link
+  redirect to window.location.origin ALONE.
+- On GitHub Pages the app lives at /resume-analyser/, so the link redirected to
+  https://jeremygideonbareh.github.io/ (github.io ROOT) -> HTTP 404
+  "Site not found · GitHub Pages" (confirmed live: page title + status 404,
+  access_token stranded in the URL hash, app never loaded).
+- F3 had passed on localhost:4173 only because origin+pathname happened to
+  equal the app URL there; the deployed origin exposed the bug.
+
+FIX (committed with this evidence):
+- src/lib/auth-flow.ts: sendEmailOtp now passes
+  options.emailRedirectTo = window.location.origin + window.location.pathname
+  (guarded by typeof window !== 'undefined' for the node test env).
+- src/lib/__tests__/auth-flow.test.ts: +1 regression test stubbing window as
+  { origin: https://jeremygideonbareh.github.io, pathname: /resume-analyser/ }
+  asserting emailRedirectTo = https://jeremygideonbareh.github.io/resume-analyser/
+- Supabase uri_allow_list: added the trailing-slash variant
+  https://jeremygideonbareh.github.io/resume-analyser/ alongside the existing
+  no-slash entry (PATCH /v1/projects/mhkieytinkgouhvwrmbp/config/auth, HTTP 200,
+  verified in GET response). NOTE: full-config PUT/PATCH is rejected (SMTP
+  fields conflict with the built-in emailer) — send ONLY the field being changed.
+
+GATES (after fix):
+- vitest auth-flow.test.ts: PASS (12) FAIL (0)
+- vitest full suite: PASS (129) FAIL (0)   [128 -> 129 with the new test]
+- tsc --noEmit: No errors found (exit 0)
+- oxlint (changed files + full project): exit 0
+- npm run build (tsc -b && vite build): exit 0
+- dist secret gate: 0 hits (sbp_/service_role), 0 .env* files
+
+REDEPLOY:
+- gh-pages orphan-branch dance in %TEMP%\resumelab-ghpages2 worktree
+  (npx gh-pages cannot authenticate on this machine — documented fallback).
+- Commit 3327a4e pushed to refs/heads/gh-pages (80 files).
+- Deployed index.html asset index-DZCqU4OT.js == local dist hash (byte match);
+  deployed bundle contains "emailRedirectTo" + origin concat (fix live).
+
+--------------------------------------------------------------------------------
+LIVE SMOKE TEST — FULL SIGNED-IN JOURNEY (04:50-04:55 UTC)
+--------------------------------------------------------------------------------
+1. Deployed site: https://jeremygideonbareh.github.io/resume-analyser/
+   - Landing renders, Sign in modal opens, Email tab present.
+2. Send code to resumelab-test-223306696a@emalupe.com (mail.tm throwaway).
+   - New email "Your sign-in link" (id 6a853622079b3ed18a678276, 04:50:41).
+   - redirect_to = https://jeremygideonbareh.github.io/resume-analyser/  <-- FIXED
+     (pre-fix email had redirect_to = https://jeremygideonbareh.github.io/)
+3. Opened magic link:
+   - Landed on https://jeremygideonbareh.github.io/resume-analyser/#access_token=...
+   - Page title "ResumeLab — ATS Resume Analyser" (NOT "Site not found" 404).
+   - Session detected: signedIn=true, hash cleared to "#", UI shows
+     r***@emalupe.com + Log out + Dashboard.
+4. Uploaded src/test/fixtures/strong.txt (89 words):
+   - "✓ TXT LOADED · 89 WORDS" -> clicked "Analyse resume".
+   - Result: ATS SCORE 100 — Strong; sections detected (professional summary,
+     experience, education, skills); skills extracted (13): javascript,
+     typescript, html, css, graphql, react, next.js, jest, node.js, aws,
+     docker, a/b testing, figma; feedback "No issues found — nice work."
+   - 0 console errors.
+5. Dashboard (signed-in save path):
+   - Analyses run 2 | Average ATS score 100 | Skills detected 13 | Best score 100
+   - Recent analyses: strong.txt | TXT | 100 (x2 — Aug 18 F3 + Aug 19 this run)
+   - Activity: "Analysed strong.txt — Aug 19, 2026"  <-- NEW production save
+6. Log out: signedOut=true (Sign in button returns).
+7. Screenshot evidence: ext-4-3-prod-analysis.png (result view, ATS 100).
+
+--------------------------------------------------------------------------------
+RESULT: PRODUCTION AUTH FLOW FULLY VERIFIED ON LIVE SITE
+- Magic link redirects to the app (not the github.io root).
+- Session detected from URL hash; analysis runs; result SAVED to the account;
+  dashboard reflects it; logout works. 0 console errors throughout.
+================================================================================
