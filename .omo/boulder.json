@@ -1,15 +1,19 @@
 {
-  "schema_version": 2,
-  "active_work_id": "resume-analyser-ext",
-  "works": {
-    "resume-analyser-ext": {
-      "work_id": "resume-analyser-ext",
-      "active_plan": ".omo/plans/resume-analyser-ext.md",
-      "plan_name": "resume-analyser-ext",
-      "session_ids": ["opencode:ses_0059fff04ffen7rG9KvvUP7wa7"],
-      "status": "active",
-      "worktree_path": null,
-      "started_at": "2026-08-14T04:58:40.748Z"
-    }
-  }
+    "schema_version":  2,
+    "active_work_id":  "resume-analyser-ext",
+    "works":  {
+                  "resume-analyser-ext":  {
+                                              "work_id":  "resume-analyser-ext",
+                                              "active_plan":  ".omo/plans/resume-analyser-ext.md",
+                                              "plan_name":  "resume-analyser-ext",
+                                              "session_ids":  [
+                                                                  "opencode:ses_0059fff04ffen7rG9KvvUP7wa7"
+                                                              ],
+                                              "status":  "completed",
+                                              "worktree_path":  null,
+                                              "started_at":  "2026-08-14T04:58:40.748Z",
+                                              "ended_at":  "2026-08-19T05:02:36.8199528Z",
+                                              "elapsed_ms":  432236072
+                                          }
+              }
 }
