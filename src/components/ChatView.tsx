@@ -67,7 +67,8 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
   }, [userId])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // jsdom (tests) does not implement scrollIntoView — guard the call.
+    bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, sending])
 
   const handleSend = async () => {

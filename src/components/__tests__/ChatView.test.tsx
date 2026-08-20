@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import { ChatView } from '@/components/ChatView'
+import { loadConversation, postChatMessage } from '@/lib/chat'
 import type { ChatMessage, EligibilityResult } from '@/lib/placement-types'
 
 vi.mock('@/lib/chat', () => ({
@@ -16,10 +17,6 @@ vi.mock('@/lib/chat', () => ({
  * Cases per the plan: gate, load conversation, send flow, eligibility cards,
  * error retry, Enter-to-send.
  */
-
-const { loadConversation, postChatMessage } = vi.mocked(
-  require('@/lib/chat') as typeof import('@/lib/chat'),
-)
 
 const history: ChatMessage[] = [
   {
