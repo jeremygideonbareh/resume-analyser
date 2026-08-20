@@ -5,8 +5,16 @@ import {
   sectionBreakdown,
   recentRows,
   activityItems,
+  eligibleCompanies,
+  readinessStats,
+  applicationStats,
 } from '@/lib/dashboard-data'
 import type { AnalysisHistoryRow } from '@/lib/history'
+import type {
+  StudentProfile,
+  Company,
+  Application,
+} from '@/lib/placement-types'
 
 /**
  * Todo 3.4 — dashboard data derivation (pure helpers).
@@ -214,5 +222,134 @@ describe('activityItems', () => {
       makeRow({ id: 'a', created_at: '2026-08-01T10:00:00Z', filename: 'a.pdf' }),
     ]
     expect(activityItems(rows, 2)).toHaveLength(2)
+  })
+})
+
+// --- Placement Assistant helpers (T5.1) -----------------------------------
+
+function makeProfile(overrides: Partial<StudentProfile> = {}): StudentProfile {
+  return {
+    id: 'p1',
+    created_at: '2026-08-20T00:00:00Z',
+    user_id: 'user_1',
+    full_name: 'Test Student',
+    department: 'CSE',
+    semester: 6,
+    cgpa: 8.5,
+    backlogs: 0,
+    skills: ['python', 'java', 'sql'],
+    certifications: [],
+    programming_languages: ['python'],
+    portfolio_url: null,
+    github_url: 'https://github.com/teststudent',
+    linkedin_url: null,
+    target_role: 'Software Engineer',
+    updated_at: '2026-08-20T00:00:00Z',
+    ...overrides,
+  }
+}
+
+function makeCompany(overrides: Partial<Company> = {}): Company {
+  return {
+    id: 'c1',
+    created_at: '2026-08-20T00:00:00Z',
+    name: 'TestCorp',
+    min_cgpa: 7.0,
+    max_backlogs: 0,
+    required_skills: ['python', 'sql'],
+    preferred_skills: ['java'],
+    description: null,
+    recruitment_process: null,
+    salary_insights: null,
+    ...overrides,
+  }
+}
+
+function makeApplication(overrides: Partial<Application>): Application {
+  return {
+    id: 'a1',
+    created_at: '2026-08-20T00:00:00Z',
+    user_id: 'user_1',
+    company_id: 'c1',
+    company_name: 'TestCorp',
+    status: 'applied',
+    applied_at: '2026-08-20T00:00:00Z',
+    notes: null,
+    ...overrides,
+  }
+}
+
+describe('eligibleCompanies', () => {
+  it('returns an empty list when the student has no profile', () => {
+    expect(eligibleCompanies(null, [makeCompany()])).toEqual([])
+  })
+
+  it('evaluates the profile against every company', () => {
+    const results = eligibleCompanies(makeProfile(), [
+      makeCompany(),
+      makeCompany({ id: 'c2', name: 'OtherCorp', min_cgpa: 9.0 }),
+    ])
+    expect(results).toHaveLength(2)
+    expect(results[0].eligible).toBe(true)
+    expect(results[1].eligible).toBe(false)
+    expect(results[1].reasons).toContain('CGPA below cutoff')
+  })
+})
+
+describe('readinessStats', () => {
+  it('scores 0 for a user with no profile and no analyses', () => {
+    const stats = readinessStats(null, [])
+    expect(stats.score).toBe(0)
+    expect(stats.band.label).toBe('Weak')
+    expect(stats.resumeScore).toBe(0)
+    expect(stats.skillCoverage).toBe(0)
+    expect(stats.profileCompleteness).toBe(0)
+  })
+
+  it('uses the latest analysis score (newest-first input) and full profile', () => {
+    const rows = [
+      makeRow({ id: 'b', created_at: '2026-08-02T10:00:00Z', score: 80 }),
+      makeRow({ id: 'a', created_at: '2026-08-01T10:00:00Z', score: 60 }),
+    ]
+    const stats = readinessStats(makeProfile(), rows)
+    // resume 80 → 40 + skills 3/10 → 30*0.3=9 + completeness 100 → 20 = 69
+    expect(stats.resumeScore).toBe(80)
+    expect(stats.skillCoverage).toBe(30)
+    expect(stats.profileCompleteness).toBe(100)
+    expect(stats.score).toBe(69)
+    expect(stats.band.label).toBe('Needs work')
+  })
+
+  it('ignores older analyses when the newest score is 0', () => {
+    const rows = [makeRow({ id: 'a', created_at: '2026-08-01T10:00:00Z', score: 0 })]
+    const stats = readinessStats(null, rows)
+    expect(stats.resumeScore).toBe(0)
+    expect(stats.score).toBe(0)
+  })
+})
+
+describe('applicationStats', () => {
+  it('zero-fills every status for an empty list', () => {
+    expect(applicationStats([])).toEqual({
+      draft: 0,
+      applied: 0,
+      shortlisted: 0,
+      interview: 0,
+      offer: 0,
+      rejected: 0,
+    })
+  })
+
+  it('counts applications by status', () => {
+    const stats = applicationStats([
+      makeApplication({ status: 'applied' }),
+      makeApplication({ status: 'applied' }),
+      makeApplication({ status: 'interview' }),
+      makeApplication({ status: 'offer' }),
+    ])
+    expect(stats.applied).toBe(2)
+    expect(stats.interview).toBe(1)
+    expect(stats.offer).toBe(1)
+    expect(stats.draft).toBe(0)
   })
 })

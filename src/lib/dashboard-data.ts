@@ -1,5 +1,19 @@
 import { WEIGHTS } from './analysis'
 import type { AnalysisHistoryRow } from './history'
+import { evaluateEligibility } from './eligibility'
+import {
+  computeReadiness,
+  skillCoverageScore,
+  profileCompletenessScore,
+} from './readiness'
+import { scoreBand } from './report-format'
+import type {
+  StudentProfile,
+  Company,
+  Application,
+  ApplicationStatus,
+  EligibilityResult,
+} from './placement-types'
 
 /**
  * Todo 3.4 — dashboard data derivation (pure helpers, no React).
@@ -136,4 +150,73 @@ export function activityItems(
     title: `Analysed ${r.filename}`,
     created_at: r.created_at.slice(0, 10),
   }))
+}
+
+// --- Placement Assistant helpers (T5.1) -----------------------------------
+
+export interface ReadinessStats {
+  score: number
+  band: ReturnType<typeof scoreBand>
+  resumeScore: number
+  skillCoverage: number
+  profileCompleteness: number
+}
+
+/**
+ * Evaluate the student profile against every company (delegates to the pure
+ * `evaluateEligibility` in `src/lib/eligibility.ts`). Returns [] when the
+ * student has no profile yet.
+ */
+export function eligibleCompanies(
+  profile: StudentProfile | null,
+  companies: readonly Company[],
+): EligibilityResult[] {
+  if (!profile) return []
+  return companies.map((c) => evaluateEligibility(profile, c))
+}
+
+/**
+ * Placement readiness stats (D8). `recentAnalyses` is NEWEST-FIRST (the
+ * `loadHistory` contract) — the latest saved analysis score is rows[0].
+ * A missing profile contributes 0 for both skill coverage and completeness.
+ */
+export function readinessStats(
+  profile: StudentProfile | null,
+  recentAnalyses: readonly AnalysisHistoryRow[],
+): ReadinessStats {
+  const resumeScore = recentAnalyses[0]?.score ?? 0
+  const skillCoverage = skillCoverageScore(profile?.skills ?? [])
+  const profileCompleteness = profile
+    ? profileCompletenessScore(profile)
+    : 0
+  const score = computeReadiness({
+    resumeScore,
+    skillCoverageScore: skillCoverage,
+    profileCompletenessScore: profileCompleteness,
+  })
+  return {
+    score,
+    band: scoreBand(score),
+    resumeScore,
+    skillCoverage,
+    profileCompleteness,
+  }
+}
+
+/** Count applications by status (all six statuses present, zero-filled). */
+export function applicationStats(
+  applications: readonly Application[],
+): Record<ApplicationStatus, number> {
+  const stats: Record<ApplicationStatus, number> = {
+    draft: 0,
+    applied: 0,
+    shortlisted: 0,
+    interview: 0,
+    offer: 0,
+    rejected: 0,
+  }
+  for (const app of applications) {
+    stats[app.status] += 1
+  }
+  return stats
 }
