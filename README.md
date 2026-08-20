@@ -13,6 +13,11 @@
 - **Kinetic UX** — scroll reveals, magnetic CTAs, count-up score animation, reduced-motion support.
 - **Sign in (Supabase Auth)** — email OTP is live out of the box; phone OTP is wired and shows a graceful "needs an SMS provider" message until a paid provider (e.g. Twilio) is enabled in the Supabase dashboard. The session token lives on your device (localStorage) and is removable by logging out or clearing site data. Signed-in analyses are saved to your account (metrics + filename only — never the resume text) so you can review them in your personal dashboard; sign out or delete your history any time.
 - **Optional LLM feedback tier** — env-gated (`VITE_ENABLE_LLM`, default **off**); when enabled, a serverless function calls an OpenAI-compatible LLM with the API key **server-side only**.
+- **Placement Assistant (Core 4 modules)** — for students, on top of the analyser:
+  1. **Student profile** — academic details (CGPA, department, semester, backlogs), skills, certifications, programming languages, portfolio/GitHub/LinkedIn links, target role; completeness meter.
+  2. **AI placement chatbot** — ask "Am I eligible for IBM?" and get a deterministic eligibility verdict (computed from your profile against seeded company criteria — the LLM only words it, never decides it) plus a conversational answer; history persists per account.
+  3. **Resume-analyzer completion** — grammar checking (`POST /api/grammar`) and AI-generated improvement suggestions on top of the existing ATS score.
+  4. **Placement dashboard** — readiness score (resume + skill coverage + profile completeness), eligible-company list with reasons, applications tracker, skill progress, Phase-2 placeholder cards.
 - **Hardened** — strict Content-Security-Policy injected at build time, `npm audit` clean, pdf.js lazy-loaded as a separate chunk (LCP ~256 ms), full keyboard-only flow with visible focus indicators.
 
 ## Stack
@@ -55,8 +60,30 @@ VITE_ENABLE_LLM=true
 **3. Behavior**
 
 - With the gate off: the "AI Feedback" section is hidden entirely and the literal `/api/analyze` string is stripped from the built bundle (grep-verified).
-- With the gate on: after analysis, a "Get AI feedback" button appears → POST `{ text }` to `/api/analyze` → the serverless function calls the LLM and returns `{ summary, strengths[], improvements[], suggestions[] }`.
-- The function enforces POST-only (405), a 100 KB body limit (413), a 10 s timeout (504), and never logs or persists resume text. Upstream/malformed responses degrade to a friendly "AI feedback is temporarily unavailable" — the core report is unaffected.
+- With the gate on: after analysis, a "Get AI feedback" button appears → POST `{ text }` to `/api/analyze` → the serverless function calls the LLM and returns `{ summary, strengths[], improvements[], suggestions[] }`. The same gate also enables the **grammar checker** (`POST /api/grammar` → `{ issues: [{ message, suggestion, context }] }`) and the **placement chatbot** (`POST /api/chat` → `{ reply, eligibility[] }`).
+- The functions enforce POST-only (405), body limits (413), a 10 s timeout (504), and never log or persist resume text. Upstream/malformed responses degrade to a friendly "AI feedback is temporarily unavailable" — the core report is unaffected.
+
+## Placement Assistant (Core 4 modules)
+
+The analyser is extended with four student-placement modules (see `HANDOFF.md` → "Placement Assistant (Core 4)" for the full design, decisions D1–D12, and the Phase-2 list):
+
+1. **Student profile** (`Profile` in the signed-in header) — academic details, skills, certifications, languages, links, target role; completeness meter; saved to `student_profiles` (RLS: owner only).
+2. **AI placement chatbot** (`Assistant` in the signed-in header) — deterministic eligibility against 8 seeded companies (IBM, TCS, Infosys, Wipro, Deloitte, Accenture, Amazon, Microsoft) + LLM conversation; history in `chatbot_messages` (RLS: owner only).
+3. **Resume-analyzer completion** — grammar issues checklist + AI improvement cards in the AI feedback section (gate-on only).
+4. **Placement dashboard** — readiness score, eligible companies, applications tracker, skill progress, Phase-2 placeholders.
+
+**Setup** — the placement tables are created by `.omo/scripts/migrate-placement.mjs` (Management API, `SUPABASE_PAT` from `.env.local`, never committed; same pattern as `migrate-resume-analyses.mjs`). The AI modules need the LLM env vars above **and** a serverless host (Vercel) — GitHub Pages cannot run `api/` functions. Server-side env vars for the host's store:
+
+| Env var | Default | Purpose |
+|---|---|---|
+| `LLM_API_KEY` | *(none — required)* | API key for the LLM provider. **Never set in the client.** |
+| `LLM_MODEL` | `gpt-4o-mini` | Model name (any OpenAI-compatible chat-completions model). |
+| `LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible endpoint. |
+| `LLM_TIMEOUT_MS` | `10000` | Upstream call timeout before the function returns 504. |
+| `SUPABASE_URL` | *(none — required)* | Supabase project URL (server-side reads). |
+| `SUPABASE_SERVICE_ROLE_KEY` | *(none — required)* | Server-only key for `api/chat.ts` to load profiles/companies. **Never in the client.** |
+
+**Privacy stance (changed for these modules, D9)** — the placement modules store student profile data, chat history, and applications per account (that is their purpose). Resume **text** is still never stored — analysis stays client-side; only metrics + filename are saved, as before.
 
 ## Sign in (Supabase Auth)
 
@@ -84,29 +111,40 @@ VITE_SUPABASE_ANON_KEY=<your-anon-key>
 
 ## Deployment
 
-Deploy to Vercel (or any static host) — the production build is a static site plus optional `api/` serverless functions:
+**Vercel is the primary host** (required for the AI modules — GitHub Pages cannot run `api/` functions):
 
 - Build command: `npm run build` (output: `dist/`).
-- `vercel.json` pins `outputDirectory: dist` (the app is a single page with anchor links — no SPA rewrites needed).
+- `vercel.json` pins `outputDirectory: dist` (the app is a single page with anchor links — no SPA rewrites needed) and routes `api/*` to serverless functions.
 - The Content-Security-Policy is injected into `dist/index.html` at build time — no host header config required.
-- No `.env*` files are committed; secrets live in the host's environment-variable store.
+- No `.env*` files are committed; secrets live in the host's environment-variable store. Set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (client, inlined at build) and the server vars from the Placement Assistant table above.
+- **GitHub Pages remains a static mirror only** (deployed at `https://jeremygideonbareh.github.io/resume-analyser/`) — the analyser works there, but the AI modules (chat/grammar/improvements) require the Vercel deployment.
 
 ## Project structure
 
 ```
 api/analyze.ts              # Optional serverless LLM proxy (env-gated)
+api/chat.ts                 # Placement chatbot: JWT auth, deterministic eligibility, LLM reply, guards
+api/grammar.ts              # Grammar-check API for resume text (strict-JSON LLM)
 src/
   components/               # UI + sections + motion primitives
+    ProfileView.tsx         # Student profile form + completeness meter
+    ChatView.tsx            # Placement chatbot UI + eligibility cards
+    dashboard.tsx           # Placement dashboard (readiness, eligible companies, applications)
   lib/
     parsing.ts              # PDF/DOCX/TXT extraction (pdfjs lazy-loaded)
     analysis.ts             # Rule-based scoring engine + feedback
     skills-lexicon.ts       # 200+ detected skills (swap point)
     llm.ts / llm-types.ts   # LLM gate + client fetch
+    placement-types.ts      # StudentProfile, Company, ChatMessage, Application, GrammarIssue
+    eligibility.ts          # Deterministic eligibility evaluator (client copy; D12)
+    readiness.ts            # Readiness score formula (D8)
+    chat.ts                 # postChatMessage + loadConversation
   test/fixtures/            # QA fixtures (strong / weak / sample)
 .omo/                       # Work plan, evidence, notepads (internal)
 ```
 
 ## Privacy
 
-- Resume text never leaves the browser unless **you** enable the LLM tier, in which case it is sent only to your own `api/analyze` function and only when a user clicks "Get AI feedback".
-- No analytics, no cookies. Resume text never leaves the browser unless **you** enable the LLM tier. Analyses run while signed in are saved to your account (metrics + filename only — never the resume text) so you can review them in your dashboard; sign out or delete your history any time. Guests: nothing is stored. See `HANDOFF.md` for the full design rationale.
+- Resume text never leaves the browser unless **you** enable the LLM tier, in which case it is sent only to your own `api/analyze`/`api/grammar` functions and only when a user clicks the relevant button.
+- No analytics, no cookies. Analyses run while signed in are saved to your account (metrics + filename only — never the resume text) so you can review them in your dashboard; sign out or delete your history any time. Guests: nothing is stored.
+- **Placement modules (D9):** student profile data, chat history, and applications ARE stored per account — that is their purpose (RLS: owner-only on every table). Resume text is still never stored. See `HANDOFF.md` for the full design rationale.
