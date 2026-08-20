@@ -1,0 +1,5 @@
+﻿PLACEMENT WAVE - T4.2 AI feedback enhancement - 2026-08-20 23:30:27
+Files: src/lib/llm-types.ts (GrammarIssue additive), src/components/AiFeedbackSection.tsx (grammar issues + improvement cards), api/analyze.ts (prompt text only), tests
+Tests: AiFeedbackSection.test.tsx (7 - grammar fetch, issues render, improvements render, gate-off hides all, error fallback, clipboard copy)
+Result: PASS (part of full suite 243 PASS / 0 FAIL)
+Gate grep: /api/grammar literal absent from dist when VITE_ENABLE_LLM off (grep-verified in T6.1)

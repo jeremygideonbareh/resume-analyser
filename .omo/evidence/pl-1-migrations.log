@@ -1,0 +1,11 @@
+﻿PLACEMENT WAVE - T1.1/T1.2 Migration + Seed - 2026-08-20 23:30:27
+Script: .omo/scripts/migrate-placement.mjs (gitignored, Management API database/query with SUPABASE_PAT)
+Run 1: FAILED - 42601 syntax error at or near "not" (create policy IF NOT EXISTS invalid on PG < 18)
+Fix: all 11 policy statements changed to plain 'create policy "..."' (matches migrate-resume-analyses.mjs pattern)
+Run 2: SUCCESS
+Verification SELECTs:
+  student_profiles: 0 rows
+  companies: 8 rows (IBM, TCS, Infosys, Wipro, Deloitte, Accenture, Amazon, Microsoft)
+  chatbot_messages: 0 rows
+  applications: 0 rows
+Re-run: idempotent (no duplicate companies - ON CONFLICT on name)

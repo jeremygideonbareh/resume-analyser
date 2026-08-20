@@ -1,0 +1,4 @@
+﻿PLACEMENT WAVE - T1.3 Eligibility + Types - 2026-08-20 23:30:27
+Files: src/lib/placement-types.ts, src/lib/eligibility.ts, src/lib/__tests__/eligibility.test.ts
+Tests: eligibility.test.ts - 8 cases (eligible, ineligible-per-criteria cgpa/backlogs/skills, empty profile, null criteria)
+Result: PASS (part of full suite 243 PASS / 0 FAIL)

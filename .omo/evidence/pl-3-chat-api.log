@@ -1,0 +1,5 @@
+﻿PLACEMENT WAVE - T3.1 api/chat.ts - 2026-08-20 23:30:27
+Files: api/chat.ts, api/__tests__/chat.test.ts
+Tests: 13 cases - POST-only, auth (JWT), eligibility math, prompt contains profile+company facts, persistence, rate-limit, oversize, timeout fallback, no key leakage
+Result: PASS (part of full suite 243 PASS / 0 FAIL)
+Typecheck fixes: .ts import extensions, typed res.json() casts with non-null assertions

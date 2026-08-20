@@ -1,0 +1,4 @@
+﻿PLACEMENT WAVE - T4.1 api/grammar.ts - 2026-08-20 23:30:27
+Files: api/grammar.ts, api/__tests__/grammar.test.ts
+Tests: 12 cases - shape validation, JSON-fence stripping, oversize, timeout, fallback
+Result: PASS (part of full suite 243 PASS / 0 FAIL)

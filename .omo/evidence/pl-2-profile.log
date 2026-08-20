@@ -1,0 +1,5 @@
+﻿PLACEMENT WAVE - T2.2 Profile load/save + completeness - 2026-08-20 23:30:27
+Files: ProfileView.tsx (load on mount, upsert on save, completeness meter, validation)
+Tests: ProfileView.test.tsx (11), readiness.test.ts (profileCompletenessScore cases)
+Result: PASS (part of full suite 243 PASS / 0 FAIL)
+Fixes this session: sonner toast mock (vi.hoisted), exact label queries, toastMock.error assertion, unused beforeEach removed

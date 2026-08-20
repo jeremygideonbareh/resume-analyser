@@ -1,0 +1,5 @@
+﻿PLACEMENT WAVE - T5.1/T5.2 Dashboard - 2026-08-20 23:30:27
+Files: src/lib/readiness.ts, src/lib/dashboard-data.ts (eligibleCompanies/readinessStats/applicationStats), src/components/dashboard.tsx (readiness KPI, eligible companies, applications, skill progress, Phase-2 placeholders), tests
+Tests: readiness.test.ts (12), dashboard-data.test.ts (+6), Dashboard.test.tsx (9)
+Result: PASS (part of full suite 243 PASS / 0 FAIL)
+Root-cause fix: dashboard.tsx:268 rendered {readiness.band} (full ScoreBand object) as React child -> fixed to {readiness.band.label}
