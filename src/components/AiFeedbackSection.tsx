@@ -1,24 +1,57 @@
 import { useState } from 'react'
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react'
-import { LLM_ENABLED, fetchAiFeedback } from '@/lib/llm'
-import type { AiFeedback } from '@/lib/llm-types'
+import { AlertCircle, Check, Copy, Loader2, Sparkles } from 'lucide-react'
+import { fetchAiFeedback, fetchGrammarIssues, LLM_ENABLED } from '@/lib/llm'
+import type { AiFeedback, GrammarIssue } from '@/lib/llm-types'
 
 type FeedbackState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'done'; feedback: AiFeedback }
+  | { status: 'done'; feedback: AiFeedback; issues: GrammarIssue[] }
   | { status: 'error' }
 
 interface AiFeedbackSectionProps {
   text: string
 }
 
+/** Copy text to the clipboard with a legacy fallback for older browsers. */
+async function copyText(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+      return true
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = value
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(textarea)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 /**
  * "AI Feedback (beta)" card — only renders when the env gate is on
  * (VITE_ENABLE_LLM=true). Never appears or fires requests otherwise.
+ *
+ * T4.2 — on "Get AI feedback" it fetches the summary/strengths/improvements
+ * AND the grammar issues in parallel, then renders:
+ *   - the existing summary + strengths,
+ *   - grammar issues as a checklist (context, message, suggestion, Apply),
+ *   - improvements + suggestions as actionable "AI-generated resume
+ *     improvements" cards with a copy affordance.
  */
 export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
   const [state, setState] = useState<FeedbackState>({ status: 'idle' })
+  const [copied, setCopied] = useState<string | null>(null)
 
   if (!LLM_ENABLED) return null
 
@@ -26,10 +59,29 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
     if (state.status === 'loading') return
     setState({ status: 'loading' })
     try {
-      const feedback = await fetchAiFeedback(text)
-      setState({ status: 'done', feedback })
+      const [feedback, issues] = await Promise.all([
+        fetchAiFeedback(text),
+        fetchGrammarIssues(text),
+      ])
+      setState({ status: 'done', feedback, issues })
     } catch {
       setState({ status: 'error' })
+    }
+  }
+
+  const applySuggestion = async (issue: GrammarIssue) => {
+    const ok = await copyText(issue.suggestion)
+    if (ok) {
+      setCopied(issue.suggestion)
+      window.setTimeout(() => setCopied(null), 2000)
+    }
+  }
+
+  const copyCard = async (value: string) => {
+    const ok = await copyText(value)
+    if (ok) {
+      setCopied(value)
+      window.setTimeout(() => setCopied(null), 2000)
     }
   }
 
@@ -76,7 +128,7 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
       )}
 
       {state.status === 'done' && (
-        <div className="mt-3 space-y-4">
+        <div className="mt-3 space-y-5">
           <p className="text-sm leading-relaxed text-ink">
             {state.feedback.summary}
           </p>
@@ -85,16 +137,78 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
             items={state.feedback.strengths}
             tone="emerald"
           />
-          <AiFeedbackList
-            title="Improvements"
-            items={state.feedback.improvements}
-            tone="amber"
-          />
-          <AiFeedbackList
-            title="Suggestions"
-            items={state.feedback.suggestions}
-            tone="ink"
-          />
+
+          {state.issues.length > 0 && (
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+                Grammar issues
+              </p>
+              <ul className="mt-2 space-y-2">
+                {state.issues.map((issue, i) => (
+                  <li
+                    key={`${issue.message}-${i}`}
+                    className="rounded-xl border border-ink/10 bg-surface/60 p-3"
+                  >
+                    <p className="text-xs italic text-ink-soft">
+                      “{issue.context}”
+                    </p>
+                    <p className="mt-1.5 text-sm text-ink">{issue.message}</p>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-ink-soft">
+                        Suggestion: <span className="text-ink">{issue.suggestion}</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void applySuggestion(issue)}
+                        className="flex items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30"
+                      >
+                        {copied === issue.suggestion ? (
+                          <>
+                            <Check className="h-3 w-3 text-accent" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Apply
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(state.feedback.improvements.length > 0 ||
+            state.feedback.suggestions.length > 0) && (
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+                AI-generated resume improvements
+              </p>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {state.feedback.improvements.map((item, i) => (
+                  <ImprovementCard
+                    key={`improvement-${i}`}
+                    label="Improvement"
+                    value={item}
+                    copied={copied === item}
+                    onCopy={() => void copyCard(item)}
+                  />
+                ))}
+                {state.feedback.suggestions.map((item, i) => (
+                  <ImprovementCard
+                    key={`suggestion-${i}`}
+                    label="Suggestion"
+                    value={item}
+                    copied={copied === item}
+                    onCopy={() => void copyCard(item)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -132,6 +246,47 @@ function AiFeedbackList({
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function ImprovementCard({
+  label,
+  value,
+  copied,
+  onCopy,
+}: {
+  label: string
+  value: string
+  copied: boolean
+  onCopy: () => void
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-ink/10 bg-surface/60 p-3">
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+          {label}
+        </p>
+        <p className="mt-1 text-sm leading-snug text-ink">{value}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label={`Copy ${label.toLowerCase()}`}
+        className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full border border-ink/15 px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30"
+      >
+        {copied ? (
+          <>
+            <Check className="h-3 w-3 text-accent" />
+            Copied
+          </>
+        ) : (
+          <>
+            <Copy className="h-3 w-3" />
+            Copy
+          </>
+        )}
+      </button>
     </div>
   )
 }

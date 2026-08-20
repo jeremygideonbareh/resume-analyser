@@ -29,7 +29,9 @@ Analyze the resume text provided by the user and respond with STRICT JSON only â
 no prose, no markdown fences â€” matching exactly:
 {"summary": string, "strengths": string[], "improvements": string[], "suggestions": string[]}
 Summary: 2-3 sentences. Strengths: up to 5 short items. Improvements: up to 5
-actionable items. Suggestions: up to 3 general next steps.`
+actionable items phrased as concrete resume edits the student can apply directly
+(e.g. "Add metrics to your project bullets", "Move skills above education").
+Suggestions: up to 3 general next steps, each phrased as a specific action.`
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {

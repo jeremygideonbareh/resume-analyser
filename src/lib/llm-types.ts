@@ -9,3 +9,13 @@ export interface AiFeedback {
   improvements: string[]
   suggestions: string[]
 }
+
+/**
+ * Grammar issue shape returned by `POST /api/grammar` (T4.1/T4.2).
+ * Additive — existing consumers of `AiFeedback` are unaffected.
+ */
+export interface GrammarIssue {
+  message: string
+  suggestion: string
+  context: string
+}

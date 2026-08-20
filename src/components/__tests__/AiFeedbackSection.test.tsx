@@ -8,6 +8,7 @@ const { llmMock } = vi.hoisted(() => ({
   llmMock: {
     LLM_ENABLED: true,
     fetchAiFeedback: vi.fn(),
+    fetchGrammarIssues: vi.fn(),
   },
 }))
 
@@ -16,6 +17,7 @@ vi.mock('@/lib/llm', () => ({
     return llmMock.LLM_ENABLED
   },
   fetchAiFeedback: llmMock.fetchAiFeedback,
+  fetchGrammarIssues: llmMock.fetchGrammarIssues,
 }))
 
 afterEach(() => {
@@ -23,6 +25,21 @@ afterEach(() => {
   vi.clearAllMocks()
   llmMock.LLM_ENABLED = true
 })
+
+const feedback = {
+  summary: 'Strong resume overall.',
+  strengths: ['Clear headings'],
+  improvements: ['Add metrics to your project bullets'],
+  suggestions: ['Add a professional summary section'],
+}
+
+const issues = [
+  {
+    message: 'Possible typo',
+    suggestion: 'Change "recieve" to "receive"',
+    context: 'recieve the award',
+  },
+]
 
 describe('AiFeedbackSection', () => {
   it('renders nothing when the LLM tier is disabled', () => {
@@ -32,26 +49,72 @@ describe('AiFeedbackSection', () => {
     expect(screen.queryByText(/AI Feedback/)).toBeNull()
   })
 
-  it('shows the CTA, POSTs the resume text, and renders feedback', async () => {
-    llmMock.fetchAiFeedback.mockResolvedValue({
-      summary: 'Strong resume overall.',
-      strengths: ['Clear headings'],
-      improvements: ['Add metrics'],
-      suggestions: ['Add a summary'],
-    })
+  it('POSTs the resume text to both endpoints and renders feedback', async () => {
+    llmMock.fetchAiFeedback.mockResolvedValue(feedback)
+    llmMock.fetchGrammarIssues.mockResolvedValue(issues)
 
     render(<AiFeedbackSection text="My resume text" />)
     fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
 
     expect(llmMock.fetchAiFeedback).toHaveBeenCalledWith('My resume text')
+    expect(llmMock.fetchGrammarIssues).toHaveBeenCalledWith('My resume text')
     expect(await screen.findByText('Strong resume overall.')).toBeInTheDocument()
     expect(screen.getByText('Clear headings')).toBeInTheDocument()
-    expect(screen.getByText('Add metrics')).toBeInTheDocument()
-    expect(screen.getByText('Add a summary')).toBeInTheDocument()
   })
 
-  it('renders a friendly message when the request fails', async () => {
-    llmMock.fetchAiFeedback.mockRejectedValue(new Error('boom'))
+  it('renders grammar issues as a checklist with context, message, and Apply', async () => {
+    llmMock.fetchAiFeedback.mockResolvedValue(feedback)
+    llmMock.fetchGrammarIssues.mockResolvedValue(issues)
+
+    render(<AiFeedbackSection text="My resume text" />)
+    fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
+
+    expect(await screen.findByText('Grammar issues')).toBeInTheDocument()
+    expect(screen.getByText('“recieve the award”')).toBeInTheDocument()
+    expect(screen.getByText('Possible typo')).toBeInTheDocument()
+    expect(screen.getByText(/Change "recieve" to "receive"/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /apply/i })).toBeInTheDocument()
+  })
+
+  it('copies the suggestion to the clipboard when Apply is clicked', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    })
+    llmMock.fetchAiFeedback.mockResolvedValue(feedback)
+    llmMock.fetchGrammarIssues.mockResolvedValue(issues)
+
+    render(<AiFeedbackSection text="My resume text" />)
+    fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
+
+    const apply = await screen.findByRole('button', { name: /apply/i })
+    fireEvent.click(apply)
+
+    await vi.waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('Change "recieve" to "receive"')
+    })
+    expect(await screen.findByText('Copied')).toBeInTheDocument()
+  })
+
+  it('renders improvements and suggestions as actionable cards', async () => {
+    llmMock.fetchAiFeedback.mockResolvedValue(feedback)
+    llmMock.fetchGrammarIssues.mockResolvedValue([])
+
+    render(<AiFeedbackSection text="My resume text" />)
+    fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
+
+    expect(
+      await screen.findByText('AI-generated resume improvements'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Add metrics to your project bullets')).toBeInTheDocument()
+    expect(screen.getByText('Add a professional summary section')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /copy/i }).length).toBe(2)
+  })
+
+  it('renders a friendly message when either request fails', async () => {
+    llmMock.fetchAiFeedback.mockResolvedValue(feedback)
+    llmMock.fetchGrammarIssues.mockRejectedValue(new Error('boom'))
 
     render(<AiFeedbackSection text="My resume text" />)
     fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
@@ -61,12 +124,19 @@ describe('AiFeedbackSection', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows a loading state while the request is in flight', async () => {
-    let resolve!: (v: unknown) => void
+  it('shows a loading state while the requests are in flight', async () => {
+    let resolveFeedback!: (v: unknown) => void
+    let resolveIssues!: (v: unknown) => void
     llmMock.fetchAiFeedback.mockImplementation(
       () =>
         new Promise((r) => {
-          resolve = r
+          resolveFeedback = r
+        }),
+    )
+    llmMock.fetchGrammarIssues.mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolveIssues = r
         }),
     )
 
@@ -75,12 +145,8 @@ describe('AiFeedbackSection', () => {
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
-    resolve({
-      summary: 's',
-      strengths: [],
-      improvements: [],
-      suggestions: [],
-    })
+    resolveFeedback({ summary: 's', strengths: [], improvements: [], suggestions: [] })
+    resolveIssues([])
     expect(await screen.findByText('s')).toBeInTheDocument()
   })
 })
