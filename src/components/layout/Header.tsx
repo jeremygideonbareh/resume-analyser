@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { FlippingWordSwap } from '@/components/ui/flipping-word-swap'
 import { maskIdentifier, type AuthUser } from '@/lib/session'
 
-export type AppView = 'landing' | 'dashboard'
+export type AppView = 'landing' | 'dashboard' | 'profile' | 'chat'
 
 interface HeaderProps {
   /** Signed-in user from useAuthSession(), or null when signed out. */
@@ -131,14 +131,32 @@ export function Header({
             </button>
           )}
           {user && (
-            <button
-              type="button"
-              onClick={() => onNavigate('dashboard')}
-              aria-current={view === 'dashboard' ? 'page' : undefined}
-              className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
-            >
-              Dashboard
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onNavigate('profile')}
+                aria-current={view === 'profile' ? 'page' : undefined}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+              >
+                Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('chat')}
+                aria-current={view === 'chat' ? 'page' : undefined}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+              >
+                Assistant
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('dashboard')}
+                aria-current={view === 'dashboard' ? 'page' : undefined}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+              >
+                Dashboard
+              </button>
+            </>
           )}
           <FlippingWordSwap
             word1="Analyse"

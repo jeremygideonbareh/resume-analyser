@@ -99,4 +99,74 @@ describe('Header — signed-in state', () => {
       'page',
     )
   })
+
+  it('shows Profile and Assistant links when signed in', () => {
+    render(<Header user={emailUser} onSignIn={vi.fn()} onSignOut={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /assistant/i })).toBeInTheDocument()
+  })
+
+  it('calls onNavigate with "profile" when the Profile link is clicked', () => {
+    const onNavigate = vi.fn()
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        onNavigate={onNavigate}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /profile/i }))
+    expect(onNavigate).toHaveBeenCalledWith('profile')
+  })
+
+  it('calls onNavigate with "chat" when the Assistant link is clicked', () => {
+    const onNavigate = vi.fn()
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        onNavigate={onNavigate}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /assistant/i }))
+    expect(onNavigate).toHaveBeenCalledWith('chat')
+  })
+
+  it('marks the Profile link as current when the profile view is active', () => {
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        view="profile"
+      />,
+    )
+    expect(screen.getByRole('button', { name: /profile/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+  })
+
+  it('marks the Assistant link as current when the chat view is active', () => {
+    render(
+      <Header
+        user={emailUser}
+        onSignIn={vi.fn()}
+        onSignOut={vi.fn()}
+        view="chat"
+      />,
+    )
+    expect(screen.getByRole('button', { name: /assistant/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+  })
+
+  it('does not show Profile or Assistant links when signed out', () => {
+    render(<Header user={null} onSignIn={vi.fn()} onSignOut={vi.fn()} />)
+    expect(screen.queryByRole('button', { name: /profile/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /assistant/i })).toBeNull()
+  })
 })
