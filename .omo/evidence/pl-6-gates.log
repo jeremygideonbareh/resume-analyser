@@ -1,7 +1,8 @@
-﻿PLACEMENT WAVE - T6.1 Full gates + security grep - 2026-08-20 23:30:27
+﻿PLACEMENT WAVE - T6.1 Full gates + security grep (FINAL, post-ChatView-fix) - 2026-08-20 23:44:51
 typecheck: 0 errors (tsc -b --noEmit)
 lint: 0 new (oxlint; pre-existing warnings only: ui/button.tsx:67, ui/sidebar.tsx:699, ui/badge.tsx:49 only-export-components, scripts/make-fixtures.mjs:35 unused font)
-test: 243 PASS / 0 FAIL (npx vitest --pool=threads run; full log C:\Users\cloud\AppData\Local\rtk\tee\1787247380_vitest_run.log)
-build: OK (built in 10.23s; chunk-size warning pre-existing)
-Security grep (tracked files): LLM_API_KEY -> 0 real hits; sbp_ -> only masked refs (.env.example:31 placeholder, .omo/ drafts/evidence/notepads, HANDOFF.md); service_role -> 0 real hits; gho_ -> 0 real hits
+test: 252 PASS / 0 FAIL (26 files) - npx vitest --pool=threads run
+  NOTE: earlier run reported 243 PASS but had 1 failed SUITE (ChatView.test.tsx) - module resolution + scrollIntoView jsdom crash; fixed in 5bc3db0
+build: OK (built in 2.68s; chunk-size warning pre-existing)
+Security grep (tracked files): LLM_API_KEY -> only .env.example:11 placeholder + HANDOFF doc text; sbp_ -> only .env.example:31 placeholder + HANDOFF doc text; service_role -> only HANDOFF doc text; gho_ -> 0 real hits
 dist grep: no secrets
