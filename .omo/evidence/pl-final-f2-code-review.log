@@ -1,0 +1,10 @@
+﻿PLACEMENT WAVE - F2 CODE REVIEW - APPROVE - 2026-08-20 23:50:09
+- Every changed file read line-by-line (16 implementation + 11 test files)
+- Logic matches D1-D12: deterministic eligibility (D7) server+client, readiness formula (D8), privacy stance (D9), guards (D11), duplication intentional (D12)
+- No stubs/hardcoded values; PhaseTwoCard is an explicit "Coming in Phase 2" placeholder
+- API keys server-side only (dist grep + code read: LLM_API_KEY read only in api/*.ts)
+- RLS policies correct on all 4 new tables (student_profiles, companies, chatbot_messages, applications - owner-only)
+- Eligibility duplication flagged as intentional (D12)
+- No Phase-2 features implemented
+- ChatView fixes this wave: module mock import pattern (require -> import) + scrollIntoView jsdom guard (5bc3db0)
+VERDICT: APPROVE

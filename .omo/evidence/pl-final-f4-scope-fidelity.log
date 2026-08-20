@@ -1,0 +1,11 @@
+﻿PLACEMENT WAVE - F4 SCOPE FIDELITY - APPROVE - 2026-08-20 23:50:09
+- Phase-2 module names grep (interview/aptitude/coding/notification/learning/admin/recruiter/flutter/pwa):
+  * interview -> application STATUS enum + "interview prep" chat copy + PhaseTwoCard placeholder (explicit)
+  * aptitude/coding -> PhaseTwoCard placeholders only
+  * recruiter -> marketing copy only (SampleReport, analysis.ts)
+  * pwa/flutter -> skills-lexicon keywords only (resume skill detection)
+  * admin -> test comment only
+  -> no functional Phase-2 code
+- Hero copy + privacy copy truthful (README lines 3/86/107/150, Footer line 25, history.ts comment: resume text never stored; placement data stored per-account by design D9)
+- No raw resume-text storage: parsed.text only in comments + word-count display (report-format.ts), never inserted
+VERDICT: APPROVE

@@ -1,0 +1,7 @@
+﻿PLACEMENT WAVE - F1 PLAN COMPLIANCE - APPROVE - 2026-08-20 23:50:09
+- Every todo T1.1-T6.5 marked with evidence present in .omo/evidence/pl-*.log (pl-1-migrations, pl-1-eligibility, pl-2-nav, pl-2-profile, pl-3-chat-api, pl-3-chat-ui, pl-4-grammar-api, pl-4-ai-improvements, pl-5-dashboard, pl-6-gates)
+- Fresh gates: typecheck 0 / lint 0 new (4 pre-existing warnings) / tests 252 PASS 0 FAIL (26 files) / build 0
+- Secrets grep zero (LLM_API_KEY/sbp_/service_role/gho_ -> only masked .env.example placeholders + HANDOFF doc text)
+- dist grep clean
+- Commits: 11 (911564f..5bc3db0) pushed to feat/placement-assistant, verified git ls-remote
+VERDICT: APPROVE
