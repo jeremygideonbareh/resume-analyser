@@ -1,0 +1,16 @@
+﻿PLACEMENT WAVE - T6.2 Vercel deploy - LIVE + VERIFIED - 2026-08-21 11:22:26
+- Vercel project: cloudlyconfusing-4947s-projects/resume-lab
+- Production URL: https://resume-lab-one.vercel.app
+- Env vars: LLM_API_KEY (Groq), LLM_BASE_URL (https://api.groq.com/openai/v1), LLM_MODEL (llama-3.3-70b-versatile), VITE_ENABLE_LLM=true, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+- FIXES DURING DEPLOY:
+  1. base path: '/resume-analyser/' (GitHub Pages) -> conditional process.env.VERCEL ? '/' : '/resume-analyser/' (5c2da5c)
+  2. api imports: .ts extension -> .js extension for nodenext + Vercel bundler (44a5475)
+  3. api handlers: Web API (request: Request) -> Vercel Node.js (req: VercelRequest, res: VercelResponse) signature (30a3a99) - FIXED "request.text is not a function" runtime crash
+  4. @vercel/node added as devDependency
+- Verification:
+  - Site: HTTP 200
+  - Assets: /assets/index-*.js + .css -> HTTP 200 (no 404s)
+  - /api/chat (no auth) -> 401 (correct)
+  - /api/grammar (empty text) -> 400 (correct)
+  - /api/analyze (empty text) -> 400 (correct)
+- Tests: 252 PASS / 0 FAIL (26 files) after handler rewrite
