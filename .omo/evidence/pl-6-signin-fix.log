@@ -1,0 +1,6 @@
+﻿PLACEMENT WAVE - Sign-in fix on Vercel - DONE - 2026-08-21 11:37:08
+- Root cause: VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY were in .env.local (local dev) but NEVER set in Vercel env. VITE_ vars are inlined at build time - without them getSupabase() throws "Supabase is not configured" and sign-in breaks.
+- Fix: added both to Vercel production env, redeployed.
+- Verification: deployed JS bundle contains "mhkieytinkgouhvwrmbp.supabase.co" (INLINED) + anon key (INLINED).
+- Supabase auth endpoint reachable (401 without apikey header = expected).
+- NOTE: user should add https://resume-lab-one.vercel.app to Supabase Auth > URL Config (Site URL + Redirect URLs) for OTP/redirect links.
