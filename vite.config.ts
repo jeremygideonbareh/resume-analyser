@@ -1,11 +1,11 @@
-/// <reference types="vitest/config" />
+﻿/// <reference types="vitest/config" />
 import path from 'node:path'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 /**
- * CSP meta tag (Todo 5.2) — injected ONLY into the production build.
+ * CSP meta tag (Todo 5.2) â€” injected ONLY into the production build.
  * Dev is exempt: Vite's react-refresh preamble and HMR websocket would be
  * blocked by a strict policy, so the meta is applied at build time via
  * transformIndexHtml instead of being hardcoded in index.html.
@@ -37,9 +37,9 @@ function cspMetaPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages serves the app under /resume-analyser/ — assets must be
+  // GitHub Pages serves the app under /resume-analyser/ â€” assets must be
   // base-prefixed or they 404 on the deployed site (Todo 4.3, 2026-08-19).
-  base: '/resume-analyser/',
+  base: process.env.VERCEL ? '/' : '/resume-analyser/',
   plugins: [react(), tailwindcss(), cspMetaPlugin()],
   resolve: {
     alias: {
