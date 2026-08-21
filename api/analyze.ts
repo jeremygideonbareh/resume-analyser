@@ -1,54 +1,59 @@
 ﻿/**
- * Serverless LLM feedback endpoint (Todo 5.1) â€” env-gated, key server-side.
+ * Serverless LLM feedback endpoint (Todo 5.1) — env-gated, key server-side.
  *
- * Runs on both Vercel and Netlify:
- *   - Vercel:  `api/analyze.ts` â†’ default-export Web Request/Response handler
- *   - Netlify: `api/analyze.ts` â†’ default-export async handler (Functions v2)
+ * Runs on Vercel (Node.js runtime, `(req, res)` handler signature).
  *
  * Env contract (server-side only, never bundled to the client):
- *   - LLM_API_KEY     required â€” rejects with 503 when missing
+ *   - LLM_API_KEY     required — rejects with 503 when missing
  *   - LLM_MODEL       optional, default "gpt-4o-mini"
  *   - LLM_BASE_URL    optional, default "https://api.openai.com/v1" (OpenAI-compatible)
  *   - LLM_TIMEOUT_MS  optional ops/test knob, default 10000 (10s timeout guard)
  *
  * Guards: 10s abort timeout (504), 100KB body limit (413), POST only (405).
  *
- * Privacy: resume text is used only for the single LLM completion â€” it is
+ * Privacy: resume text is used only for the single LLM completion — it is
  * never logged, never persisted, and never echoed back to the client.
  */
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { AiFeedback } from '../src/lib/llm-types.js'
-
 
 const MAX_BODY_BYTES = 100 * 1024 // 100KB request body limit
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 
 const SYSTEM_PROMPT = `You are a senior technical recruiter giving concise ATS-resume feedback.
-Analyze the resume text provided by the user and respond with STRICT JSON only â€”
-no prose, no markdown fences â€” matching exactly:
+Analyze the resume text provided by the user and respond with STRICT JSON only —
+no prose, no markdown fences — matching exactly:
 {"summary": string, "strengths": string[], "improvements": string[], "suggestions": string[]}
 Summary: 2-3 sentences. Strengths: up to 5 short items. Improvements: up to 5
 actionable items phrased as concrete resume edits the student can apply directly
 (e.g. "Add metrics to your project bullets", "Move skills above education").
 Suggestions: up to 3 general next steps, each phrased as a specific action.`
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return json({ error: 'method-not-allowed' }, 405)
+function json(res: VercelResponse, payload: unknown, status: number): void {
+  res.status(status).json(payload)
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<void> {
+  if (req.method !== 'POST') {
+    return json(res, { error: 'method-not-allowed' }, 405)
   }
 
   const apiKey = process.env.LLM_API_KEY
   if (!apiKey) {
-    return json({ error: 'llm-not-configured' }, 503)
+    return json(res, { error: 'llm-not-configured' }, 503)
   }
 
   const model = process.env.LLM_MODEL ?? DEFAULT_MODEL
   const baseUrl = process.env.LLM_BASE_URL ?? DEFAULT_BASE_URL
   const timeoutMs = Number(process.env.LLM_TIMEOUT_MS ?? 10_000)
 
-  const raw = await request.text()
+  const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
   if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
-    return json({ error: 'payload-too-large' }, 413)
+    return json(res, { error: 'payload-too-large' }, 413)
   }
 
   let text: string
@@ -56,10 +61,10 @@ export default async function handler(request: Request): Promise<Response> {
     const parsed = JSON.parse(raw) as { text?: unknown }
     text = typeof parsed.text === 'string' ? parsed.text : ''
   } catch {
-    return json({ error: 'bad-json' }, 400)
+    return json(res, { error: 'bad-json' }, 400)
   }
   if (text.trim().length === 0) {
-    return json({ error: 'empty-text' }, 400)
+    return json(res, { error: 'empty-text' }, 400)
   }
 
   const controller = new AbortController()
@@ -84,7 +89,7 @@ export default async function handler(request: Request): Promise<Response> {
     })
 
     if (!upstream.ok) {
-      return json({ error: 'llm-upstream-error' }, 502)
+      return json(res, { error: 'llm-upstream-error' }, 502)
     }
 
     const data = (await upstream.json()) as {
@@ -92,30 +97,23 @@ export default async function handler(request: Request): Promise<Response> {
     }
     const content = data.choices?.[0]?.message?.content
     if (!content) {
-      return json({ error: 'llm-empty-response' }, 502)
+      return json(res, { error: 'llm-empty-response' }, 502)
     }
 
     const feedback = parseFeedback(content)
     if (!feedback) {
-      return json({ error: 'llm-malformed-response' }, 502)
+      return json(res, { error: 'llm-malformed-response' }, 502)
     }
 
-    return json(feedback, 200)
+    return json(res, feedback, 200)
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      return json({ error: 'timeout' }, 504)
+      return json(res, { error: 'timeout' }, 504)
     }
-    return json({ error: 'internal' }, 500)
+    return json(res, { error: 'internal' }, 500)
   } finally {
     clearTimeout(timer)
   }
-}
-
-function json(payload: unknown, status: number): Response {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }
 
 /** Validate the LLM's JSON output strictly against the AiFeedback contract. */

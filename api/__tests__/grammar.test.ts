@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 /**
  * T4.1 — api/grammar.ts tests.
@@ -12,12 +13,31 @@ async function loadGrammar() {
   return await import('../grammar.ts')
 }
 
-function makeRequest(method: string, body?: unknown): Request {
-  return new Request('http://localhost/api/grammar', {
+function makeReq(method: string, body?: unknown): VercelRequest {
+  return {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+    headers: {},
+    body: body === undefined ? undefined : body,
+  } as VercelRequest
+}
+
+function makeRes() {
+  const res: Record<string, unknown> = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      this.statusCode = code
+      return this
+    },
+    json(payload: unknown) {
+      this.body = payload
+      return this
+    },
+  }
+  return res as unknown as VercelResponse & {
+    statusCode: number
+    body: unknown
+  }
 }
 
 const okUpstream = (content: string) =>
@@ -41,22 +61,23 @@ afterEach(() => {
 describe('api/grammar — guards', () => {
   it('rejects non-POST requests with 405', async () => {
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('GET'))
-    expect(res.status).toBe(405)
+    const res = makeRes()
+    await grammar.default(makeReq('GET'), res)
+    expect(res.statusCode).toBe(405)
   })
 
   it('rejects an oversized payload with 413', async () => {
     const grammar = await loadGrammar()
-    const res = await grammar.default(
-      makeRequest('POST', { text: 'x'.repeat(200 * 1024) }),
-    )
-    expect(res.status).toBe(413)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'x'.repeat(200 * 1024) }), res)
+    expect(res.statusCode).toBe(413)
   })
 
   it('rejects empty text with 400', async () => {
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: '   ' }))
-    expect(res.status).toBe(400)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: '   ' }), res)
+    expect(res.statusCode).toBe(400)
   })
 
   it('returns 504 on an upstream timeout', async () => {
@@ -65,15 +86,17 @@ describe('api/grammar — guards', () => {
       vi.fn().mockRejectedValue(new DOMException('Aborted', 'AbortError')),
     )
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'hello' }))
-    expect(res.status).toBe(504)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'hello' }), res)
+    expect(res.statusCode).toBe(504)
   })
 
   it('returns 502 on an upstream error status', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'hello' }))
-    expect(res.status).toBe(502)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'hello' }), res)
+    expect(res.statusCode).toBe(502)
   })
 })
 
@@ -94,18 +117,18 @@ describe('api/grammar — happy path', () => {
       ),
     )
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'Hello world' }))
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as {
-      issues: Array<{ message: string; suggestion: string; context: string }>
-    }
-    expect(body.issues).toEqual([
-      {
-        message: 'Missing comma',
-        suggestion: 'Hello, world',
-        context: 'Hello world',
-      },
-    ])
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'Hello world' }), res)
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual({
+      issues: [
+        {
+          message: 'Missing comma',
+          suggestion: 'Hello, world',
+          context: 'Hello world',
+        },
+      ],
+    })
   })
 
   it('strips markdown fences around the JSON', async () => {
@@ -114,18 +137,17 @@ describe('api/grammar — happy path', () => {
       okUpstream('```json\n{"issues": [{"message": "m", "suggestion": "s", "context": "c"}]}\n```'),
     )
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'x' }))
-    const body = (await res.json()) as {
-      issues: Array<{ message: string; suggestion: string; context: string }>
-    }
-    expect(body.issues).toEqual([{ message: 'm', suggestion: 's', context: 'c' }])
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'x' }), res)
+    expect(res.body).toEqual({ issues: [{ message: 'm', suggestion: 's', context: 'c' }] })
   })
 
   it('returns 502 on malformed JSON from the LLM', async () => {
     vi.stubGlobal('fetch', okUpstream('not json at all'))
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'x' }))
-    expect(res.status).toBe(502)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'x' }), res)
+    expect(res.statusCode).toBe(502)
   })
 
   it('returns 502 when an issue item is missing a required field', async () => {
@@ -134,16 +156,17 @@ describe('api/grammar — happy path', () => {
       okUpstream(JSON.stringify({ issues: [{ message: 'm' }] })),
     )
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'x' }))
-    expect(res.status).toBe(502)
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'x' }), res)
+    expect(res.statusCode).toBe(502)
   })
 
   it('never leaks the API key in the response', async () => {
     vi.stubGlobal('fetch', okUpstream('{"issues": []}'))
     const grammar = await loadGrammar()
-    const res = await grammar.default(makeRequest('POST', { text: 'x' }))
-    const text = await res.text()
-    expect(text).not.toContain('sk-test-secret-key')
+    const res = makeRes()
+    await grammar.default(makeReq('POST', { text: 'x' }), res)
+    expect(JSON.stringify(res.body)).not.toContain('sk-test-secret-key')
   })
 })
 

@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { StudentProfile, Company } from '../../src/lib/placement-types.ts'
+﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { StudentProfile, Company } from '../../src/lib/placement-types.js'
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(),
@@ -119,14 +120,33 @@ async function loadChat() {
   return await import('../chat.ts')
 }
 
-function makeRequest(method: string, body?: unknown, token?: string): Request {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (token) headers.Authorization = `Bearer ${token}`
-  return new Request('http://localhost/api/chat', {
+function makeReq(method: string, body?: unknown, token?: string): VercelRequest {
+  const headers: Record<string, string | string[] | undefined> = {}
+  if (token) headers.authorization = `Bearer ${token}`
+  return {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+    body: body === undefined ? undefined : body,
+  } as VercelRequest
+}
+
+function makeRes() {
+  const res: Record<string, unknown> = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      this.statusCode = code
+      return this
+    },
+    json(payload: unknown) {
+      this.body = payload
+      return this
+    },
+  }
+  return res as unknown as VercelResponse & {
+    statusCode: number
+    body: unknown
+  }
 }
 
 const okUpstream = (content: string) =>
@@ -154,16 +174,18 @@ describe('api/chat — guards', () => {
     const { createClient } = await import('@supabase/supabase-js')
     vi.mocked(createClient).mockReturnValue(makeMockClient().client as never)
     const chat = await loadChat()
-    const res = await chat.default(makeRequest('GET'))
-    expect(res.status).toBe(405)
+    const res = makeRes()
+    await chat.default(makeReq('GET'), res)
+    expect(res.statusCode).toBe(405)
   })
 
   it('rejects a missing token with 401', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     vi.mocked(createClient).mockReturnValue(makeMockClient().client as never)
     const chat = await loadChat()
-    const res = await chat.default(makeRequest('POST', { message: 'hi' }))
-    expect(res.status).toBe(401)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }), res)
+    expect(res.statusCode).toBe(401)
   })
 
   it('rejects an invalid token with 401', async () => {
@@ -172,18 +194,18 @@ describe('api/chat — guards', () => {
       makeMockClient({ authError: new Error('invalid token') }).client as never,
     )
     const chat = await loadChat()
-    const res = await chat.default(makeRequest('POST', { message: 'hi' }, 'bad-token'))
-    expect(res.status).toBe(401)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }, 'bad-token'), res)
+    expect(res.statusCode).toBe(401)
   })
 
   it('rejects an oversized message with 413', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     vi.mocked(createClient).mockReturnValue(makeMockClient().client as never)
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'x'.repeat(3000) }, 'valid-token'),
-    )
-    expect(res.status).toBe(413)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'x'.repeat(3000) }, 'valid-token'), res)
+    expect(res.statusCode).toBe(413)
   })
 
   it('rejects a message sent within the 2s rate limit with 429', async () => {
@@ -192,10 +214,9 @@ describe('api/chat — guards', () => {
       makeMockClient({ lastMessageAt: new Date().toISOString() }).client as never,
     )
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'hi' }, 'valid-token'),
-    )
-    expect(res.status).toBe(429)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }, 'valid-token'), res)
+    expect(res.statusCode).toBe(429)
   })
 
   it('rejects with 403 when the student has no profile', async () => {
@@ -204,10 +225,9 @@ describe('api/chat — guards', () => {
       makeMockClient({ profile: null }).client as never,
     )
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'hi' }, 'valid-token'),
-    )
-    expect(res.status).toBe(403)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }, 'valid-token'), res)
+    expect(res.statusCode).toBe(403)
   })
 
   it('returns 504 on an upstream timeout', async () => {
@@ -220,10 +240,9 @@ describe('api/chat — guards', () => {
       vi.fn().mockRejectedValue(new DOMException('Aborted', 'AbortError')),
     )
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'hi' }, 'valid-token'),
-    )
-    expect(res.status).toBe(504)
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }, 'valid-token'), res)
+    expect(res.statusCode).toBe(504)
   })
 })
 
@@ -238,12 +257,14 @@ describe('api/chat — happy path', () => {
     )
 
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'Am I eligible for IBM?' }, 'valid-token'),
+    const res = makeRes()
+    await chat.default(
+      makeReq('POST', { message: 'Am I eligible for IBM?' }, 'valid-token'),
+      res,
     )
-    expect(res.status).toBe(200)
+    expect(res.statusCode).toBe(200)
 
-    const body = (await res.json()) as {
+    const body = res.body as {
       reply: string
       eligibility: Array<{
         company: string
@@ -279,10 +300,12 @@ describe('api/chat — happy path', () => {
     vi.stubGlobal('fetch', okUpstream('Here is some general advice.'))
 
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'How should I prepare for interviews?' }, 'valid-token'),
+    const res = makeRes()
+    await chat.default(
+      makeReq('POST', { message: 'How should I prepare for interviews?' }, 'valid-token'),
+      res,
     )
-    const body = (await res.json()) as {
+    const body = res.body as {
       reply: string
       eligibility: Array<{
         company: string
@@ -301,10 +324,9 @@ describe('api/chat — happy path', () => {
     vi.stubGlobal('fetch', okUpstream('Some reply'))
 
     const chat = await loadChat()
-    const res = await chat.default(
-      makeRequest('POST', { message: 'hi' }, 'valid-token'),
-    )
-    const text = await res.text()
+    const res = makeRes()
+    await chat.default(makeReq('POST', { message: 'hi' }, 'valid-token'), res)
+    const text = JSON.stringify(res.body)
     expect(text).not.toContain('sk-test-secret-key')
     expect(text).not.toContain('service-role-test-key')
   })

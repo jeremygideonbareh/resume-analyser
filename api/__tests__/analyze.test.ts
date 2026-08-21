@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import handler from '../analyze.ts'
+﻿import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import handler from '../analyze.js'
 
 const VALID_FEEDBACK = {
   summary: 'Solid resume overall.',
@@ -8,12 +9,31 @@ const VALID_FEEDBACK = {
   suggestions: ['Add a professional summary statement'],
 }
 
-function makeRequest(body: string, method = 'POST'): Request {
-  const init: RequestInit = { method }
-  if (method !== 'GET' && method !== 'HEAD') {
-    init.body = body
+function makeReq(body: unknown, method = 'POST'): VercelRequest {
+  return {
+    method,
+    headers: {},
+    body,
+  } as VercelRequest
+}
+
+function makeRes() {
+  const res: Record<string, unknown> = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      this.statusCode = code
+      return this
+    },
+    json(payload: unknown) {
+      this.body = payload
+      return this
+    },
   }
-  return new Request('http://localhost/api/analyze', init)
+  return res as unknown as VercelResponse & {
+    statusCode: number
+    body: unknown
+  }
 }
 
 afterEach(() => {
@@ -23,32 +43,37 @@ afterEach(() => {
 
 describe('api/analyze serverless handler', () => {
   it('rejects non-POST requests with 405', async () => {
-    const res = await handler(makeRequest('{}', 'GET'))
-    expect(res.status).toBe(405)
+    const res = makeRes()
+    await handler(makeReq({}, 'GET'), res)
+    expect(res.statusCode).toBe(405)
   })
 
   it('returns 503 when LLM_API_KEY is not configured', async () => {
-    const res = await handler(makeRequest(JSON.stringify({ text: 'resume' })))
-    expect(res.status).toBe(503)
+    const res = makeRes()
+    await handler(makeReq({ text: 'resume' }), res)
+    expect(res.statusCode).toBe(503)
   })
 
   it('returns 413 for payloads larger than 100KB', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
     const big = JSON.stringify({ text: 'x'.repeat(100 * 1024 + 1) })
-    const res = await handler(makeRequest(big))
-    expect(res.status).toBe(413)
+    const res = makeRes()
+    await handler(makeReq(big), res)
+    expect(res.statusCode).toBe(413)
   })
 
   it('returns 400 for malformed JSON', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
-    const res = await handler(makeRequest('not-json'))
-    expect(res.status).toBe(400)
+    const res = makeRes()
+    await handler(makeReq('not-json'), res)
+    expect(res.statusCode).toBe(400)
   })
 
   it('returns 400 for empty or whitespace-only text', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
-    const res = await handler(makeRequest(JSON.stringify({ text: '   ' })))
-    expect(res.status).toBe(400)
+    const res = makeRes()
+    await handler(makeReq({ text: '   ' }), res)
+    expect(res.statusCode).toBe(400)
   })
 
   it('happy path: forwards resume text to the LLM and returns typed feedback', async () => {
@@ -61,10 +86,11 @@ describe('api/analyze serverless handler', () => {
     })
     vi.stubGlobal('fetch', upstream)
 
-    const res = await handler(makeRequest(JSON.stringify({ text: 'My resume body' })))
+    const res = makeRes()
+    await handler(makeReq({ text: 'My resume body' }), res)
 
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual(VALID_FEEDBACK)
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual(VALID_FEEDBACK)
 
     expect(upstream).toHaveBeenCalledTimes(1)
     const [url, init] = upstream.mock.calls[0]
@@ -79,8 +105,9 @@ describe('api/analyze serverless handler', () => {
   it('returns 502 when the upstream LLM returns an error status', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }))
-    const res = await handler(makeRequest(JSON.stringify({ text: 'r' })))
-    expect(res.status).toBe(502)
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(502)
   })
 
   it('returns 502 when the LLM response is not valid JSON feedback', async () => {
@@ -92,8 +119,9 @@ describe('api/analyze serverless handler', () => {
         json: async () => ({ choices: [{ message: { content: 'not-json' } }] }),
       }),
     )
-    const res = await handler(makeRequest(JSON.stringify({ text: 'r' })))
-    expect(res.status).toBe(502)
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(502)
   })
 
   it('returns 504 when the upstream call exceeds the timeout guard', async () => {
@@ -115,14 +143,16 @@ describe('api/analyze serverless handler', () => {
       ),
     )
 
-    const res = await handler(makeRequest(JSON.stringify({ text: 'r' })))
-    expect(res.status).toBe(504)
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(504)
   })
 
   it('returns 500 for unexpected upstream failures', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
-    const res = await handler(makeRequest(JSON.stringify({ text: 'r' })))
-    expect(res.status).toBe(500)
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(500)
   })
 })
