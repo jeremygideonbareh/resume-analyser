@@ -1,0 +1,8 @@
+﻿PLACEMENT WAVE - F3 LIVE PRODUCTION QA - APPROVE - 2026-08-21 11:41:37
+- Deployed URL: https://resume-lab-one.vercel.app
+- Full journey verified live: sign up (3 users in Supabase) -> complete profile (meter 100%) -> chat "Am I eligible for IBM?" (eligibility card with reasons) -> analyse resume (grammar issues + improvement cards) -> dashboard (readiness score + eligible companies + applications) -> logout/login persistence
+- Guest gate intact: signed-out users see landing only, no Profile/Assistant/Dashboard links
+- Marquee/hero unchanged (no visual regression)
+- 0 console errors
+- Evidence: .omo/evidence/pl-6-live.log + pl-6-deploy.log + pl-6-signin-fix.log
+VERDICT: APPROVE

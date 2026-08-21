@@ -1,0 +1,7 @@
+﻿PLACEMENT WAVE - T6.3 Live smoke - DONE - 2026-08-21 11:41:37
+- URL: https://resume-lab-one.vercel.app
+- Supabase URL config: SITE_URL = https://resume-lab-one.vercel.app; URI_ALLOW_LIST includes Vercel + GitHub Pages + localhost (verified via Management API)
+- API endpoints verified: /api/chat 401 (no auth), /api/grammar 400 (empty), /api/analyze 400 (empty)
+- Sign-in verified: 3 users in Supabase Auth (sign-up working); VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY inlined in deployed bundle
+- Full browser journey completed by user: sign up -> profile -> chat eligibility -> analyse + grammar -> dashboard -> logout/login persistence
+- 0 console errors reported
