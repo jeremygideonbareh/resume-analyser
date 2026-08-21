@@ -1,14 +1,14 @@
-/**
- * Grammar-check endpoint (T4.1) — server-side LLM spelling/grammar check.
+﻿/**
+ * Grammar-check endpoint (T4.1) â€” server-side LLM spelling/grammar check.
  *
- * Request: `{ "text": string }` (≤ 100 KB — same limit as `/api/analyze`).
- * Flow: LLM call with a strict JSON prompt → validate + sanitize the JSON
- * (strip markdown fences) → return `{ issues: [{ message, suggestion, context }] }`.
+ * Request: `{ "text": string }` (â‰¤ 100 KB â€” same limit as `/api/analyze`).
+ * Flow: LLM call with a strict JSON prompt â†’ validate + sanitize the JSON
+ * (strip markdown fences) â†’ return `{ issues: [{ message, suggestion, context }] }`.
  *
- * Guards: 405, 413, 504, 500 → friendly fallback; never log resume text;
+ * Guards: 405, 413, 504, 500 â†’ friendly fallback; never log resume text;
  * never leak the API key.
  */
-import type { GrammarIssue } from '../src/lib/placement-types.ts'
+import type { GrammarIssue } from '../src/lib/placement-types.js'
 
 export const config = { runtime: 'nodejs' }
 
@@ -19,7 +19,7 @@ const DEFAULT_TIMEOUT_MS = 10_000
 
 const SYSTEM_PROMPT = `You are a meticulous copy editor. Find spelling, grammar,
 punctuation, and awkward-phrasing issues in the resume text provided by the user.
-Respond with STRICT JSON only — no prose, no markdown fences — matching exactly:
+Respond with STRICT JSON only â€” no prose, no markdown fences â€” matching exactly:
 {"issues": [{"message": string, "suggestion": string, "context": string}]}
 - message: a short description of the issue.
 - suggestion: the corrected text for that spot.

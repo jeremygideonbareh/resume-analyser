@@ -1,22 +1,22 @@
-/**
- * Serverless LLM feedback endpoint (Todo 5.1) — env-gated, key server-side.
+﻿/**
+ * Serverless LLM feedback endpoint (Todo 5.1) â€” env-gated, key server-side.
  *
  * Runs on both Vercel and Netlify:
- *   - Vercel:  `api/analyze.ts` → default-export Web Request/Response handler
- *   - Netlify: `api/analyze.ts` → default-export async handler (Functions v2)
+ *   - Vercel:  `api/analyze.ts` â†’ default-export Web Request/Response handler
+ *   - Netlify: `api/analyze.ts` â†’ default-export async handler (Functions v2)
  *
  * Env contract (server-side only, never bundled to the client):
- *   - LLM_API_KEY     required — rejects with 503 when missing
+ *   - LLM_API_KEY     required â€” rejects with 503 when missing
  *   - LLM_MODEL       optional, default "gpt-4o-mini"
  *   - LLM_BASE_URL    optional, default "https://api.openai.com/v1" (OpenAI-compatible)
  *   - LLM_TIMEOUT_MS  optional ops/test knob, default 10000 (10s timeout guard)
  *
  * Guards: 10s abort timeout (504), 100KB body limit (413), POST only (405).
  *
- * Privacy: resume text is used only for the single LLM completion — it is
+ * Privacy: resume text is used only for the single LLM completion â€” it is
  * never logged, never persisted, and never echoed back to the client.
  */
-import type { AiFeedback } from '../src/lib/llm-types.ts'
+import type { AiFeedback } from '../src/lib/llm-types.js'
 
 export const config = { runtime: 'nodejs' }
 
@@ -25,8 +25,8 @@ const DEFAULT_MODEL = 'gpt-4o-mini'
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 
 const SYSTEM_PROMPT = `You are a senior technical recruiter giving concise ATS-resume feedback.
-Analyze the resume text provided by the user and respond with STRICT JSON only —
-no prose, no markdown fences — matching exactly:
+Analyze the resume text provided by the user and respond with STRICT JSON only â€”
+no prose, no markdown fences â€” matching exactly:
 {"summary": string, "strengths": string[], "improvements": string[], "suggestions": string[]}
 Summary: 2-3 sentences. Strengths: up to 5 short items. Improvements: up to 5
 actionable items phrased as concrete resume edits the student can apply directly
