@@ -21,8 +21,6 @@ import type {
   EligibilityResult,
 } from '../src/lib/placement-types.js'
 
-export const config = { runtime: 'nodejs' }
-
 const MAX_MESSAGE_BYTES = 2 * 1024 // 2 KB message limit (D11)
 const RATE_LIMIT_MS = 2_000 // â‰¥ 2 s between messages (D11)
 const DEFAULT_MODEL = 'gpt-4o-mini'

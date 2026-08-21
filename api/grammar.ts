@@ -10,8 +10,6 @@
  */
 import type { GrammarIssue } from '../src/lib/placement-types.js'
 
-export const config = { runtime: 'nodejs' }
-
 const MAX_BODY_BYTES = 100 * 1024 // 100 KB request body limit
 const DEFAULT_MODEL = 'gpt-4o-mini'
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1'

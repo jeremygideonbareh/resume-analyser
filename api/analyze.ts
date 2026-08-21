@@ -18,7 +18,6 @@
  */
 import type { AiFeedback } from '../src/lib/llm-types.js'
 
-export const config = { runtime: 'nodejs' }
 
 const MAX_BODY_BYTES = 100 * 1024 // 100KB request body limit
 const DEFAULT_MODEL = 'gpt-4o-mini'
