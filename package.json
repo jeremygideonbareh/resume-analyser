@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "secrets:check": "node .omo/scripts/check-secrets.mjs",
+    "secrets:sync": "node .omo/scripts/sync-vercel-env.mjs"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.3.0",
