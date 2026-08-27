@@ -47,8 +47,13 @@ function PracticeMode({
   const [session, setSession] = useState<PracticeSession | null>(null)
   const [questions, setQuestions] = useState<PracticeQuestion[]>([])
   const [index, setIndex] = useState(0)
-  const [answer, setAnswer] = useState('')
-  const [feedback, setFeedback] = useState<{ text: string; score: number } | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [feedback, setFeedback] = useState<{
+    correct: boolean
+    correctIndex: number
+    explanation: string
+    score: number
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [finalResult, setFinalResult] = useState<{
@@ -67,7 +72,7 @@ function PracticeMode({
       setSession(result.session)
       setQuestions(result.questions)
       setIndex(0)
-      setAnswer('')
+      setSelectedIndex(null)
       setFeedback(null)
       setPhase('active')
     } catch (err) {
@@ -83,12 +88,17 @@ function PracticeMode({
   }
 
   const handleSubmitAnswer = async () => {
-    if (!answer.trim() || !session || !current) return
+    if (selectedIndex === null || !session || !current) return
     setLoading(true)
     setError(null)
     try {
-      const result = await submitAnswer(session.id, current.id, answer.trim())
-      setFeedback({ text: result.feedback, score: result.score })
+      const result = await submitAnswer(session.id, current.id, selectedIndex)
+      setFeedback({
+        correct: result.correct,
+        correctIndex: result.correctIndex,
+        explanation: result.explanation,
+        score: result.score,
+      })
       setSession((prev) =>
         prev
           ? {
@@ -108,7 +118,7 @@ function PracticeMode({
   const handleNext = () => {
     if (index + 1 < questions.length) {
       setIndex((i) => i + 1)
-      setAnswer('')
+      setSelectedIndex(null)
       setFeedback(null)
     } else {
       handleComplete()
@@ -134,7 +144,7 @@ function PracticeMode({
     setSession(null)
     setQuestions([])
     setIndex(0)
-    setAnswer('')
+    setSelectedIndex(null)
     setFeedback(null)
     setFinalResult(null)
     setError(null)
@@ -155,9 +165,9 @@ function PracticeMode({
           </div>
         </div>
         <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink-soft">
-          Get 10 interview questions tailored to your profile — a mix of
+          Get 10 multiple-choice questions tailored to your profile — a mix of
           technical questions based on your skills and behavioral questions.
-          Answer each one and receive AI feedback with a score.
+          Pick the best answer and get instant grading with an explanation.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {(['easy', 'medium', 'hard'] as const).map((d) => (
@@ -286,19 +296,43 @@ function PracticeMode({
             <p className="text-sm leading-relaxed text-ink">{current.prompt}</p>
             {!feedback ? (
               <div className="mt-4 space-y-3">
-                <textarea
-                  aria-label="Your answer"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Type your answer here…"
-                  rows={4}
-                  className="w-full rounded-xl border border-ink/15 bg-surface p-3 text-sm leading-relaxed text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-ink/40"
-                />
+                <div className="space-y-2" role="radiogroup" aria-label="Answer options">
+                  {current.options.map((option, i) => {
+                    const letter = String.fromCharCode(65 + i)
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        role="radio"
+                        aria-checked={selectedIndex === i}
+                        onClick={() => setSelectedIndex(i)}
+                        className={cn(
+                          'flex w-full items-start gap-3 rounded-xl border p-3 text-left text-sm leading-relaxed transition-colors',
+                          selectedIndex === i
+                            ? 'border-accent bg-accent/5 text-ink'
+                            : 'border-ink/15 bg-surface text-ink hover:border-ink/30',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-medium',
+                            selectedIndex === i
+                              ? 'border-accent bg-accent text-paper'
+                              : 'border-ink/25 text-ink-soft',
+                          )}
+                        >
+                          {letter}
+                        </span>
+                        <span className="flex-1">{option}</span>
+                      </button>
+                    )
+                  })}
+                </div>
                 {error && <p className="text-sm text-danger">{error}</p>}
                 <Button
                   type="button"
                   onClick={() => void handleSubmitAnswer()}
-                  disabled={loading || !answer.trim()}
+                  disabled={loading || selectedIndex === null}
                   className="h-10 px-5"
                 >
                   {loading ? (
@@ -313,15 +347,13 @@ function PracticeMode({
                 <div
                   className={cn(
                     'rounded-xl border p-4',
-                    feedback.score >= 7
+                    feedback.correct
                       ? 'border-accent/30 bg-accent/5'
-                      : feedback.score >= 4
-                        ? 'border-yellow-500/30 bg-yellow-500/5'
-                        : 'border-danger/30 bg-danger/5',
+                      : 'border-danger/30 bg-danger/5',
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    {feedback.score >= 7 ? (
+                    {feedback.correct ? (
                       <CheckCircle2 className="h-4 w-4 text-accent" />
                     ) : (
                       <XCircle className="h-4 w-4 text-danger" />
@@ -332,11 +364,20 @@ function PracticeMode({
                         scoreColor(feedback.score),
                       )}
                     >
-                      {feedback.score}/10
+                      {feedback.correct ? 'Correct' : 'Wrong'} — {feedback.score}/10
                     </span>
                   </div>
+                  {!feedback.correct && (
+                    <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                      Correct answer:{' '}
+                      <span className="font-medium text-ink">
+                        {String.fromCharCode(65 + feedback.correctIndex)}.{' '}
+                        {current.options[feedback.correctIndex]}
+                      </span>
+                    </p>
+                  )}
                   <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                    {feedback.text}
+                    {feedback.explanation}
                   </p>
                 </div>
                 <Button

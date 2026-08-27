@@ -7,6 +7,7 @@
  * Max total = 100. Breakdown categories always sum to the final score.
  */
 import { findSkills, SKILLS } from './skills-lexicon'
+import { scanResumeIssues, type ResumeIssue } from './resume-issues'
 
 export type CategoryId =
   | 'keywords'
@@ -62,6 +63,8 @@ export interface AnalysisResult {
   missingKeywords: string[]
   /** Rule-driven, human-readable feedback. */
   feedback: FeedbackItem[]
+  /** Line-anchored issues for the annotated preview (empty when no content). */
+  issues: ResumeIssue[]
   /** Warning codes, e.g. 'no-content', forwarded 'possible-scanned'. */
   warnings: string[]
 }
@@ -269,6 +272,7 @@ export function analyzeResume(
       skills: [],
       presentKeywords: [],
       missingKeywords: [],
+      issues: [],
       feedback: buildFeedback(
         false, false, false, false, 0, false, [], [], true,
       ),
@@ -398,6 +402,7 @@ export function analyzeResume(
     presentKeywords,
     missingKeywords,
     feedback,
+    issues: scanResumeIssues(trimmed),
     warnings,
   }
 }

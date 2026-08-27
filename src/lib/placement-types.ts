@@ -104,8 +104,19 @@ export interface PracticeQuestion {
   seq: number
   type: PracticeQuestionType
   prompt: string
+  /** Multiple-choice options rendered in order by the client. */
+  options: string[]
+  /** Index into `options` of the correct answer (0-based). */
+  correctIndex: number
+  /** Explanation shown after grading, sourced from the LLM at generation time. */
+  explanation: string
+  /** Index into `options` the student selected (0-based). */
+  selectedIndex?: number
+  /** Deprecated free-text answer — retained for older persisted rows. */
   userAnswer?: string
+  /** Deprecated free-text feedback — MCQ grading returns explanation instead. */
   feedback?: string
+  /** 0 (wrong) or 10 (correct) once graded. */
   score?: number
 }
 

@@ -21,7 +21,9 @@ export interface StartResult {
 }
 
 export interface AnswerResult {
-  feedback: string
+  correct: boolean
+  correctIndex: number
+  explanation: string
   score: number
   completed: number
   total: number
@@ -69,13 +71,13 @@ export async function startPractice(
   return postAction<StartResult>('start', { difficulty })
 }
 
-/** Submit an answer for a single question and get graded. */
+/** Submit the selected option index for a single question and get graded. */
 export async function submitAnswer(
   sessionId: string,
   questionId: string,
-  answer: string,
+  selectedIndex: number,
 ): Promise<AnswerResult> {
-  return postAction<AnswerResult>('answer', { sessionId, questionId, answer })
+  return postAction<AnswerResult>('answer', { sessionId, questionId, selectedIndex })
 }
 
 /** Complete a session and get the final score summary. */

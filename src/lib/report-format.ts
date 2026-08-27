@@ -1,5 +1,6 @@
 import type { AnalysisResult, FeedbackItem } from './analysis'
 import type { ParsedResume } from './parsing'
+import type { ResumeIssue } from './resume-issues'
 
 /**
  * Pure formatting helpers for the report UI. Kept free of React so they are
@@ -110,4 +111,69 @@ export function buildCopySummary(
     })
   }
   return lines.join('\n')
+}
+
+// --- annotated resume preview (Todo: line-anchored issues) ----------------
+
+export interface AnnotatedSegment {
+  text: string
+  issue: ResumeIssue | null
+}
+
+export interface AnnotatedLine {
+  line: number
+  segments: AnnotatedSegment[]
+}
+
+/**
+ * Split the resume text into lines, each with its issue-highlight spans.
+ *
+ * Issues are anchored to 1-based line numbers and absolute char offsets.
+ * Where two issues overlap on a line we keep the most specific (smallest)
+ * span so segments always tile the line without gaps or double-highlighting.
+ */
+export function buildAnnotatedLines(
+  text: string,
+  issues: ResumeIssue[],
+): AnnotatedLine[] {
+  const rawLines = text.split(/\r?\n/)
+  const lines: AnnotatedLine[] = []
+  let offset = 0
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const raw = rawLines[i]
+    const lineStart = offset
+    const lineEnd = offset + raw.length
+
+    const candidates = issues
+      .filter((issue) => issue.line === i + 1)
+      .map((issue) => ({
+        issue,
+        localStart: Math.max(issue.start, lineStart) - lineStart,
+        localEnd: Math.min(issue.end, lineEnd) - lineStart,
+      }))
+      .filter((c) => c.localEnd > c.localStart && c.localStart < raw.length)
+      .sort((a, b) =>
+        a.localStart - b.localStart || (a.localEnd - a.localStart) - (b.localEnd - b.localStart),
+      )
+
+    const segments: AnnotatedSegment[] = []
+    let cursor = 0
+    for (const { issue, localStart, localEnd } of candidates) {
+      if (localStart < cursor) continue // already covered by a previous span
+      if (localStart > cursor) {
+        segments.push({ text: raw.slice(cursor, localStart), issue: null })
+      }
+      segments.push({ text: raw.slice(localStart, localEnd), issue })
+      cursor = localEnd
+    }
+    if (cursor < raw.length) {
+      segments.push({ text: raw.slice(cursor), issue: null })
+    }
+
+    lines.push({ line: i + 1, segments })
+    offset += raw.length + 1
+  }
+
+  return lines
 }

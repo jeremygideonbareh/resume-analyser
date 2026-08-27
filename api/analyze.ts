@@ -24,11 +24,16 @@ const DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 const SYSTEM_PROMPT = `You are a senior technical recruiter giving concise ATS-resume feedback.
 Analyze the resume text provided by the user and respond with STRICT JSON only —
 no prose, no markdown fences — matching exactly:
-{"summary": string, "strengths": string[], "improvements": string[], "suggestions": string[]}
+{"summary": string, "strengths": string[], "improvements": string[], "suggestions": string[], "lineIssues": [{"line": number, "severity": "critical"|"warning"|"info", "message": string, "suggestion": string}]}
 Summary: 2-3 sentences. Strengths: up to 5 short items. Improvements: up to 5
 actionable items phrased as concrete resume edits the student can apply directly
 (e.g. "Add metrics to your project bullets", "Move skills above education").
-Suggestions: up to 3 general next steps, each phrased as a specific action.`
+Suggestions: up to 3 general next steps, each phrased as a specific action.
+lineIssues: up to 6 precise, per-line problems detected in the resume. "line" is
+the 1-based line number in the resume text. "message" describes the specific
+problem on that line, "suggestion" gives a concrete edit. Only list issues you
+can confidently attribute to a specific line. If there are no clear line-level
+issues, return an empty array.`
 
 function json(res: VercelResponse, payload: unknown, status: number): void {
   res.status(status).json(payload)
@@ -130,13 +135,47 @@ function parseFeedback(content: string): AiFeedback | null {
     ) {
       return null
     }
+    const lineIssues = normalizeLineIssues(raw.lineIssues)
     return {
       summary: raw.summary,
       strengths: raw.strengths,
       improvements: raw.improvements,
       suggestions: raw.suggestions,
+      ...(lineIssues.length > 0 ? { lineIssues } : {}),
     }
   } catch {
     return null
   }
+}
+
+/** Accept only well-formed line issues; drop anything malformed. */
+function normalizeLineIssues(
+  value: unknown,
+): NonNullable<AiFeedback['lineIssues']> {
+  if (!Array.isArray(value)) return []
+  const out: NonNullable<AiFeedback['lineIssues']> = []
+  for (const item of value) {
+    if (typeof item !== 'object' || item === null) continue
+    const i = item as {
+      line?: unknown
+      severity?: unknown
+      message?: unknown
+      suggestion?: unknown
+    }
+    if (
+      typeof i.line !== 'number' || !Number.isInteger(i.line) || i.line < 1 ||
+      (i.severity !== 'critical' && i.severity !== 'warning' && i.severity !== 'info') ||
+      typeof i.message !== 'string' || i.message.trim().length === 0 ||
+      typeof i.suggestion !== 'string'
+    ) {
+      continue
+    }
+    out.push({
+      line: i.line,
+      severity: i.severity,
+      message: i.message.trim(),
+      suggestion: i.suggestion.trim(),
+    })
+  }
+  return out
 }

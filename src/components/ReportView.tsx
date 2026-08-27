@@ -26,6 +26,7 @@ import {
 } from '@/lib/report-format'
 import { ReportReveal } from '@/components/KineticLoader'
 import { AiFeedbackSection } from '@/components/AiFeedbackSection'
+import { AnnotatedResume } from '@/components/AnnotatedResume'
 import { LLM_ENABLED } from '@/lib/llm'
 
 /** Animated count-up — ease-out-quart; instant when reduced motion. */
@@ -428,6 +429,29 @@ export function ReportView({ result, parsed }: ReportViewProps) {
           )}
         </div>
       </ReportReveal>
+
+      {/* Annotated resume preview — line-anchored, rule-based issues */}
+      {parsed && parsed.text && (
+        <ReportReveal delay={0.8}>
+          <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+                Inline issue highlights
+              </h3>
+              <span className="font-mono text-[11px] text-ink-soft">
+                {result.issues.length} issue{result.issues.length === 1 ? '' : 's'} found
+              </span>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm text-ink-soft">
+              Issues are highlighted inline in your resume text. Click a
+              highlight or an issue in the list to jump to that line.
+            </p>
+            <div className="mt-4">
+              <AnnotatedResume text={parsed.text} issues={result.issues} />
+            </div>
+          </div>
+        </ReportReveal>
+      )}
 
       {/* Optional AI feedback (beta) — env-gated, key server-side (Todo 5.1) */}
       {LLM_ENABLED && parsed && (

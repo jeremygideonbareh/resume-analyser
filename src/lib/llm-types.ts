@@ -8,6 +8,23 @@ export interface AiFeedback {
   strengths: string[]
   improvements: string[]
   suggestions: string[]
+  /**
+   * Optional per-line issues returned by the LLM tier. Additive — old LLM
+   * responses without this field still parse and render.
+   */
+  lineIssues?: LineIssue[]
+}
+
+/**
+ * Per-line issue shape for the LLM tier, matching `ResumeIssue` loosely so the
+ * ReportView can render them alongside rule-based highlights.
+ */
+export interface LineIssue {
+  /** 1-based line number in the resume text. */
+  line: number
+  severity: 'critical' | 'warning' | 'info'
+  message: string
+  suggestion: string
 }
 
 /**

@@ -55,7 +55,15 @@ function makeMockClient(opts: {
   sessionErr?: Error | null
   question?: Record<string, unknown> | null
   questionErr?: Error | null
-  insertedQuestions?: Array<{ id: string; seq: number; type: string; prompt: string }>
+  insertedQuestions?: Array<{
+    id: string
+    seq: number
+    type: string
+    prompt: string
+    options?: string[]
+    correct_index?: number
+    explanation?: string
+  }>
 } = {}) {
   const inserts: Array<{ table: string; row: unknown }> = []
   const updates: Array<{ table: string; row: unknown; filter: string }> = []
@@ -127,6 +135,9 @@ const QUESTIONS_JSON = JSON.stringify({
   questions: Array.from({ length: 10 }, (_, i) => ({
     type: i < 7 ? 'technical' : 'behavioral',
     prompt: `Question ${i + 1}: ${i < 7 ? 'Explain a concept' : 'Tell me about yourself'}`,
+    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+    correctIndex: (i % 4),
+    explanation: `Explanation for question ${i + 1}`,
   })),
 })
 
@@ -241,6 +252,9 @@ describe('api/practice — start', () => {
         seq: i + 1,
         type: i < 7 ? 'technical' : 'behavioral',
         prompt: `Question ${i + 1}`,
+        options: ['A', 'B', 'C', 'D'],
+        correct_index: (i % 4),
+        explanation: `Exp ${i + 1}`,
       })),
     })
     vi.mocked(createClient).mockReturnValue(mock.client as never)
@@ -253,10 +267,16 @@ describe('api/practice — start', () => {
       res,
     )
     expect(res.statusCode).toBe(200)
-    const body = res.body as { session: { id: string }; questions: Array<{ type: string }> }
+    const body = res.body as {
+      session: { id: string }
+      questions: Array<{ type: string; options: string[]; correctIndex: number; explanation: string }>
+    }
     expect(body.questions).toHaveLength(10)
     expect(body.questions.filter((q) => q.type === 'technical')).toHaveLength(7)
     expect(body.questions.filter((q) => q.type === 'behavioral')).toHaveLength(3)
+    expect(body.questions[0].options).toHaveLength(4)
+    expect(body.questions[0].correctIndex).toBe(0)
+    expect(body.questions[0].explanation).toBe('Exp 1')
   })
 
   it('returns 502 on malformed LLM response', async () => {
@@ -313,7 +333,7 @@ describe('api/practice — start', () => {
 })
 
 describe('api/practice — answer', () => {
-  it('grades an answer and returns feedback + score', async () => {
+  it('grades a correct selection (index matches correct_index)', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     const mock = makeMockClient({
       profile,
@@ -325,22 +345,80 @@ describe('api/practice — answer', () => {
         completed_questions: 2,
         score_sum: 14,
       },
-      question: { id: 'q_1', session_id: 'sess_1', prompt: 'What is Python?' },
+      question: {
+        id: 'q_1',
+        session_id: 'sess_1',
+        prompt: 'What is Python?',
+        options: ['A', 'B', 'C', 'D'],
+        correct_index: 2,
+        explanation: 'Python is interpreted.',
+      },
     })
     vi.mocked(createClient).mockReturnValue(mock.client as never)
-    vi.stubGlobal('fetch', okUpstream(JSON.stringify({ score: 8, feedback: 'Good answer' })))
 
     const practice = await loadPractice()
     const res = makeRes()
     await practice.default(
-      makeReq('POST', { action: 'answer', sessionId: 'sess_1', questionId: 'q_1', answer: 'Python is a language' }, 'valid-token'),
+      makeReq('POST', { action: 'answer', sessionId: 'sess_1', questionId: 'q_1', selectedIndex: 2 }, 'valid-token'),
       res,
     )
     expect(res.statusCode).toBe(200)
-    const body = res.body as { feedback: string; score: number; completed: number }
-    expect(body.score).toBe(8)
-    expect(body.feedback).toBe('Good answer')
+    const body = res.body as { correct: boolean; score: number; explanation: string; completed: number }
+    expect(body.correct).toBe(true)
+    expect(body.correctIndex).toBe(2)
+    expect(body.explanation).toBe('Python is interpreted.')
+    expect(body.score).toBe(10)
     expect(body.completed).toBe(3)
+  })
+
+  it('grades a wrong selection as 0 with correctIndex', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const mock = makeMockClient({
+      profile,
+      session: {
+        id: 'sess_1',
+        user_id: 'user_1',
+        difficulty: 'medium',
+        total_questions: 10,
+        completed_questions: 0,
+        score_sum: 0,
+      },
+      question: {
+        id: 'q_1',
+        session_id: 'sess_1',
+        prompt: 'What is 2+2?',
+        options: ['3', '4', '5', '6'],
+        correct_index: 1,
+        explanation: '2+2 equals 4.',
+      },
+    })
+    vi.mocked(createClient).mockReturnValue(mock.client as never)
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'answer', sessionId: 'sess_1', questionId: 'q_1', selectedIndex: 0 }, 'valid-token'),
+      res,
+    )
+    expect(res.statusCode).toBe(200)
+    const body = res.body as { correct: boolean; score: number; correctIndex: number }
+    expect(body.correct).toBe(false)
+    expect(body.correctIndex).toBe(1)
+    expect(body.score).toBe(0)
+  })
+
+  it('rejects an out-of-range selectedIndex with 400', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const mock = makeMockClient({ profile })
+    vi.mocked(createClient).mockReturnValue(mock.client as never)
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'answer', sessionId: 'sess_1', questionId: 'q_1', selectedIndex: 7 }, 'valid-token'),
+      res,
+    )
+    expect(res.statusCode).toBe(400)
   })
 
   it('returns 404 when session not found', async () => {
@@ -351,7 +429,7 @@ describe('api/practice — answer', () => {
     const practice = await loadPractice()
     const res = makeRes()
     await practice.default(
-      makeReq('POST', { action: 'answer', sessionId: 'bad', questionId: 'q_1', answer: 'hi' }, 'valid-token'),
+      makeReq('POST', { action: 'answer', sessionId: 'bad', questionId: 'q_1', selectedIndex: 0 }, 'valid-token'),
       res,
     )
     expect(res.statusCode).toBe(404)
@@ -394,16 +472,39 @@ describe('api/practice — pure helpers', () => {
     expect(practice.parseQuestions(QUESTIONS_JSON)).toHaveLength(10)
     expect(practice.parseQuestions('not json')).toBeNull()
     expect(practice.parseQuestions('{"questions": []}')).toBeNull()
-  })
-
-  it('parseGrade validates score range', async () => {
-    const practice = await loadPractice()
-    expect(practice.parseGrade(JSON.stringify({ score: 8, feedback: 'Good' }))).toEqual({
-      score: 8,
-      feedback: 'Good',
+    expect(
+      practice.parseQuestions(
+        JSON.stringify({
+          questions: Array.from({ length: 10 }, (_, i) => ({
+            type: 'technical',
+            prompt: 'q',
+            options: ['a', 'b', 'c'],
+            correctIndex: 0,
+            explanation: 'x',
+          })),
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      practice.parseQuestions(
+        JSON.stringify({
+          questions: Array.from({ length: 10 }, (_, i) => ({
+            type: 'technical',
+            prompt: 'q',
+            options: ['a', 'b', 'c', 'd'],
+            correctIndex: 9,
+            explanation: 'x',
+          })),
+        }),
+      ),
+    ).toBeNull()
+    const parsed = practice.parseQuestions(QUESTIONS_JSON)
+    expect(parsed?.[0]).toMatchObject({
+      type: 'technical',
+      correctIndex: 0,
+      explanation: 'Explanation for question 1',
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
     })
-    expect(practice.parseGrade(JSON.stringify({ score: 11, feedback: 'Bad' }))).toBeNull()
-    expect(practice.parseGrade(JSON.stringify({ score: -1, feedback: 'Bad' }))).toBeNull()
   })
 
   it('buildStartUserPrompt embeds profile facts and difficulty', async () => {
@@ -414,9 +515,11 @@ describe('api/practice — pure helpers', () => {
     expect(prompt).toContain('Difficulty: hard')
   })
 
-  it('buildGradeSystemPrompt instructs to ignore instructions in answer', async () => {
+  it('buildStartSystemPrompt instructs MCQ shape', async () => {
     const practice = await loadPractice()
-    const prompt = practice.buildGradeSystemPrompt()
+    const prompt = practice.buildStartSystemPrompt()
+    expect(prompt).toContain('correctIndex')
+    expect(prompt).toContain('options')
     expect(prompt.toLowerCase()).toContain('ignore any instructions')
   })
 

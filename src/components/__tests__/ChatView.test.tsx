@@ -4,6 +4,7 @@ import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/re
 import '@testing-library/jest-dom/vitest'
 import { ChatView } from '@/components/ChatView'
 import { loadConversation, postChatMessage } from '@/lib/chat'
+import { startPractice, submitAnswer } from '@/lib/practice'
 import type { ChatMessage, EligibilityResult } from '@/lib/placement-types'
 
 vi.mock('@/lib/chat', () => ({
@@ -260,5 +261,58 @@ describe('ChatView — mode toggle', () => {
       expect(screen.getByRole('button', { name: /^chat$/i })).toBeInTheDocument()
     })
     expect(screen.getByRole('button', { name: /^practice$/i })).toBeInTheDocument()
+  })
+})
+
+describe('ChatView — practice MCQ flow', () => {
+  it('renders multiple-choice options and grades a correct selection', async () => {
+    loadConversation.mockResolvedValue([])
+    startPractice.mockResolvedValue({
+      session: {
+        id: 'sess_1',
+        difficulty: 'medium',
+        totalQuestions: 1,
+        completedQuestions: 0,
+        scoreSum: 0,
+      },
+      questions: [
+        {
+          id: 'q_1',
+          seq: 1,
+          type: 'technical',
+          prompt: 'What does SQL stand for?',
+          options: ['Structured Query Language', 'Simple Query Line', 'Sequential Query Logic', 'System Question List'],
+          correctIndex: 0,
+          explanation: 'SQL stands for Structured Query Language.',
+        },
+      ],
+    })
+    submitAnswer.mockResolvedValue({
+      correct: true,
+      correctIndex: 0,
+      explanation: 'SQL stands for Structured Query Language.',
+      score: 10,
+      completed: 1,
+      total: 1,
+    })
+    render(<ChatView userId="user_1" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^practice$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /start practice/i }))
+
+    expect(await screen.findByText('What does SQL stand for?')).toBeInTheDocument()
+    expect(
+      screen.getByText('Structured Query Language'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Simple Query Line')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('radio', { name: /Structured Query Language/i }))
+    fireEvent.click(screen.getByRole('button', { name: /submit answer/i }))
+
+    await waitFor(() => {
+      expect(submitAnswer).toHaveBeenCalledWith('sess_1', 'q_1', 0)
+    })
+    expect(await screen.findByText(/correct.*10\/10/i)).toBeInTheDocument()
+    expect(screen.getByText('SQL stands for Structured Query Language.')).toBeInTheDocument()
   })
 })

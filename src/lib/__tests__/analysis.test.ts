@@ -59,6 +59,18 @@ describe('analyzeResume', () => {
     expect(r.sections.find((s) => s.name === 'experience')?.present).toBe(false)
   })
 
+  it('returns line-anchored issues for weak text and empty issues for empty input', () => {
+    const r = analyzeResume(WEAK_RESUME)
+    expect(Array.isArray(r.issues)).toBe(true)
+    // The weak fixture uses a bullet-less run-on sentence; it should at least
+    // surface a buzzword (detail-oriented) on line 1.
+    expect(r.issues.some((i) => i.line >= 1 && i.original.length > 0)).toBe(true)
+    expect(r.issues.every((i) => i.start >= 0 && i.end > i.start)).toBe(true)
+
+    const empty = analyzeResume('   ')
+    expect(empty.issues).toEqual([])
+  })
+
   it('computes present/missing JD keywords correctly and scores keywords from them', () => {
     const r = analyzeResume(JD_MATCH_RESUME, { jdText: JD_TEXT })
     expect(r.presentKeywords).toEqual(

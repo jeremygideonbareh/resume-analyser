@@ -102,6 +102,63 @@ describe('api/analyze serverless handler', () => {
     expect(body.messages[1]).toEqual({ role: 'user', content: 'My resume body' })
   })
 
+  it('parses and returns optional lineIssues from the LLM response', async () => {
+    vi.stubEnv('LLM_API_KEY', 'sk-test')
+    const withLine = {
+      ...VALID_FEEDBACK,
+      lineIssues: [
+        {
+          line: 3,
+          severity: 'warning',
+          message: 'Weak action verb',
+          suggestion: 'Replace with a stronger verb.',
+        },
+      ],
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: JSON.stringify(withLine) } }],
+        }),
+      }),
+    )
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(200)
+    expect((res.body as { lineIssues?: unknown }).lineIssues).toEqual(
+      withLine.lineIssues,
+    )
+  })
+
+  it('drops malformed lineIssues but keeps valid feedback', async () => {
+    vi.stubEnv('LLM_API_KEY', 'sk-test')
+    const withBadLine = {
+      ...VALID_FEEDBACK,
+      lineIssues: [
+        { line: 0, severity: 'warning', message: 'bad line number' },
+        { line: 2, severity: 'bogus', message: 'bad severity' },
+        { line: 3, severity: 'info', message: '', suggestion: 'x' },
+      ],
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: JSON.stringify(withBadLine) } }],
+        }),
+      }),
+    )
+    const res = makeRes()
+    await handler(makeReq({ text: 'r' }), res)
+    expect(res.statusCode).toBe(200)
+    const body = res.body as { lineIssues?: unknown; summary: string }
+    expect(body.summary).toBe(VALID_FEEDBACK.summary)
+    expect(body.lineIssues).toBeUndefined()
+  })
+
   it('returns 502 when the upstream LLM returns an error status', async () => {
     vi.stubEnv('LLM_API_KEY', 'sk-test')
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }))
