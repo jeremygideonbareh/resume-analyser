@@ -20,6 +20,9 @@ const CLIENT_TIMEOUT_MS = 10_000
 /**
  * POST a message to the placement chatbot. Throws on any failure — callers
  * render a friendly fallback with a retry affordance.
+ *
+ * Throws `Error('profile-required')` when the server returns 403 (no student
+ * profile yet). Callers can detect this to show a "complete your profile" UX.
  */
 export async function postChatMessage(message: string): Promise<ChatReply> {
   const supabase = getSupabase()
@@ -42,6 +45,12 @@ export async function postChatMessage(message: string): Promise<ChatReply> {
       signal: controller.signal,
     })
     if (!res.ok) {
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}))
+        if ((body as { error?: string }).error === 'profile-required') {
+          throw new Error('profile-required')
+        }
+      }
       throw new Error(`Chat request failed with status ${res.status}`)
     }
     return (await res.json()) as ChatReply

@@ -1,39 +1,404 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bot, Loader2, Send, UserRound } from 'lucide-react'
+import {
+  Bot,
+  CheckCircle2,
+  Loader2,
+  Send,
+  Target,
+  UserRound,
+  XCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { loadConversation, postChatMessage } from '@/lib/chat'
-import type { ChatMessage, EligibilityResult } from '@/lib/placement-types'
+import {
+  startPractice,
+  submitAnswer,
+  completeSession,
+} from '@/lib/practice'
+import type {
+  ChatMessage,
+  EligibilityResult,
+  PracticeDifficulty,
+  PracticeQuestion,
+  PracticeSession,
+} from '@/lib/placement-types'
 import { cn } from '@/lib/utils'
 
 type AppView = 'landing' | 'dashboard' | 'profile' | 'chat'
 
 interface ChatViewProps {
-  /** Signed-in user id — gates the chat behind authentication. */
   userId?: string
-  /** Switches the app view (e.g. to the profile to complete it first). */
   onNavigate?: (view: AppView) => void
 }
 
 interface LocalMessage extends ChatMessage {
-  /** Client-generated id for messages not yet persisted server-side. */
   localId: string
 }
 
-/**
- * ChatView — the placement chatbot module (T3.3).
- *
- * Message list + composer. Sends via `postChatMessage` (JWT-authenticated),
- * renders deterministic eligibility cards (D7) when the reply carries them,
- * and loads the persisted conversation on mount. Signed-out users see a
- * sign-in prompt instead of the chat.
- */
+type PracticePhase = 'idle' | 'active' | 'complete'
+
+function PracticeMode({
+  onNavigate,
+}: {
+  onNavigate: (view: AppView) => void
+}) {
+  const [phase, setPhase] = useState<PracticePhase>('idle')
+  const [difficulty, setDifficulty] = useState<PracticeDifficulty>('medium')
+  const [session, setSession] = useState<PracticeSession | null>(null)
+  const [questions, setQuestions] = useState<PracticeQuestion[]>([])
+  const [index, setIndex] = useState(0)
+  const [answer, setAnswer] = useState('')
+  const [feedback, setFeedback] = useState<{ text: string; score: number } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [finalResult, setFinalResult] = useState<{
+    scoreSum: number
+    totalQuestions: number
+    percent: number
+  } | null>(null)
+
+  const current = questions[index]
+
+  const handleStart = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await startPractice(difficulty)
+      setSession(result.session)
+      setQuestions(result.questions)
+      setIndex(0)
+      setAnswer('')
+      setFeedback(null)
+      setPhase('active')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start'
+      if (msg === 'profile-required') {
+        onNavigate('profile')
+        return
+      }
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmitAnswer = async () => {
+    if (!answer.trim() || !session || !current) return
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await submitAnswer(session.id, current.id, answer.trim())
+      setFeedback({ text: result.feedback, score: result.score })
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              completedQuestions: result.completed,
+              scoreSum: (prev.scoreSum ?? 0) + result.score,
+            }
+          : prev,
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to grade')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNext = () => {
+    if (index + 1 < questions.length) {
+      setIndex((i) => i + 1)
+      setAnswer('')
+      setFeedback(null)
+    } else {
+      handleComplete()
+    }
+  }
+
+  const handleComplete = async () => {
+    if (!session) return
+    setLoading(true)
+    try {
+      const result = await completeSession(session.id)
+      setFinalResult(result)
+      setPhase('complete')
+    } catch {
+      setPhase('complete')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewSession = () => {
+    setPhase('idle')
+    setSession(null)
+    setQuestions([])
+    setIndex(0)
+    setAnswer('')
+    setFeedback(null)
+    setFinalResult(null)
+    setError(null)
+  }
+
+  if (phase === 'idle') {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Target className="h-6 w-6 text-accent" />
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+              Practice mode
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              Interview practice questions
+            </h2>
+          </div>
+        </div>
+        <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink-soft">
+          Get 10 interview questions tailored to your profile — a mix of
+          technical questions based on your skills and behavioral questions.
+          Answer each one and receive AI feedback with a score.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {(['easy', 'medium', 'hard'] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDifficulty(d)}
+              className={cn(
+                'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                difficulty === d
+                  ? 'border-accent bg-accent/10 text-ink'
+                  : 'border-ink/15 text-ink-soft hover:border-ink/30',
+              )}
+            >
+              {d.charAt(0).toUpperCase() + d.slice(1)}
+            </button>
+          ))}
+        </div>
+        {error && <p className="mt-3 text-sm text-danger">{error}</p>}
+        <Button
+          type="button"
+          onClick={() => void handleStart()}
+          disabled={loading}
+          className="mt-6 h-11 px-6"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Start practice'}
+        </Button>
+      </div>
+    )
+  }
+
+  if (phase === 'complete' && finalResult) {
+    const band =
+      finalResult.percent >= 80
+        ? 'Excellent'
+        : finalResult.percent >= 60
+          ? 'Good'
+          : finalResult.percent >= 40
+            ? 'Needs practice'
+            : 'Keep practicing'
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="h-6 w-6 text-accent" />
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+              Practice complete
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              Your results
+            </h2>
+          </div>
+        </div>
+        <div className="mt-6 rounded-2xl border border-ink/10 bg-paper p-6 text-center">
+          <p className="font-mono text-5xl font-semibold tracking-tight text-ink">
+            {finalResult.scoreSum}
+            <span className="text-2xl text-ink-soft">
+              /{finalResult.totalQuestions * 10}
+            </span>
+          </p>
+          <p className="mt-2 font-mono text-sm uppercase tracking-[0.12em] text-accent">
+            {finalResult.percent}% — {band}
+          </p>
+        </div>
+        <div className="mt-6 flex gap-3">
+          <Button type="button" onClick={handleNewSession} className="h-11 px-6">
+            New session
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onNavigate('dashboard')}
+            className="h-11 px-6"
+          >
+            Back to dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const scoreColor = (s: number) =>
+    s >= 8 ? 'text-accent' : s >= 5 ? 'text-yellow-600' : 'text-danger'
+
+  return (
+    <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-3xl flex-col px-4 py-6 sm:px-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+            Practice — {session?.difficulty}
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+            Question {index + 1} of {questions.length}
+          </h2>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-xs text-ink-soft">
+            Score: {session?.scoreSum ?? 0}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
+        <div
+          className="h-full rounded-full bg-accent transition-all"
+          style={{ width: `${((index + 1) / questions.length) * 100}%` }}
+        />
+      </div>
+      <div className="mt-6 flex-1 overflow-y-auto rounded-2xl border border-ink/10 bg-paper p-4 sm:p-6">
+        {current && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
+                  current.type === 'technical'
+                    ? 'bg-accent/15 text-ink'
+                    : 'bg-ink/10 text-ink-soft',
+                )}
+              >
+                {current.type}
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+                #{current.seq}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-ink">{current.prompt}</p>
+            {!feedback ? (
+              <div className="mt-4 space-y-3">
+                <textarea
+                  aria-label="Your answer"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Type your answer here…"
+                  rows={4}
+                  className="w-full rounded-xl border border-ink/15 bg-surface p-3 text-sm leading-relaxed text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-ink/40"
+                />
+                {error && <p className="text-sm text-danger">{error}</p>}
+                <Button
+                  type="button"
+                  onClick={() => void handleSubmitAnswer()}
+                  disabled={loading || !answer.trim()}
+                  className="h-10 px-5"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Submit answer'
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div
+                  className={cn(
+                    'rounded-xl border p-4',
+                    feedback.score >= 7
+                      ? 'border-accent/30 bg-accent/5'
+                      : feedback.score >= 4
+                        ? 'border-yellow-500/30 bg-yellow-500/5'
+                        : 'border-danger/30 bg-danger/5',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {feedback.score >= 7 ? (
+                      <CheckCircle2 className="h-4 w-4 text-accent" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-danger" />
+                    )}
+                    <span
+                      className={cn(
+                        'font-mono text-lg font-semibold',
+                        scoreColor(feedback.score),
+                      )}
+                    >
+                      {feedback.score}/10
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                    {feedback.text}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="h-10 px-5"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : index + 1 < questions.length ? (
+                    'Next question'
+                  ) : (
+                    'Finish'
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ModeToggle({
+  mode,
+  onModeChange,
+}: {
+  mode: 'chat' | 'practice'
+  onModeChange: (m: 'chat' | 'practice') => void
+}) {
+  return (
+    <div className="mt-3 flex gap-1 rounded-lg border border-ink/10 bg-surface p-0.5">
+      {(['chat', 'practice'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => onModeChange(m)}
+          className={cn(
+            'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+            mode === m
+              ? 'bg-paper text-ink shadow-sm'
+              : 'text-ink-soft hover:text-ink',
+          )}
+        >
+          {m === 'chat' ? 'Chat' : 'Practice'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
+  const [mode, setMode] = useState<'chat' | 'practice'>('chat')
   const [messages, setMessages] = useState<LocalMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [sendError, setSendError] = useState(false)
+  const [profileRequired, setProfileRequired] = useState(false)
   const [eligibilityByMessage, setEligibilityByMessage] = useState<
     Record<string, EligibilityResult[]>
   >({})
@@ -51,9 +416,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
       try {
         const history = await loadConversation()
         if (cancelled) return
-        setMessages(
-          history.map((m) => ({ ...m, localId: m.id })),
-        )
+        setMessages(history.map((m) => ({ ...m, localId: m.id })))
       } catch {
         if (!cancelled) setLoadError(true)
       } finally {
@@ -67,7 +430,6 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
   }, [userId])
 
   useEffect(() => {
-    // jsdom (tests) does not implement scrollIntoView — guard the call.
     bottomRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, sending])
 
@@ -76,6 +438,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
     if (!text || sending) return
     setInput('')
     setSendError(false)
+    setProfileRequired(false)
 
     const userMessage: LocalMessage = {
       id: '',
@@ -106,10 +469,20 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
           [assistantId]: eligibility,
         }))
       }
-    } catch {
-      setSendError(true)
-      setMessages((prev) => prev.filter((m) => m.localId !== userMessage.localId))
-      setInput(text)
+    } catch (err) {
+      if (err instanceof Error && err.message === 'profile-required') {
+        setProfileRequired(true)
+        setMessages((prev) =>
+          prev.filter((m) => m.localId !== userMessage.localId),
+        )
+        setInput(text)
+      } else {
+        setSendError(true)
+        setMessages((prev) =>
+          prev.filter((m) => m.localId !== userMessage.localId),
+        )
+        setInput(text)
+      }
     } finally {
       setSending(false)
     }
@@ -139,7 +512,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
     )
   }
 
-  if (loading) {
+  if (loading && mode === 'chat') {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
         <p role="status" className="flex items-center gap-2 text-sm text-ink-soft">
@@ -157,7 +530,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
           Placement assistant
         </p>
         <h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Couldn’t load your conversation.
+          Couldn't load your conversation.
         </h2>
         <button
           type="button"
@@ -167,6 +540,44 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
           Reload
         </button>
       </div>
+    )
+  }
+
+  if (profileRequired && mode === 'chat') {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
+        <div className="flex items-center gap-3">
+          <Target className="h-6 w-6 text-accent" />
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+              Placement assistant
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              Complete your placement profile first
+            </h2>
+          </div>
+        </div>
+        <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink-soft">
+          Your profile powers the eligibility answers, chat context, and
+          practice questions. Fill it in once and everything works.
+        </p>
+        <Button
+          type="button"
+          onClick={() => onNavigate('profile')}
+          className="mt-6 h-11 px-6"
+        >
+          Go to profile
+        </Button>
+      </div>
+    )
+  }
+
+  if (mode === 'practice') {
+    return (
+      <>
+        <ModeToggle mode={mode} onModeChange={setMode} />
+        <PracticeMode onNavigate={onNavigate} />
+      </>
     )
   }
 
@@ -191,13 +602,15 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
         </Button>
       </div>
 
-      <div className="mt-6 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-ink/10 bg-paper p-4 sm:p-6">
-        {messages.length === 0 && !sendError ? (
+      <ModeToggle mode={mode} onModeChange={setMode} />
+
+      <div className="mt-4 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-ink/10 bg-paper p-4 sm:p-6">
+        {messages.length === 0 && !sendError && !profileRequired ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <Bot className="h-8 w-8 text-accent" />
             <p className="max-w-sm text-sm text-ink-soft">
-              Ask things like “Am I eligible for TCS?” or “Which companies can
-              I apply to?” — answers are grounded in your profile and the
+              Ask things like "Am I eligible for TCS?" or "Which companies can
+              I apply to?" — answers are grounded in your profile and the
               seeded company data.
             </p>
           </div>
@@ -291,10 +704,26 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
           </div>
         )}
 
+        {profileRequired && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+            <p className="text-sm text-ink">
+              Complete your placement profile first — it powers the eligibility answers.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => onNavigate('profile')}
+              className="h-8 shrink-0 px-3 text-xs"
+            >
+              Go to profile
+            </Button>
+          </div>
+        )}
+
         {sendError && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3">
             <p className="text-sm text-danger">
-              Couldn’t reach the assistant. Your message is back in the box —
+              Couldn't reach the assistant. Your message is back in the box —
               try again.
             </p>
             <Button

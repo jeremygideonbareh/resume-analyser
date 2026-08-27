@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
@@ -9,6 +9,12 @@ import type { ChatMessage, EligibilityResult } from '@/lib/placement-types'
 vi.mock('@/lib/chat', () => ({
   loadConversation: vi.fn(),
   postChatMessage: vi.fn(),
+}))
+
+vi.mock('@/lib/practice', () => ({
+  startPractice: vi.fn(),
+  submitAnswer: vi.fn(),
+  completeSession: vi.fn(),
 }))
 
 /**
@@ -211,7 +217,7 @@ describe('ChatView — error retry', () => {
     fireEvent.click(screen.getByRole('button', { name: /send message/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/couldn’t reach the assistant/i)).toBeInTheDocument()
+      expect(screen.getByText(/couldn't reach the assistant/i)).toBeInTheDocument()
     })
     // Input restored so the user can retry.
     expect(screen.getByLabelText(/message the placement assistant/i)).toHaveValue(
@@ -221,6 +227,38 @@ describe('ChatView — error retry', () => {
     fireEvent.click(screen.getByRole('button', { name: /retry/i }))
 
     expect(await screen.findByText('Recovered!')).toBeInTheDocument()
-    expect(screen.queryByText(/couldn’t reach the assistant/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/couldn't reach the assistant/i)).not.toBeInTheDocument()
+  })
+})
+describe('ChatView — profile-required', () => {
+  it('shows full-page profile prompt when chat returns profile-required', async () => {
+    loadConversation.mockResolvedValue([])
+    postChatMessage.mockRejectedValue(new Error('profile-required'))
+    render(<ChatView userId="user_1" />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/message the placement assistant/i)).toBeInTheDocument()
+    })
+    fireEvent.change(screen.getByLabelText(/message the placement assistant/i), {
+      target: { value: 'Hi' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /send message/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/complete your placement profile first/i)).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: /go to profile/i })).toBeInTheDocument()
+  })
+})
+
+describe('ChatView — mode toggle', () => {
+  it('renders Chat and Practice toggle buttons', async () => {
+    loadConversation.mockResolvedValue([])
+    render(<ChatView userId="user_1" />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^chat$/i })).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: /^practice$/i })).toBeInTheDocument()
   })
 })

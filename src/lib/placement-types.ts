@@ -90,3 +90,29 @@ export interface GrammarIssue {
   suggestion: string
   context: string
 }
+
+// ---------------------------------------------------------------------------
+// Practice Questions (Phase 5)
+// ---------------------------------------------------------------------------
+
+export type PracticeDifficulty = 'easy' | 'medium' | 'hard'
+
+export type PracticeQuestionType = 'technical' | 'behavioral'
+
+export interface PracticeQuestion {
+  id: string
+  seq: number
+  type: PracticeQuestionType
+  prompt: string
+  userAnswer?: string
+  feedback?: string
+  score?: number
+}
+
+export interface PracticeSession {
+  id: string
+  difficulty: PracticeDifficulty
+  totalQuestions: number
+  completedQuestions: number
+  scoreSum: number
+}
