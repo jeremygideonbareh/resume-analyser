@@ -25,6 +25,15 @@ const QUESTIONS_PER_SESSION = 10
 
 // --- helpers ---------------------------------------------------------------
 
+class LlmUpstreamError extends Error {
+  status: number
+  constructor(status: number) {
+    super(`LLM upstream ${status}`)
+    this.name = 'LlmUpstreamError'
+    this.status = status
+  }
+}
+
 function json(res: VercelResponse, payload: unknown, status: number): void {
   res.status(status).json(payload)
 }
@@ -191,7 +200,7 @@ async function callLlm(
       }),
       signal: controller.signal,
     })
-    if (!upstream.ok) throw new Error(`LLM upstream ${upstream.status}`)
+    if (!upstream.ok) throw new LlmUpstreamError(upstream.status)
     const data = (await upstream.json()) as {
       choices?: Array<{ message?: { content?: string } }>
     }
@@ -238,6 +247,7 @@ async function handleStart(
     )
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return json(res, { error: 'timeout' }, 504)
+    if (err instanceof LlmUpstreamError) return json(res, { error: 'llm-upstream-error', status: err.status }, 502)
     return json(res, { error: 'llm-upstream-error' }, 502)
   }
 
@@ -343,6 +353,7 @@ async function handleAnswer(
     )
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return json(res, { error: 'timeout' }, 504)
+    if (err instanceof LlmUpstreamError) return json(res, { error: 'llm-upstream-error', status: err.status }, 502)
     return json(res, { error: 'llm-upstream-error' }, 502)
   }
 

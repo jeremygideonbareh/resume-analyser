@@ -290,6 +290,26 @@ describe('api/practice — start', () => {
     )
     expect(JSON.stringify(res.body)).not.toContain('sk-test-secret-key')
   })
+
+  it('returns 502 with upstream status detail when the LLM upstream errors', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    vi.mocked(createClient).mockReturnValue(
+      makeMockClient({ profile }).client as never,
+    )
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    )
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'start', difficulty: 'easy' }, 'valid-token'),
+      res,
+    )
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { status?: number }).status).toBe(404)
+  })
 })
 
 describe('api/practice — answer', () => {

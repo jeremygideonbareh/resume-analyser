@@ -89,7 +89,7 @@ export default async function handler(
     })
 
     if (!upstream.ok) {
-      return json(res, { error: 'llm-upstream-error' }, 502)
+      return json(res, { error: 'llm-upstream-error', status: upstream.status }, 502)
     }
 
     const data = (await upstream.json()) as {

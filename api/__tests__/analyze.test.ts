@@ -108,6 +108,7 @@ describe('api/analyze serverless handler', () => {
     const res = makeRes()
     await handler(makeReq({ text: 'r' }), res)
     expect(res.statusCode).toBe(502)
+    expect((res.body as { status?: number }).status).toBe(429)
   })
 
   it('returns 502 when the LLM response is not valid JSON feedback', async () => {

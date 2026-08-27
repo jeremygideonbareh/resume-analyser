@@ -97,6 +97,7 @@ describe('api/grammar — guards', () => {
     const res = makeRes()
     await grammar.default(makeReq('POST', { text: 'hello' }), res)
     expect(res.statusCode).toBe(502)
+    expect((res.body as { status?: number }).status).toBe(500)
   })
 })
 
