@@ -88,10 +88,10 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
   return (
     <section
       aria-label="AI feedback"
-      className="rounded-2xl border border-ink/10 bg-paper p-6"
+      className="rounded-xl border border-hairline bg-surface p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold text-ink">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
           AI Feedback (beta)
         </h3>
@@ -99,7 +99,7 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
           <button
             type="button"
             onClick={() => void run()}
-            className="rounded-full border border-ink/15 px-4 py-2 text-sm text-ink transition-colors hover:border-ink/30"
+            className="rounded-full border border-hairline px-4 py-2 text-sm text-ink transition-colors hover:border-ink/25"
           >
             Get AI feedback
           </button>
@@ -135,21 +135,23 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
           <AiFeedbackList
             title="Strengths"
             items={state.feedback.strengths}
-            tone="emerald"
+            tone="success"
           />
 
           {state.issues.length > 0 && (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+              <p className="text-[13px] text-muted">
                 Grammar issues
               </p>
               <ul className="mt-2 space-y-2">
                 {state.issues.map((issue, i) => (
                   <li
                     key={`${issue.message}-${i}`}
-                    className="rounded-xl border border-ink/10 bg-surface/60 p-3"
+                    className="rounded-xl border border-hairline bg-surface/60 p-3"
                   >
-                    <p className="text-xs italic text-ink-soft">
+                    {/* No italic — the loaded Archivo axis is upright only, so
+                        it would synthesise an oblique. */}
+                    <p className="text-xs text-muted">
                       “{issue.context}”
                     </p>
                     <p className="mt-1.5 text-sm text-ink">{issue.message}</p>
@@ -160,7 +162,7 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
                       <button
                         type="button"
                         onClick={() => void applySuggestion(issue)}
-                        className="flex items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30"
+                        className="flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/25"
                       >
                         {copied === issue.suggestion ? (
                           <>
@@ -184,7 +186,7 @@ export function AiFeedbackSection({ text }: AiFeedbackSectionProps) {
           {(state.feedback.improvements.length > 0 ||
             state.feedback.suggestions.length > 0) && (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+              <p className="text-[13px] text-muted">
                 AI-generated resume improvements
               </p>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -222,18 +224,18 @@ function AiFeedbackList({
 }: {
   title: string
   items: string[]
-  tone: 'emerald' | 'amber' | 'ink'
+  tone: 'success' | 'amber' | 'ink'
 }) {
   if (items.length === 0) return null
   const dotClass =
-    tone === 'emerald'
-      ? 'bg-emerald-600'
+    tone === 'success'
+      ? 'bg-success'
       : tone === 'amber'
         ? 'bg-amber-600'
         : 'bg-ink/30'
   return (
     <div>
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+      <p className="text-[13px] text-muted">
         {title}
       </p>
       <ul className="mt-2 space-y-1.5">
@@ -262,18 +264,16 @@ function ImprovementCard({
   onCopy: () => void
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-ink/10 bg-surface/60 p-3">
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-hairline bg-surface/60 p-3">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
-          {label}
-        </p>
+        <p className="text-[12px] font-medium text-muted">{label}</p>
         <p className="mt-1 text-sm leading-snug text-ink">{value}</p>
       </div>
       <button
         type="button"
         onClick={onCopy}
         aria-label={`Copy ${label.toLowerCase()}`}
-        className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full border border-ink/15 px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30"
+        className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full border border-hairline px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/25"
       >
         {copied ? (
           <>

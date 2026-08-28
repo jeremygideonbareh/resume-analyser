@@ -258,7 +258,7 @@ export function LoginPanel({
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             onKeyDown={handleKeyDown}
-            className="w-full max-w-sm rounded-xl border border-ink/10 bg-paper p-6 shadow-lg"
+            className="w-full max-w-sm rounded-xl border border-hairline bg-surface p-6 elev-raised"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -268,7 +268,7 @@ export function LoginPanel({
                 >
                   {title}
                 </h2>
-                <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+                <p className="mt-0.5 text-[13px] text-muted">
                   {subtitle}
                 </p>
               </div>
@@ -287,7 +287,7 @@ export function LoginPanel({
               <div
                 role="tablist"
                 aria-label="Authentication mode"
-                className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-ink/10 bg-surface p-1"
+                className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-hairline bg-surface p-1"
               >
                 {(
                   [
@@ -304,7 +304,7 @@ export function LoginPanel({
                     aria-controls="login-tabpanel"
                     onClick={() => switchMode(m)}
                     className={cn(
-                      'flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors',
+                      'flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors',
                       mode === m
                         ? 'bg-ink text-surface'
                         : 'text-ink-soft hover:text-ink',
@@ -337,7 +337,7 @@ export function LoginPanel({
                   <button
                     type="button"
                     onClick={() => switchMode('signin')}
-                    className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+                    className="mt-4 text-[13px] text-muted underline-offset-4 hover:text-ink hover:underline"
                   >
                     ← Back to sign in
                   </button>
@@ -348,7 +348,7 @@ export function LoginPanel({
                     <>
                       <label
                         htmlFor="login-email"
-                        className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                        className="text-[13px] text-muted"
                       >
                         Email address
                       </label>
@@ -380,7 +380,7 @@ export function LoginPanel({
                     <>
                       <label
                         htmlFor="login-password"
-                        className="mt-4 block font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                        className="mt-4 block text-[13px] text-muted"
                       >
                         Password
                       </label>
@@ -412,7 +412,7 @@ export function LoginPanel({
                     <>
                       <label
                         htmlFor="login-confirm"
-                        className="mt-4 block font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                        className="mt-4 block text-[13px] text-muted"
                       >
                         Confirm password
                       </label>
@@ -473,7 +473,7 @@ export function LoginPanel({
                     <button
                       type="button"
                       onClick={() => switchMode('forgot')}
-                      className="mt-3 w-full text-center font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+                      className="mt-3 w-full text-center text-[13px] text-muted underline-offset-4 hover:text-ink hover:underline"
                     >
                       Forgot password?
                     </button>

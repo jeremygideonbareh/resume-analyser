@@ -98,7 +98,7 @@ export function ToolSection({
     : { duration: 0.2, ease: 'easeOut' as const }
 
   return (
-    <section id="tool" className="border-b border-ink/10">
+    <section id="tool" className="border-b border-hairline">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className={`grid gap-10 ${phase === 'done' ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} lg:items-start`}>
           {phase !== 'done' && (
@@ -108,10 +108,14 @@ export function ToolSection({
                   text="Drop your resume "
                   className="cursor-default justify-start"
                 />
+                {/* Not italic: only Archivo's upright wght axis is loaded, so
+                    `italic` synthesises a skewed oblique. Emphasis comes from
+                    colour, which also drops the italic-accent-word construction
+                    the other sections were rebuilt to stop repeating. */}
                 <LetterCascade
                   text="in."
-                  letterClassName="font-normal italic text-accent"
-                  className="cursor-default justify-start"
+                  letterClassName="text-link"
+                  className="justify-start"
                 />
               </h2>
               <p className="mt-4 max-w-md text-ink-soft">
@@ -140,9 +144,11 @@ export function ToolSection({
                   {user ? (
                     <UploadZone onParsed={handleParsed} />
                   ) : (
-                    <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+                    <div className="rounded-xl border border-hairline bg-surface p-6">
                       <div className="flex items-start gap-4">
-                        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/10 bg-surface text-accent">
+                        {/* accent-soft, not surface: a white circle on a white
+                            card is an invisible container. */}
+                        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-link">
                           <Lock className="h-4 w-4" aria-hidden="true" />
                         </span>
                         <div>
@@ -176,7 +182,7 @@ export function ToolSection({
                   exit={reduce ? undefined : { opacity: 0, y: -8 }}
                   transition={phaseTransition}
                 >
-                  <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+                  <div className="rounded-xl border border-hairline bg-surface p-6">
                     <p className="font-mono text-[13px] text-link">
                       {parsed.format.toUpperCase()} loaded
                     </p>
@@ -220,7 +226,7 @@ export function ToolSection({
                             placeholder="Paste the job description here…"
                             rows={4}
                             aria-label="Job description"
-                            className="mt-3 w-full resize-y rounded-xl border border-ink/15 bg-paper p-3 text-sm text-ink placeholder:text-ink-soft/60 focus:border-accent focus:outline-none"
+                            className="mt-3 w-full resize-y rounded-xl border border-hairline bg-surface p-3 text-sm text-ink placeholder:text-ink-soft/60 focus:border-accent focus:outline-none"
                           />
                         </motion.div>
                       )}
@@ -237,7 +243,7 @@ export function ToolSection({
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="rounded-full border border-ink/15 px-5 py-2.5 text-sm text-ink transition-colors hover:border-ink/30"
+                        className="rounded-full border border-hairline px-5 py-2.5 text-sm text-ink transition-colors hover:border-ink/25"
                       >
                         Try another resume
                       </button>
@@ -271,7 +277,7 @@ export function ToolSection({
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="rounded-full border border-ink/15 px-5 py-2 text-sm text-ink transition-colors hover:border-ink/30"
+                        className="rounded-full border border-hairline px-5 py-2 text-sm text-ink transition-colors hover:border-ink/25"
                       >
                         Try another resume
                       </button>

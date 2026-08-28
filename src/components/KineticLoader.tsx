@@ -63,9 +63,9 @@ export function ScanSkeleton() {
     <div
       role="status"
       aria-live="polite"
-      className="rounded-2xl border border-ink/10 bg-paper p-6"
+      className="rounded-xl border border-hairline bg-surface p-6"
     >
-      <div className="relative overflow-hidden rounded-xl border border-ink/10 bg-surface p-5">
+      <div className="relative overflow-hidden rounded-xl border border-hairline bg-surface p-5">
         {/* Resume outline — sized to final content (no CLS) */}
         <div className="space-y-2.5">
           <div className="skeleton-shimmer h-3 w-1/3 rounded bg-ink/10" />
@@ -88,9 +88,10 @@ export function ScanSkeleton() {
         )}
       </div>
 
-      <p className="mt-4 font-mono text-xs uppercase tracking-[0.14em] text-ink-soft">
-        {ticker}
-      </p>
+      {/* No role/aria-live here: the wrapper above is already the live region,
+          and nesting one inside another makes screen readers announce the
+          change twice. */}
+      <p className="mt-4 text-[13px] text-ink-soft">{ticker}</p>
     </div>
   )
 }
@@ -127,13 +128,13 @@ export function AnalyzingSkeleton() {
     <div
       role="status"
       aria-live="polite"
-      className="rounded-2xl border border-ink/10 bg-paper p-6"
+      className="rounded-xl border border-hairline bg-surface p-6"
     >
       <div className="flex items-baseline gap-3">
         <span className="font-mono text-6xl font-semibold tabular-nums tracking-tight text-ink">
           {score}
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <span className="text-[13px] font-semibold text-ink">
           ATS Score
         </span>
       </div>
@@ -141,7 +142,7 @@ export function AnalyzingSkeleton() {
       <div className="mt-6 space-y-3">
         {CATEGORY_BARS.map((bar, i) => (
           <div key={bar.label}>
-            <div className="flex justify-between font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+            <div className="flex justify-between text-[13px] text-muted">
               <span>{bar.label}</span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-ink/10">

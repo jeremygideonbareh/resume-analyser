@@ -255,7 +255,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
   if (!userId) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+        <p className="text-[13px] font-semibold text-link">
           Profile
         </p>
         <h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -264,7 +264,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
         <button
           type="button"
           onClick={() => onNavigate('landing')}
-          className="mt-6 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+          className="mt-6 rounded-full border border-hairline px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-surface"
         >
           Back to home
         </button>
@@ -289,7 +289,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
   if (loadError) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+        <p className="text-[13px] font-semibold text-link">
           Profile
         </p>
         <h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -301,7 +301,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mt-6 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+          className="mt-6 rounded-full border border-hairline px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-surface"
         >
           Reload
         </button>
@@ -320,7 +320,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+          <p className="text-[13px] font-semibold text-link">
             Profile
           </p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -331,7 +331,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
           </p>
         </div>
         <div className="w-full max-w-xs">
-          <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+          <div className="flex items-center justify-between text-[13px] text-muted">
             <span>Profile completeness</span>
             <span className="text-ink">{completeness}%</span>
           </div>
@@ -354,9 +354,9 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
         {/* Personal details */}
         <section
           aria-label="Personal details"
-          className="rounded-2xl border border-ink/10 bg-paper p-6"
+          className="rounded-xl border border-hairline bg-surface p-6"
         >
-          <h3 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+          <h3 className="flex items-center gap-2 text-[13px] font-semibold text-ink">
             <UserRound className="h-3.5 w-3.5 text-accent" />
             Personal details
           </h3>
@@ -364,7 +364,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
             <div>
               <label
                 htmlFor="profile-full-name"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 Full name
               </label>
@@ -380,7 +380,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
               <div>
                 <label
                   htmlFor="profile-department"
-                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                  className="text-[13px] text-muted"
                 >
                   Department
                 </label>
@@ -388,7 +388,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
                   id="profile-department"
                   value={form.department}
                   onChange={(e) => set('department', e.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-md border border-ink/15 bg-paper px-3 text-sm text-ink outline-none transition-colors focus:border-ink/40"
+                  className="mt-1.5 h-10 w-full rounded-md border border-hairline bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-ink/40"
                 >
                   <option value="">Select…</option>
                   {DEPARTMENTS.map((d) => (
@@ -401,7 +401,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
               <div>
                 <label
                   htmlFor="profile-semester"
-                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                  className="text-[13px] text-muted"
                 >
                   Semester
                 </label>
@@ -409,7 +409,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
                   id="profile-semester"
                   value={form.semester}
                   onChange={(e) => set('semester', e.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-md border border-ink/15 bg-paper px-3 text-sm text-ink outline-none transition-colors focus:border-ink/40"
+                  className="mt-1.5 h-10 w-full rounded-md border border-hairline bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-ink/40"
                 >
                   <option value="">Select…</option>
                   {Array.from({ length: 8 }, (_, i) => i + 1).map((s) => (
@@ -425,7 +425,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
               <div>
                 <label
                   htmlFor="profile-cgpa"
-                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                  className="text-[13px] text-muted"
                 >
                   CGPA (0–10)
                 </label>
@@ -446,7 +446,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
               <div>
                 <label
                   htmlFor="profile-backlogs"
-                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                  className="text-[13px] text-muted"
                 >
                   Active backlogs
                 </label>
@@ -465,7 +465,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
             <div>
               <label
                 htmlFor="profile-target-role"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 Target role
               </label>
@@ -483,16 +483,16 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
         {/* Skills & certifications */}
         <section
           aria-label="Skills and certifications"
-          className="rounded-2xl border border-ink/10 bg-paper p-6"
+          className="rounded-xl border border-hairline bg-surface p-6"
         >
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+          <h3 className="text-[13px] font-semibold text-ink">
             Skills & certifications
           </h3>
           <div className="mt-4 space-y-4">
             <div>
               <label
                 htmlFor="profile-skills"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 Skills (comma-separated)
               </label>
@@ -511,7 +511,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
             <div>
               <label
                 htmlFor="profile-certifications"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 Certifications (comma-separated)
               </label>
@@ -524,7 +524,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
               />
             </div>
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              <span className="text-[13px] text-muted">
                 Programming languages
               </span>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -540,7 +540,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
                         'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
                         active
                           ? 'border-accent bg-accent/10 text-ink'
-                          : 'border-ink/15 text-ink-soft hover:border-ink/30',
+                          : 'border-hairline text-ink-soft hover:border-ink/25',
                       )}
                     >
                       {lang}
@@ -570,16 +570,16 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
         {/* Links */}
         <section
           aria-label="Links"
-          className="rounded-2xl border border-ink/10 bg-paper p-6 lg:col-span-2"
+          className="rounded-xl border border-hairline bg-surface p-6 lg:col-span-2"
         >
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+          <h3 className="text-[13px] font-semibold text-ink">
             Links
           </h3>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label
                 htmlFor="profile-portfolio"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 Portfolio URL
               </label>
@@ -596,7 +596,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
             <div>
               <label
                 htmlFor="profile-github"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 GitHub URL
               </label>
@@ -613,7 +613,7 @@ export function ProfileView({ userId, onNavigate = () => {} }: ProfileViewProps)
             <div>
               <label
                 htmlFor="profile-linkedin"
-                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted"
+                className="text-[13px] text-muted"
               >
                 LinkedIn URL
               </label>

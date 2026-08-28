@@ -156,7 +156,7 @@ function PracticeMode({
         <div className="flex items-center gap-3">
           <Target className="h-6 w-6 text-accent" />
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+            <p className="text-[13px] font-semibold text-link">
               Practice mode
             </p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
@@ -179,7 +179,7 @@ function PracticeMode({
                 'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
                 difficulty === d
                   ? 'border-accent bg-accent/10 text-ink'
-                  : 'border-ink/15 text-ink-soft hover:border-ink/30',
+                  : 'border-hairline text-ink-soft hover:border-ink/25',
               )}
             >
               {d.charAt(0).toUpperCase() + d.slice(1)}
@@ -213,7 +213,7 @@ function PracticeMode({
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-6 w-6 text-accent" />
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+            <p className="text-[13px] font-semibold text-link">
               Practice complete
             </p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
@@ -221,14 +221,14 @@ function PracticeMode({
             </h2>
           </div>
         </div>
-        <div className="mt-6 rounded-2xl border border-ink/10 bg-paper p-6 text-center">
+        <div className="mt-6 rounded-xl border border-hairline bg-surface p-6 text-center">
           <p className="font-mono text-5xl font-semibold tracking-tight text-ink">
             {finalResult.scoreSum}
             <span className="text-2xl text-ink-soft">
               /{finalResult.totalQuestions * 10}
             </span>
           </p>
-          <p className="mt-2 font-mono text-sm uppercase tracking-[0.12em] text-accent">
+          <p className="mt-2 text-title text-link">
             {finalResult.percent}% — {band}
           </p>
         </div>
@@ -256,7 +256,7 @@ function PracticeMode({
     <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-3xl flex-col px-4 py-6 sm:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+          <p className="text-[13px] font-semibold text-link">
             Practice — {session?.difficulty}
           </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
@@ -275,13 +275,13 @@ function PracticeMode({
           style={{ width: `${((index + 1) / questions.length) * 100}%` }}
         />
       </div>
-      <div className="mt-6 flex-1 overflow-y-auto rounded-2xl border border-ink/10 bg-paper p-4 sm:p-6">
+      <div className="mt-6 flex-1 overflow-y-auto rounded-xl border border-hairline bg-surface p-4 sm:p-6">
         {current && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  'rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
+                  'rounded-full px-2.5 py-0.5 text-[12px] font-medium',
                   current.type === 'technical'
                     ? 'bg-accent/15 text-ink'
                     : 'bg-ink/10 text-ink-soft',
@@ -289,7 +289,7 @@ function PracticeMode({
               >
                 {current.type}
               </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+              <span className="text-[12px] font-medium text-ink-soft">
                 #{current.seq}
               </span>
             </div>
@@ -310,7 +310,7 @@ function PracticeMode({
                           'flex w-full items-start gap-3 rounded-xl border p-3 text-left text-sm leading-relaxed transition-colors',
                           selectedIndex === i
                             ? 'border-accent bg-accent/5 text-ink'
-                            : 'border-ink/15 bg-surface text-ink hover:border-ink/30',
+                            : 'border-hairline bg-surface text-ink hover:border-ink/25',
                         )}
                       >
                         <span
@@ -411,7 +411,7 @@ function ModeToggle({
   onModeChange: (m: 'chat' | 'practice') => void
 }) {
   return (
-    <div className="mt-3 flex gap-1 rounded-lg border border-ink/10 bg-surface p-0.5">
+    <div className="mt-3 flex gap-1 rounded-lg border border-hairline bg-surface p-0.5">
       {(['chat', 'practice'] as const).map((m) => (
         <button
           key={m}
@@ -420,7 +420,7 @@ function ModeToggle({
           className={cn(
             'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
             mode === m
-              ? 'bg-paper text-ink shadow-sm'
+              ? 'bg-surface text-ink elev-soft'
               : 'text-ink-soft hover:text-ink',
           )}
         >
@@ -532,7 +532,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
   if (!userId) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+        <p className="text-[13px] font-semibold text-link">
           Placement assistant
         </p>
         <h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -545,7 +545,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
         <button
           type="button"
           onClick={() => onNavigate('landing')}
-          className="mt-6 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+          className="mt-6 rounded-full border border-hairline px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-surface"
         >
           Back to home
         </button>
@@ -567,7 +567,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
   if (loadError) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+        <p className="text-[13px] font-semibold text-link">
           Placement assistant
         </p>
         <h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -576,7 +576,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mt-6 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+          className="mt-6 rounded-full border border-hairline px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-surface"
         >
           Reload
         </button>
@@ -590,7 +590,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
         <div className="flex items-center gap-3">
           <Target className="h-6 w-6 text-accent" />
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+            <p className="text-[13px] font-semibold text-link">
               Placement assistant
             </p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
@@ -626,7 +626,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
     <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-3xl flex-col px-4 py-6 sm:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+          <p className="text-[13px] font-semibold text-link">
             Placement assistant
           </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
@@ -645,7 +645,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
 
       <ModeToggle mode={mode} onModeChange={setMode} />
 
-      <div className="mt-4 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-ink/10 bg-paper p-4 sm:p-6">
+      <div className="mt-4 flex-1 space-y-4 overflow-y-auto rounded-xl border border-hairline bg-surface p-4 sm:p-6">
         {messages.length === 0 && !sendError && !profileRequired ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <Bot className="h-8 w-8 text-accent" />
@@ -671,7 +671,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
                 )}
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+                    'max-w-[80%] rounded-xl px-4 py-2.5 text-sm leading-relaxed',
                     m.role === 'user'
                       ? 'rounded-br-sm bg-ink text-surface'
                       : 'rounded-bl-sm bg-surface text-ink',
@@ -706,7 +706,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
                           </span>
                           <span
                             className={cn(
-                              'rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]',
+                              'rounded-full px-2 py-0.5 text-[12px] font-medium',
                               e.eligible
                                 ? 'bg-accent/15 text-ink'
                                 : 'bg-danger/15 text-danger',
@@ -738,7 +738,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
             <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10">
               <Bot className="h-4 w-4 text-accent" />
             </span>
-            <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-surface px-4 py-2.5 text-sm text-ink-soft">
+            <div className="flex items-center gap-2 rounded-xl rounded-bl-sm bg-surface px-4 py-2.5 text-sm text-ink-soft">
               <Loader2 className="h-4 w-4 animate-spin" />
               Thinking…
             </div>
@@ -794,7 +794,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about eligibility, companies, interview prep…"
-          className="h-11 flex-1 rounded-full border border-ink/15 bg-paper px-5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-ink/40"
+          className="h-11 flex-1 rounded-full border border-hairline bg-surface px-5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-ink/40"
         />
         <Button
           type="submit"

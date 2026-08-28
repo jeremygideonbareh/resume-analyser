@@ -66,7 +66,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null
   const p = payload[0]?.payload
   return (
-    <div className="rounded-lg border border-ink/10 bg-paper px-3 py-2 font-mono text-xs text-ink shadow-sm">
+    <div className="rounded-lg border border-hairline bg-surface px-3 py-2 font-mono text-xs text-ink elev-soft">
       <div className="font-medium">{p?.label}</div>
       <div className="text-ink-soft">
         {p?.earned}/{p?.weight} pts
@@ -145,17 +145,17 @@ export function ReportView({ result, parsed }: ReportViewProps) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 rounded-full border border-ink/15 px-4 py-2 text-sm text-ink transition-colors hover:border-ink/30"
+            className="flex items-center gap-1.5 rounded-full border border-hairline px-4 py-2 text-sm text-ink transition-colors hover:border-ink/25"
           >
             <Printer className="h-3.5 w-3.5" /> Print report
           </button>
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 rounded-full border border-ink/15 px-4 py-2 text-sm text-ink transition-colors hover:border-ink/30"
+            className="flex items-center gap-1.5 rounded-full border border-hairline px-4 py-2 text-sm text-ink transition-colors hover:border-ink/25"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5 text-emerald-600" />
+              <Check className="h-3.5 w-3.5 text-success" />
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
@@ -166,10 +166,10 @@ export function ReportView({ result, parsed }: ReportViewProps) {
 
       {/* Signature scorecard */}
       <ReportReveal delay={0.1}>
-        <div className={`rounded-2xl border bg-paper p-6 ${band.accentClass}`}>
+        <div className={`rounded-xl border bg-surface p-6 ${band.accentClass}`}>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+              <p className="text-[13px] font-semibold text-ink">
                 ATS Score
               </p>
               <div className="mt-1 flex items-baseline gap-3">
@@ -181,7 +181,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                 </span>
               </div>
             </div>
-            <div className="text-right font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+            <div className="text-right text-[13px] text-muted">
               {parsed && (
                 <>
                   <p>{parsed.format.toUpperCase()}</p>
@@ -196,8 +196,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
       {/* Charts */}
       <ReportReveal delay={0.2}>
         <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <div className="rounded-xl border border-hairline bg-surface p-6">
+          <h3 className="text-[13px] font-semibold text-ink">
             Category profile
           </h3>
           <div className="mt-3 h-64">
@@ -227,8 +227,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <div className="rounded-xl border border-hairline bg-surface p-6">
+          <h3 className="text-[13px] font-semibold text-ink">
             Category scores — click a bar for feedback
           </h3>
           <div className="mt-3 h-64">
@@ -277,8 +277,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
 
       {/* Sections detected */}
       <ReportReveal delay={0.3}>
-        <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <div className="rounded-xl border border-hairline bg-surface p-6">
+          <h3 className="text-[13px] font-semibold text-ink">
             Sections detected
           </h3>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -287,7 +287,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
               .map((s) => (
                 <span
                   key={s.name}
-                  className="rounded-full border border-ink/15 px-3 py-1 text-xs text-ink"
+                  className="rounded-full border border-hairline px-3 py-1 text-xs text-ink"
                 >
                   {s.name}
                 </span>
@@ -303,8 +303,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
 
       {/* Skills extracted */}
       <ReportReveal delay={0.45}>
-        <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <div className="rounded-xl border border-hairline bg-surface p-6">
+          <h3 className="text-[13px] font-semibold text-ink">
             Skills extracted ({result.skills.length})
           </h3>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -328,8 +328,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
       {/* JD keyword match */}
       {hasJd && (
         <ReportReveal delay={0.6}>
-          <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+          <div className="rounded-xl border border-hairline bg-surface p-6">
+            <h3 className="text-[13px] font-semibold text-ink">
               Job description keywords
             </h3>
             <div className="mt-3 space-y-3">
@@ -341,7 +341,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                   {result.presentKeywords.map((k) => (
                     <span
                       key={k}
-                      className="rounded-full bg-emerald-600/10 px-3 py-1 text-xs font-medium text-emerald-700"
+                      className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success"
                     >
                       {k}
                     </span>
@@ -356,7 +356,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                   {result.missingKeywords.map((k) => (
                     <span
                       key={k}
-                      className="rounded-full border border-ink/20 px-3 py-1 text-xs text-ink"
+                      className="rounded-full border border-hairline px-3 py-1 text-xs text-ink"
                     >
                       {k}
                     </span>
@@ -370,8 +370,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
 
       {/* Feedback — grouped by priority, drill-down highlight */}
       <ReportReveal delay={0.75}>
-        <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+        <div className="rounded-xl border border-hairline bg-surface p-6">
+          <h3 className="text-[13px] font-semibold text-ink">
             Feedback
           </h3>
 
@@ -396,7 +396,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                   : 'Nice-to-haves'
             return (
               <div key={group} className="mt-4">
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+                <p className="text-[13px] text-muted">
                   {label}
                 </p>
                 <ol className="mt-2 space-y-2">
@@ -433,9 +433,9 @@ export function ReportView({ result, parsed }: ReportViewProps) {
       {/* Annotated resume preview — line-anchored, rule-based issues */}
       {parsed && parsed.text && (
         <ReportReveal delay={0.8}>
-          <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+          <div className="rounded-xl border border-hairline bg-surface p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+              <h3 className="text-[13px] font-semibold text-ink">
                 Inline issue highlights
               </h3>
               <span className="font-mono text-[11px] text-ink-soft">

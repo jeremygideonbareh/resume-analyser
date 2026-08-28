@@ -155,7 +155,7 @@ useEffect(() => {
             ? 'border-danger/40 bg-danger/5'
             : phase === 'success'
               ? 'border-accent/40 bg-accent/5'
-              : 'border-ink/20 bg-surface hover:border-accent/50',
+              : 'border-hairline bg-surface hover:border-accent/50',
           dragOver && 'scale-[1.01] border-accent bg-accent-soft/40'
         )}
       >
@@ -170,17 +170,17 @@ useEffect(() => {
             >
               <div
                 aria-hidden="true"
-                className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 bg-paper text-ink-soft transition-colors group-hover:text-accent"
+                className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-hairline bg-surface text-ink-soft transition-colors group-hover:text-accent"
               >
                 <FileText className="h-6 w-6" strokeWidth={1.75} />
               </div>
               <p className="font-display text-lg font-semibold text-ink">
                 Drop your resume here
               </p>
-              <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-muted">
+              <p className="mt-1 text-[13px] text-muted">
                 or click to browse
               </p>
-              <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              <p className="mt-5 text-[13px] text-muted">
                 PDF · DOCX · TXT — ≤ 5 MB — parsed in your browser
               </p>
             </motion.div>
@@ -246,7 +246,7 @@ useEffect(() => {
                 <p className="font-display text-lg font-semibold text-ink">
                   Resume ready
                 </p>
-                <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted">
+                <p className="text-[13px] text-muted">
                   {result.format.toUpperCase()} · {wordCount(result.text)} words
                 </p>
                 <Button
@@ -273,7 +273,7 @@ useEffect(() => {
               ref={pasteToggleRef}
               type="button"
               onClick={() => setPasteOpen(true)}
-              className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted underline-offset-4 hover:text-ink hover:underline"
+              className="text-[13px] text-muted underline-offset-4 hover:text-ink hover:underline"
             >
               or paste your resume as text
             </button>

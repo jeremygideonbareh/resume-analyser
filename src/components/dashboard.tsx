@@ -155,7 +155,7 @@ export function Dashboard({
 	if (error) {
 		return (
 			<div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-				<p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+				<p className="text-[13px] font-semibold text-link">
 					Dashboard
 				</p>
 				<h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -168,7 +168,7 @@ export function Dashboard({
 				<button
 					type="button"
 					onClick={() => onNavigate("landing")}
-					className="mt-6 rounded-full border border-ink/15 px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+					className="mt-6 rounded-full border border-hairline px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-surface"
 				>
 					Back to analyser
 				</button>
@@ -179,7 +179,7 @@ export function Dashboard({
 	if (rows === null) {
 		return (
 			<div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-				<p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+				<p className="text-[13px] font-semibold text-link">
 					Dashboard
 				</p>
 				<h2 className="mt-2 max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
@@ -264,7 +264,7 @@ function PlacementReadinessCard({
 			</CardHeader>
 			<CardContent className="flex flex-row items-center gap-2">
 				<p className="font-semibold text-2xl tabular-nums">{readiness.score}</p>
-				<span className="rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink">
+				<span className="rounded-full bg-accent/10 px-2 py-0.5 text-[12px] font-medium text-ink">
 					{readiness.band.label}
 				</span>
 			</CardContent>
@@ -322,7 +322,7 @@ function EligibleCompaniesCard({
 								<span
 									className={
 										e.eligible
-											? "text-emerald-600"
+											? "text-success"
 											: "text-muted-foreground"
 									}
 								>
@@ -373,7 +373,7 @@ function ApplicationsCard({
 				<button
 					type="button"
 					onClick={() => setAdding(!adding)}
-					className="flex items-center gap-1 rounded-full border border-ink/15 px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/30"
+					className="flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-xs font-medium text-ink transition-colors hover:border-ink/25"
 				>
 					{adding ? (
 						<X className="h-3 w-3" aria-hidden="true" />
@@ -386,7 +386,7 @@ function ApplicationsCard({
 			<CardContent className="px-6 pb-4">
 				{adding && (
 					<form
-						className="mb-3 space-y-2 rounded-xl border border-ink/10 bg-surface/60 p-3"
+						className="mb-3 space-y-2 rounded-xl border border-hairline bg-surface/60 p-3"
 						onSubmit={(e) => {
 							e.preventDefault()
 							onAdd()
@@ -396,7 +396,7 @@ function ApplicationsCard({
 							aria-label="Company"
 							value={newCompany}
 							onChange={(e) => setNewCompany(e.target.value)}
-							className="h-9 w-full rounded-md border border-ink/15 bg-paper px-2 text-sm text-ink outline-none"
+							className="h-9 w-full rounded-md border border-hairline bg-surface px-2 text-sm text-ink outline-none"
 						>
 							<option value="">Select company…</option>
 							{companies.map((c) => (
@@ -412,14 +412,14 @@ function ApplicationsCard({
 								value={newCompanyName}
 								onChange={(e) => setNewCompanyName(e.target.value)}
 								placeholder="Company name"
-								className="h-9 w-full rounded-md border border-ink/15 bg-paper px-2 text-sm text-ink outline-none"
+								className="h-9 w-full rounded-md border border-hairline bg-surface px-2 text-sm text-ink outline-none"
 							/>
 						)}
 						<select
 							aria-label="Status"
 							value={newStatus}
 							onChange={(e) => setNewStatus(e.target.value as ApplicationStatus)}
-							className="h-9 w-full rounded-md border border-ink/15 bg-paper px-2 text-sm text-ink outline-none"
+							className="h-9 w-full rounded-md border border-hairline bg-surface px-2 text-sm text-ink outline-none"
 						>
 							{STATUS_OPTIONS.map((s) => (
 								<option key={s} value={s}>
@@ -442,7 +442,7 @@ function ApplicationsCard({
 							{STATUS_OPTIONS.map((s) => (
 								<span
 									key={s}
-									className="rounded-full bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-soft"
+									className="rounded-full bg-surface px-2 py-0.5 text-[12px] text-ink-soft"
 								>
 									{s} {stats[s]}
 								</span>
@@ -457,7 +457,7 @@ function ApplicationsCard({
 									<span className="font-medium text-ink">
 										{a.company_name ?? companies.find((c) => c.id === a.company_id)?.name ?? "Unknown"}
 									</span>
-									<span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-soft">
+									<span className="text-[12px] text-ink-soft">
 										{a.status}
 									</span>
 								</li>

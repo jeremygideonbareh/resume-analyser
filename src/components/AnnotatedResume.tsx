@@ -46,7 +46,7 @@ export function AnnotatedResume({
       {/* Resume text with highlights */}
       <div
         aria-label="Resume text with highlighted issues"
-        className="min-w-0 max-h-[30rem] overflow-auto rounded-lg border border-ink/10 bg-surface p-4 font-mono text-[13px] leading-6 text-ink"
+        className="min-w-0 max-h-[30rem] overflow-auto rounded-lg border border-hairline bg-surface p-4 font-mono text-[13px] leading-6 text-ink"
       >
         {lines.map((line) => (
           <div key={line.line} className="flex min-h-[1.5rem]">
@@ -90,7 +90,7 @@ export function AnnotatedResume({
 
       {/* Issue list */}
       <div className="space-y-2">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+        <p className="text-[13px] text-muted">
           Issues ({issues.length})
         </p>
         {issues.length === 0 ? (
@@ -108,7 +108,7 @@ export function AnnotatedResume({
                     'group flex w-full items-start gap-2 rounded-lg border px-2.5 py-2 text-left text-xs transition-colors',
                     active === issue.line
                       ? 'border-accent bg-accent-soft ring-1 ring-accent'
-                      : 'border-ink/10 bg-paper hover:border-ink/25',
+                      : 'border-hairline bg-surface hover:border-ink/25',
                   )}
                 >
                   <span
