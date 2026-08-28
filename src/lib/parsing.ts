@@ -64,6 +64,24 @@ async function extractPdf(file: File): Promise<string> {
   // the worker file and fail (path mangling under Vitest's ?url resolution).
   if (typeof window !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+    // Verify the worker is reachable before parsing — if the asset chunk
+    // was 404'd (stale cache, bad deploy), fail early with an actionable message.
+    try {
+      const resp = await fetch(workerUrl, { method: 'HEAD' })
+      if (!resp.ok) {
+        throw new ParsingError(
+          'parse-error',
+          'PDF parser failed to load (worker unavailable). Please refresh the page and try again.'
+        )
+      }
+    } catch (e) {
+      if (e instanceof ParsingError) throw e
+      // Network error reaching the worker — likely offline or CSP block
+      throw new ParsingError(
+        'parse-error',
+        'PDF parser failed to load. Please refresh the page and try again.'
+      )
+    }
   }
   const data = new Uint8Array(await file.arrayBuffer())
   // pdfjs v6: cleanup happens on the LoadingTask (doc.destroy was removed).
@@ -127,7 +145,27 @@ export async function extractTextFromFile(file: File): Promise<ParsedResume> {
           : await file.text()
   } catch (error) {
     if (error instanceof ParsingError) throw error
-    const detail = error instanceof Error ? ` (${error.name}: ${error.message})` : ''
+    // Surface specific PDF.js error types for better UX
+    const err = error instanceof Error ? error : new Error(String(error))
+    if (err.name === 'PasswordException') {
+      throw new ParsingError(
+        'parse-error',
+        'This PDF is password-protected. Please remove the password and try again.'
+      )
+    }
+    if (err.name === 'InvalidPDFException') {
+      throw new ParsingError(
+        'parse-error',
+        'This file does not appear to be a valid PDF. Please check the file and try again.'
+      )
+    }
+    if (err.name === 'MissingDataException' || err.name === 'InvalidStateException') {
+      throw new ParsingError(
+        'parse-error',
+        'This PDF is corrupted or uses unsupported features. Try converting it to text and pasting it instead.'
+      )
+    }
+    const detail = err.message ? ` (${err.message})` : ''
     throw new ParsingError(
       'parse-error',
       `Could not read the file. Try converting it to text and pasting it instead.${detail}`

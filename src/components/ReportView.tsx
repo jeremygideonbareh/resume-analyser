@@ -259,7 +259,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                       fill={
                         selected === d.id
                           ? '#059669'
-                          : 'oklch(0.16 0 0 / 0.14)'
+                          : 'oklch(0.58 0.13 162 / 0.7)'
                       }
                     />
                   ))}

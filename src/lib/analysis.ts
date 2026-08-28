@@ -81,7 +81,7 @@ export const WEIGHTS: Record<CategoryId, number> = {
 // --- section heading detection -------------------------------------------
 
 const HEADING_RE =
-  /^\s*(professional summary|summary|work experience|experience|education|skills|technical skills|core competencies|about me|profile|objective|projects?|certifications?)\s*(?=$|[:–\-—])/i
+  /^\s*(professional summary|summary|work experience|experience|education|skills|technical skills|core competencies|about me|profile|objective|projects?|certifications?)\s*[:.\-–—]?\s*$/i
 
 const SECTION_NAMES = [
   'professional summary',
@@ -97,6 +97,20 @@ const SECTION_NAMES = [
   'projects',
   'certifications',
 ]
+
+/** Normalize section name variants to canonical SECTION_NAMES keys. */
+function normalizeSectionName(raw: string): string {
+  const low = raw.toLowerCase().trim()
+  // "work experience" → "experience"
+  if (low === 'work experience') return 'experience'
+  // "work history" → "experience"
+  if (low === 'work history') return 'experience'
+  // "academic background" → "education"
+  if (low === 'academic background') return 'education'
+  // "technical skills" → "skills" (keep as-is, both exist)
+  // Return as-is for exact matches
+  return low
+}
 
 // --- formatting / contact / recency signals ------------------------------
 
@@ -150,7 +164,7 @@ function detectSections(text: string): DetectedSection[] {
   const found = new Map<string, string>()
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(HEADING_RE)
-    if (m) found.set(m[1].toLowerCase(), lines[i].trim())
+    if (m) found.set(normalizeSectionName(m[1]), lines[i].trim())
   }
   return SECTION_NAMES.map((name) => ({
     name,

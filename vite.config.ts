@@ -28,7 +28,7 @@ function cspMetaPlugin(): Plugin {
       const connectSrc = `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ''}`
       const csp = `<meta
         http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://res.cloudinary.com; media-src 'self' https://res.cloudinary.com; ${connectSrc}"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://res.cloudinary.com; media-src 'self' https://res.cloudinary.com; worker-src 'self' blob:; ${connectSrc}"
       />`
       return html.replace('</head>', `${csp}\n  </head>`)
     },

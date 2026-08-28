@@ -101,32 +101,34 @@ export function ToolSection({
     <section id="tool" className="border-b border-ink/10">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
-          <SectionReveal>
-            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-              The Analyser
-            </p>
-            <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-              <LetterCascade
-                text="Drop your resume "
-                className="cursor-default justify-start"
-              />
-              <LetterCascade
-                text="in."
-                letterClassName="font-normal italic text-accent"
-                className="cursor-default justify-start"
-              />
-            </h2>
-            <p className="mt-4 max-w-md text-ink-soft">
-              PDF, DOCX, or plain text — up to 5MB. Parsed entirely in your
-              browser: sections, skills, formatting, and a weighted ATS score.
-            </p>
-            {parsed && phase !== 'idle' && (
-              <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-accent">
-                ✓ {parsed.format.toUpperCase()} loaded · {wordCount(parsed.text)}{' '}
-                words
+          {phase !== 'done' && (
+            <SectionReveal>
+              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+                The Analyser
               </p>
-            )}
-          </SectionReveal>
+              <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+                <LetterCascade
+                  text="Drop your resume "
+                  className="cursor-default justify-start"
+                />
+                <LetterCascade
+                  text="in."
+                  letterClassName="font-normal italic text-accent"
+                  className="cursor-default justify-start"
+                />
+              </h2>
+              <p className="mt-4 max-w-md text-ink-soft">
+                PDF, DOCX, or plain text — up to 5MB. Parsed entirely in your
+                browser: sections, skills, formatting, and a weighted ATS score.
+              </p>
+              {parsed && phase !== 'idle' && (
+                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-accent">
+                  ✓ {parsed.format.toUpperCase()} loaded · {wordCount(parsed.text)}{' '}
+                  words
+                </p>
+              )}
+            </SectionReveal>
+          )}
 
           <SectionReveal delay={0.12}>
             <AnimatePresence mode="wait" initial={false}>
@@ -269,6 +271,7 @@ export function ToolSection({
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduce ? undefined : { opacity: 0, y: -8 }}
                   transition={phaseTransition}
+                  className="lg:col-span-2"
                 >
                   <div className="space-y-4">
                     <div className="flex justify-end">

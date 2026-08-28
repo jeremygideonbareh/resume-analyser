@@ -42,11 +42,11 @@ export function AnnotatedResume({
   const issueKey = (issue: ResumeIssue) => `${issue.start}:${issue.end}:${issue.category}:${issue.line}`
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+    <div className="w-full grid gap-4 lg:grid-cols-[1fr_280px]">
       {/* Resume text with highlights */}
       <div
         aria-label="Resume text with highlighted issues"
-        className="max-h-[30rem] overflow-auto rounded-lg border border-ink/10 bg-surface p-4 font-mono text-[13px] leading-6 text-ink"
+        className="min-w-0 max-h-[30rem] overflow-auto rounded-lg border border-ink/10 bg-surface p-4 font-mono text-[13px] leading-6 text-ink"
       >
         {lines.map((line) => (
           <div key={line.line} className="flex min-h-[1.5rem]">
