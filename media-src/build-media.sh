@@ -8,20 +8,25 @@
 #
 # Sources live here in media-src/ and are deliberately NOT under public/ —
 # anything in public/ is copied verbatim into dist/, and the originals are
-# ~5.6 MB of JPEG and MP4 that no visitor should ever download. Only the
+# ~11 MB of JPEG and MP4 that no visitor should ever download. Only the
 # derived web assets belong in public/media/.
 set -euo pipefail
 cd "$(dirname "$0")"
 OUT="../public/media"
 mkdir -p "$OUT"
 
-IMG_SRC_1="Paper_sheet_with_single_crease_202608282057.jpeg"      # hero ground
-IMG_SRC_2="Indigo_field_with_light_grid_202608282057.jpeg"        # parse band
-IMG_SRC_3="Macro_of_printed_ink_on_202608282057.jpeg"             # ink dissolve
-IMG_SRC_4="Blank_paper_resting_on_surface_202608282057.jpeg"      # empty state
-IMG_SRC_5="Corner_of_white_paper_lifting_202608282057.jpeg"       # og plate
-VID_SRC_1="Daylight_traveling_across_paper_202608282059.mp4"      # light sweep
-VID_SRC_2="Lattice_forming_in_indigo_clouds…_202608282059.mp4"    # cloud drift
+# ── Stills ────────────────────────────────────────────────────────────────
+IMG_HERO="Human_watching_dissolving_glowin…_2K_202608282222.jpeg"  # hero scene
+IMG_PARSE="Indigo_field_with_light_grid_202608282057.jpeg"          # parse plate
+IMG_INK="Macro_of_printed_ink_on_202608282057.jpeg"                 # resolution band
+IMG_STACK="Single_sheet_protruding_from_pap…_202608282211.jpeg"     # verdict
+IMG_EMPTY="Blank_paper_resting_on_surface_202608282057.jpeg"        # dashboard empty
+IMG_OG="Corner_of_white_paper_lifting_202608282057.jpeg"            # share card
+
+# ── Video ─────────────────────────────────────────────────────────────────
+VID_PARSE="Camera_descending_through_indigo…_202608282216.mp4"      # parse descent
+VID_STACK="Daylight_drifting_across_paper_l…_202608282217.mp4"      # verdict stack
+VID_HERO="Figure_watching_glowing_paper_tear_202608282222.mp4"      # hero (unwired)
 
 # Stills: 2752x1536 -> drop 180px right / 120px bottom to clear the sparkle.
 STILL_CROP="crop=2572:1416:0:0"
@@ -39,10 +44,10 @@ emit_still() {   # src, filter, width, basename, quality
   # in every ffmpeg build — treat it as a bonus, never a requirement.
   if ffmpeg -v error -y -i "$src" -vf "${filt},scale=${w}:-2:flags=lanczos" \
       -c:v libaom-av1 -still-picture 1 -crf 34 -cpu-used 6 "$OUT/${out}.avif" 2>/dev/null; then
-    say "$(basename "${out}").webp + .avif"
+    say "${out}.webp + .avif"
   else
     rm -f "$OUT/${out}.avif"
-    say "$(basename "${out}").webp  (no AVIF encoder in this ffmpeg build)"
+    say "${out}.webp  (no AVIF encoder in this ffmpeg build)"
   fi
 }
 
@@ -65,28 +70,40 @@ emit_video() {   # src, extra filters, basename
     -map "[v]" -an \
     -c:v libvpx-vp9 -crf 40 -b:v 0 -row-mt 1 -deadline good "$OUT/${out}.webm"
 
-  # The poster is not a nicety: neither loop autoplays under reduced motion, so
-  # for those visitors this frame IS the design.
-  ffmpeg -v error -y -i "$src" -vf "${chain}${extra:+}" -vframes 1 -q:v 3 "$OUT/${out}-poster.webp"
-  say "$(basename "${out}").mp4 + .webm + -poster.webp"
+  # The poster is pulled from the video itself, not from a separate still, so
+  # the frame a reduced-motion visitor sees is genuinely the same scene the
+  # video would have played. A mismatched poster visibly jumps on load.
+  ffmpeg -v error -y -i "$src" -vf "${chain}" -vframes 1 -q:v 3 "$OUT/${out}-poster.webp"
+  say "${out}.mp4 + .webm + -poster.webp"
 }
 
 echo "Stills:"
-emit_still "$IMG_SRC_1" "$STILL_CROP"            2000 "hero-paper"        82
-emit_still "$IMG_SRC_2" "$STILL_CROP"            2000 "parse-atmosphere"  82
+emit_still "$IMG_HERO"  "$STILL_CROP"          2400 "hero-scene"       84
+emit_still "$IMG_PARSE" "$STILL_CROP"          2000 "parse-atmosphere" 82
 # The ink source rendered as a framed museum plate with a baked-in caption.
 # Crop to the interior: the ink-to-halftone-to-fibre transition is the asset.
-emit_still "$IMG_SRC_3" "crop=2600:1290:88:82"   1800 "ink-dissolve"      84
-emit_still "$IMG_SRC_4" "$STILL_CROP"            1400 "empty-page"        80
+emit_still "$IMG_INK"   "crop=2600:1290:88:82" 1800 "ink-dissolve"     84
+emit_still "$IMG_STACK" "$STILL_CROP"          2000 "the-stack"        82
+emit_still "$IMG_EMPTY" "$STILL_CROP"          1400 "empty-page"       80
 # OG plates are fixed at 1200x630 and get letterboxed by every scraper that
 # disagrees, so force the ratio rather than preserving the source's.
-emit_still "$IMG_SRC_5" "${STILL_CROP},crop=2572:1346:0:35" 1200 "og-plate" 88
+emit_still "$IMG_OG" "${STILL_CROP},crop=2572:1346:0:35" 1200 "og-plate" 88
 
 echo "Video:"
-# The light sweep came back distinctly golden; the page ground is a neutral
-# #f6f5f4, so pull most of the saturation out or the hero reads cream.
-emit_video "$VID_SRC_1" ",eq=saturation=0.40:gamma=1.02" "hero-light-sweep"
-emit_video "$VID_SRC_2" ""                                "parse-lattice"
+emit_video "$VID_PARSE" ""                                 "parse-lattice"
+# The stack loop came back distinctly golden; the verdict section sits on the
+# neutral #f6f5f4 ground, so pull the saturation back or it reads as sepia.
+emit_video "$VID_STACK" ",eq=saturation=0.45:gamma=1.03"   "the-stack-loop"
+# Built but NOT wired into any component. The figure and framing diverge from
+# the hero still, and the sheet visibly burns rather than dissolving — a
+# harsher claim than the product makes. Kept so the decision stays reversible.
+emit_video "$VID_HERO"  ""                                 "hero-scene-loop"
+
+# hero-paper and hero-light-sweep are deliberately no longer produced: the hero
+# now uses hero-scene, and shipping their replacements would be dead weight.
+rm -f "$OUT/hero-paper.webp" "$OUT/hero-paper.avif" \
+      "$OUT/hero-light-sweep.mp4" "$OUT/hero-light-sweep.webm" \
+      "$OUT/hero-light-sweep-poster.webp"
 
 echo
 echo "Output ($OUT):"

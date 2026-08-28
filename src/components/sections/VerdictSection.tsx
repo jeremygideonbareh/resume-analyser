@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { MediaBackdrop } from '@/components/media/MediaBackdrop'
 
 /**
  * VerdictSection — the stakes, made tangible.
@@ -44,9 +45,24 @@ export function VerdictSection() {
     <section
       id="verdict"
       aria-labelledby="verdict-heading"
-      className="border-b border-hairline"
+      className="relative overflow-hidden border-b border-hairline"
     >
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+      {/* Thousands of identical sheet edges with exactly one lit — the section's
+          argument as a picture. Stays high-key so this remains a light section:
+          the hero and the parse band are the page's dark register, and a third
+          dark moment would stop the inversion meaning anything.
+
+          Heavily scrimmed because a dial and a paragraph sit on top; the image
+          is here to give the section weight, not to be looked at directly. */}
+      <MediaBackdrop
+        src="the-stack"
+        video="the-stack-loop"
+        scrim={0.86}
+        scrimColor="canvas"
+        scrimDirection="flat"
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
           {/* ── The dial ──────────────────────────────────────── */}
           <div className="rounded-xl bg-surface p-6 elev-soft sm:p-8">

@@ -109,19 +109,20 @@ export function Hero() {
           style={animate ? { y: sceneMy } : undefined}
           className="absolute inset-0"
         >
-          {/*
-            TODO: swap to src="hero-scene" once IMG 8 is generated.
-            parse-atmosphere stands in meanwhile — same palette and mood, so
-            the composition and parallax can be judged now rather than after.
-          */}
-          {/* 0.72, not 0.42. Measured against the brightest backdrop pixel in
-              the left half — where the copy actually sits — 0.42 put body text
-              at 2.65:1. Directional, so the right side stays open for the
-              subject while the copy column keeps a dependable ground no matter
-              which plate is swapped in behind it. */}
+          {/* Scrim is directional and measured, not eyeballed: against the
+              brightest backdrop pixel in the left half — where the copy
+              actually sits — a flat 0.42 put body text at 2.65:1. This plate
+              is already dark on the left by design, so the gradient mostly
+              guards against the glow drifting during parallax.
+
+              No video here on purpose. hero-scene-loop is built and available,
+              but its figure and framing diverge from this still and the sheet
+              burns rather than dissolving, so the poster would visibly jump on
+              load and the claim would harden. Swap it in by adding
+              video="hero-scene-loop" if that reads better in place. */}
           <MediaBackdrop
-            src="parse-atmosphere"
-            scrim={0.72}
+            src="hero-scene"
+            scrim={0.85}
             scrimColor="night"
             scrimDirection="left"
             eager
@@ -180,7 +181,12 @@ export function Hero() {
           </span>
         </h1>
 
-        <p className="measure mt-6 text-body-md text-white/80">
+        {/* Full-opacity white and capped at max-w-md, not the wider `measure`.
+            At white/80 across the full measure this ran to 3.71:1 — the line
+            extends far enough right to reach the glow's haze. Narrowing it
+            keeps the paragraph inside the dark half rather than fighting the
+            subject for the same pixels. */}
+        <p className="mt-6 max-w-md text-body-md text-white">
           Employers screen resumes with software before a person opens one.
           ResumeLab runs the same weighted checks &mdash; keywords, structure,
           formatting, recency &mdash; and tells you exactly what to change.
