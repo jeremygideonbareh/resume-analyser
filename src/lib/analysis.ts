@@ -80,8 +80,27 @@ export const WEIGHTS: Record<CategoryId, number> = {
 
 // --- section heading detection -------------------------------------------
 
-const HEADING_RE =
-  /^\s*(professional summary|summary|work experience|experience|education|skills|technical skills|core competencies|about me|profile|objective|projects?|certifications?)\s*[:.\-–—]?\s*$/i
+const HEADING_WORDS =
+  'professional summary|summary|work experience|work history|experience|education|academic background|technical skills|skills|core competencies|about me|profile|objective|projects?|certifications?'
+
+/** Heading occupying its own line, optionally with trailing punctuation. */
+const HEADING_RE = new RegExp(`^\\s*(${HEADING_WORDS})\\s*[:.\\-–—]?\\s*$`, 'i')
+
+/**
+ * Heading with its content on the same line — "SKILLS: React, Node.js" or
+ * "Education — B.Tech CSE". Single-column resumes exported from Word do this
+ * constantly, and the old own-line-only rule scored them as having no
+ * sections at all, which is both wrong and the most punishing thing the
+ * analyser could get wrong: structure is 17 points and the missing-section
+ * feedback then tells people to add headings they already have.
+ *
+ * Requires a real separator so a sentence merely beginning with the word
+ * ("Experience building web apps…") is not mistaken for a heading.
+ */
+const INLINE_HEADING_RE = new RegExp(
+  `^\\s*(${HEADING_WORDS})\\s*[:\\-–—]\\s*\\S`,
+  'i',
+)
 
 const SECTION_NAMES = [
   'professional summary',
@@ -115,15 +134,97 @@ function normalizeSectionName(raw: string): string {
 // --- formatting / contact / recency signals ------------------------------
 
 const BULLET_RE = /^[\s]*[•\-*▪]\s+/m
-const QUANTIFIED_RE =
-  /\b\d+(\.\d+)?%|\$\s?[\d,]+(\.\d+)?\b|\b(improved|increased|reduced|grew|boosted|cut|raised|accelerated|doubled|tripled)\b/gi
+
+/**
+ * Impact verbs alone are not quantification. "Improved the codebase" used to
+ * earn the same formatting credit as "Cut latency 38%", because the old
+ * pattern OR-ed verbs together with numbers and two matches maxed the score.
+ * A verb now only counts when a number sits near it, and bare metrics still
+ * count on their own.
+ */
+const METRIC_RE = /\d+(?:\.\d+)?\s?%|[$€£₹]\s?[\d,]+(?:\.\d+)?|\b\d{2,}(?:,\d{3})*\+?/g
+
+/**
+ * Dates are not achievements. A bare four-digit year matches the generic
+ * number branch above, so "Developer (2010 - 2012)" was contributing four
+ * "metrics" and earning full quantification credit for a resume containing no
+ * measurements at all. A year wearing a unit — "40+", "2,000", "38%" — is
+ * still a metric, so only the undecorated form is dropped.
+ */
+function isBareYear(match: string): boolean {
+  if (!/^\d{4}$/.test(match)) return false
+  const n = Number(match)
+  return n >= 1950 && n <= new Date().getFullYear() + 1
+}
+
+/**
+ * Header lines carrying an address, profile or number. Their digits are
+ * identifiers, never achievements, so they are excluded from metric counting.
+ */
+function isContactLine(line: string): boolean {
+  return (
+    EMAIL_RE.test(line) ||
+    /https?:\/\/|www\.|linkedin|github|gitlab/i.test(line) ||
+    hasPhoneNumber(line)
+  )
+}
+const IMPACT_VERB_RE =
+  /\b(improved|increased|reduced|grew|boosted|cut|raised|accelerated|doubled|tripled|saved|shipped|launched|scaled|optimi[sz]ed)\b/gi
+
 const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b/
-// Strict phone shape — a loose digit/separator class would match date
-// ranges like "2021 – 2024". Requires (area) XXX-XXXX structure.
-const PHONE_RE =
-  /\b(?:\+?\d{1,3}[\s().-]?)?\(?\d{3}\)?[\s().-]?\d{3}[\s().-]?\d{4}\b/
-const LINKEDIN_RE = /linkedin\.com|linkedin\b/i
-const YEAR_RE = /(20\d{2})/g
+
+/**
+ * Candidate phone-shaped runs. Grouping varies too much between countries for
+ * one pattern to encode digit positions, so this only finds plausible runs and
+ * `hasPhoneNumber` decides using the digit count.
+ *
+ * Separators are limited to a single character between groups: a phone number
+ * has no long gaps, and allowing runs of whitespace lets two adjacent date
+ * ranges join into one candidate.
+ */
+const PHONE_CANDIDATE_RE =
+  /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{2,5}\)[\s.-]?)?\d{2,5}(?:[\s.-]\d{2,5}){1,4}|\+\d{9,15}|\b\d{10,12}\b/g
+
+/** 1950..next year — the plausible range for a year printed on a resume. */
+const YEARISH = (n: string) =>
+  n.length === 4 && Number(n) >= 1950 && Number(n) <= new Date().getFullYear() + 1
+
+/**
+ * Phone detection, deliberately international.
+ *
+ * The previous regex hard-coded North-American 3-3-4 grouping, so it missed
+ * "+91 98765 43210" — the standard way an Indian student writes their number,
+ * on a product whose own sample data is CGPA, backlogs, Infosys and Zoho. It
+ * also missed UK spacing.
+ *
+ * The floor of 9 digits is what keeps "2021 – 2024" out: a two-year range is
+ * exactly 8 digits, below every real national numbering plan. The explicit
+ * year-pair guard then catches the remaining case where three or more year
+ * groups sit adjacent on one line.
+ */
+export function hasPhoneNumber(text: string): boolean {
+  for (const m of text.matchAll(PHONE_CANDIDATE_RE)) {
+    const candidate = m[0]
+    const groups = candidate.match(/\d+/g) ?? []
+    const digits = groups.join('')
+    if (digits.length < 9 || digits.length > 15) continue
+    // A run of nothing but plausible years is a date range, not a number.
+    if (groups.length >= 2 && groups.every(YEARISH)) continue
+    return true
+  }
+  return false
+}
+
+/**
+ * Any public professional profile earns the same points. An engineering
+ * student with a GitHub and no LinkedIn is not worse off than the reverse —
+ * and the product's own report copy already tells people a repository link
+ * matters, so the score has to agree with the advice.
+ */
+const PROFILE_LINK_RE =
+  /linkedin\.com|\blinkedin\b|github\.com|\bgithub\b|gitlab\.com|behance\.net|dribbble\.com|\bportfolio\b|[\w-]+\.(?:dev|me|io)\b/i
+
+const YEAR_RE = /\b(19\d{2}|20\d{2})\b/g
 
 const STOPWORDS = new Set([
   'the', 'and', 'for', 'with', 'this', 'that', 'from', 'have', 'will',
@@ -140,6 +241,21 @@ const MIN_JD_KEYWORD_LEN = 3
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n))
+}
+
+/**
+ * Whole-token keyword test.
+ *
+ * The old check was `resumeText.includes(keyword)`, which credits a resume
+ * that says "JavaScript" for a job description asking for "Java" — a false
+ * positive on the single highest-weighted category, telling someone they
+ * match a requirement they do not have. Boundaries here are non-alphanumeric
+ * rather than \b, because \b treats "." and "+" as boundaries and would let
+ * "c" match inside "c++" while failing "node.js" against "node".
+ */
+export function containsKeyword(haystackLower: string, keywordLower: string): boolean {
+  const escaped = keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`, 'i').test(haystackLower)
 }
 
 function extractJdKeywords(jdText: string): string[] {
@@ -162,15 +278,53 @@ function extractJdKeywords(jdText: string): string[] {
 function detectSections(text: string): DetectedSection[] {
   const lines = text.split(/\r?\n/)
   const found = new Map<string, string>()
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(HEADING_RE)
-    if (m) found.set(normalizeSectionName(m[1]), lines[i].trim())
+  for (const line of lines) {
+    const m = line.match(HEADING_RE) ?? line.match(INLINE_HEADING_RE)
+    if (m) {
+      const key = normalizeSectionName(m[1])
+      // Own-line headings win when a resume has both, so `heading` shows the
+      // cleaner of the two in the report.
+      if (!found.has(key) || HEADING_RE.test(line)) found.set(key, line.trim())
+    }
+  }
+  // "Technical Skills" satisfies a reader looking for "Skills"; scoring should
+  // not require the plainer wording to appear as well.
+  if (found.has('technical skills') && !found.has('skills')) {
+    found.set('skills', found.get('technical skills')!)
   }
   return SECTION_NAMES.map((name) => ({
     name,
     present: found.has(name),
     heading: found.get(name),
   }))
+}
+
+/**
+ * Newest 4-digit year in the text, or null when there is none.
+ * Years beyond next year are ignored as parse noise rather than treated as
+ * the newest date — a stray "2099" should not make a stale resume look current.
+ */
+function mostRecentYear(text: string): number | null {
+  const horizon = new Date().getFullYear() + 1
+  const years = [...text.matchAll(YEAR_RE)]
+    .map((m) => Number(m[1]))
+    .filter((y) => y >= 1950 && y <= horizon)
+  return years.length ? Math.max(...years) : null
+}
+
+/**
+ * Recency used to be "does a 20xx appear anywhere", which awarded the full 13
+ * points to a resume whose most recent role ended in 2011 — identical to one
+ * ending this year. For a category named Recency that is not a rounding
+ * problem, it is measuring the wrong thing entirely.
+ *
+ * Full marks for the current or previous year, then a straight decay to zero
+ * across roughly eight years.
+ */
+export function recencyFactor(mostRecent: number | null, now = new Date().getFullYear()): number {
+  if (mostRecent === null) return 0
+  const stale = now - mostRecent
+  return clamp(1 - (stale - 1) * 0.15, 0, 1)
 }
 
 function parseConfidenceEarned(
@@ -187,13 +341,14 @@ function parseConfidenceEarned(
 function buildFeedback(
   hasEmail: boolean,
   hasPhone: boolean,
-  hasLinkedIn: boolean,
+  hasProfileLink: boolean,
   hasBullets: boolean,
   quantifiedCount: number,
   hasSummary: boolean,
   missingSections: string[],
   missingKeywords: string[],
   isEmpty: boolean,
+  newestYear: number | null = null,
 ): FeedbackItem[] {
   const feedback: FeedbackItem[] = []
   if (isEmpty) {
@@ -210,11 +365,29 @@ function buildFeedback(
       category: 'contact',
       message: 'Add your email and phone number so recruiters can reach you.',
     })
-  } else if (!hasLinkedIn) {
+  } else if (!hasProfileLink) {
     feedback.push({
       severity: 'info',
       category: 'contact',
-      message: 'Consider adding a LinkedIn profile link.',
+      message:
+        'Add a LinkedIn, GitHub, or portfolio link — engineering shortlists weight it, and it costs one line.',
+    })
+  }
+
+  // Only reachable now that recency is measured rather than merely detected.
+  const now = new Date().getFullYear()
+  if (newestYear === null) {
+    feedback.push({
+      severity: 'warning',
+      category: 'recency',
+      message:
+        'No dates found. Add years to your roles and education — parsers use them to judge how current you are.',
+    })
+  } else if (now - newestYear >= 3) {
+    feedback.push({
+      severity: 'warning',
+      category: 'recency',
+      message: `Your most recent date is ${newestYear}. Add current or recent work — a ${now - newestYear}-year gap reads as stale to a screener.`,
     })
   }
   if (!hasBullets) {
@@ -295,9 +468,13 @@ export function analyzeResume(
   }
 
   const sections = detectSections(trimmed)
-  const hasSummary =
-    sections.find((s) => s.name === 'summary' || s.name === 'professional summary')
-      ?.present ?? false
+  // `.some`, not `.find(...)?.present`: find returns the first entry whose
+  // NAME matches, and 'professional summary' is checked first, so a resume
+  // with a plain "Summary" heading was reported as having none — and told to
+  // add the section it already had.
+  const hasSummary = sections.some(
+    (s) => (s.name === 'summary' || s.name === 'professional summary') && s.present,
+  )
 
   // keywords: JD match or lexicon coverage
   const skills = findSkills(trimmed)
@@ -307,8 +484,8 @@ export function analyzeResume(
   if (opts.jdText && opts.jdText.trim()) {
     const jdKeywords = extractJdKeywords(opts.jdText)
     const lower = trimmed.toLowerCase()
-    presentKeywords = jdKeywords.filter((k) => lower.includes(k))
-    missingKeywords = jdKeywords.filter((k) => !lower.includes(k))
+    presentKeywords = jdKeywords.filter((k) => containsKeyword(lower, k))
+    missingKeywords = jdKeywords.filter((k) => !containsKeyword(lower, k))
     keywordEarned =
       jdKeywords.length === 0
         ? 0
@@ -327,20 +504,38 @@ export function analyzeResume(
 
   // formatting: bullets + quantified achievements (6 pts each)
   const hasBullets = BULLET_RE.test(trimmed)
-  const quantifiedMatches = trimmed.match(QUANTIFIED_RE) ?? []
-  const quantifiedCount = quantifiedMatches.length
+  // A metric counts on its own; an impact verb only counts as quantification
+  // when a number appears on the same line, so "Improved the codebase" no
+  // longer scores the same as "Cut latency 38%".
+  // Metrics are counted per line, skipping contact lines. A phone number is
+  // three number groups and a postcode is another; counted globally they
+  // handed a resume with no measurements in it full quantification credit
+  // purely for having a header.
+  const metricCount = trimmed
+    .split(/\r?\n/)
+    .filter((line) => !isContactLine(line))
+    .reduce(
+      (n, line) =>
+        n + (line.match(METRIC_RE) ?? []).filter((m) => !isBareYear(m.trim())).length,
+      0,
+    )
+  const verbLinesWithNumbers = trimmed
+    .split(/\r?\n/)
+    .filter((l) => IMPACT_VERB_RE.test(l) && /\d/.test(l)).length
+  IMPACT_VERB_RE.lastIndex = 0
+  const quantifiedCount = metricCount + verbLinesWithNumbers
   const formattingEarned =
     (hasBullets ? 0.5 : 0) * WEIGHTS.formatting +
-    Math.min(quantifiedCount / 2, 1) * 0.5 * WEIGHTS.formatting
+    Math.min(quantifiedCount / 3, 1) * 0.5 * WEIGHTS.formatting
 
-  // recency: any 20xx year present
-  const years = trimmed.match(YEAR_RE) ?? []
-  const recencyEarned = years.length > 0 ? WEIGHTS.recency : 0
+  // recency: how recent the newest date is, not merely whether one exists
+  const newestYear = mostRecentYear(trimmed)
+  const recencyEarned = recencyFactor(newestYear) * WEIGHTS.recency
 
-  // contact: email (3) + phone (3) + LinkedIn (2)
+  // contact: email (3) + phone (3) + any professional profile link (2)
   const hasEmail = EMAIL_RE.test(trimmed)
-  const hasPhone = PHONE_RE.test(trimmed)
-  const hasLinkedIn = LINKEDIN_RE.test(trimmed)
+  const hasPhone = hasPhoneNumber(trimmed)
+  const hasLinkedIn = PROFILE_LINK_RE.test(trimmed)
   const contactEarned =
     (hasEmail ? 3 : 0) + (hasPhone ? 3 : 0) + (hasLinkedIn ? 2 : 0)
 
@@ -406,6 +601,7 @@ export function analyzeResume(
     missingSections,
     missingKeywords,
     false,
+    newestYear,
   )
 
   return {
