@@ -9,6 +9,38 @@
       content="ResumeLab — a privacy-first ATS resume analyser. Upload your resume, get an ATS score with actionable feedback. Your resume never leaves your browser."
     />
     <title>ResumeLab — ATS Resume Analyser</title>
+
+    <!--
+      Share cards. Absolute URLs are required: scrapers do not resolve
+      relative paths, so a bare /media/og-plate.webp silently yields no
+      preview. VITE_SITE_URL is substituted at build time; update it if the
+      production origin changes.
+
+      og-plate is a WebP, which every current scraper handles. The one place
+      it still matters is older link previews, so keep the JPEG twin if you
+      start seeing blank cards in a specific client.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ResumeLab" />
+    <meta property="og:title" content="Know your score before they do" />
+    <meta
+      property="og:description"
+      content="Employers screen resumes with software before a person opens one. ResumeLab runs the same weighted checks and tells you exactly what to change — entirely in your browser."
+    />
+    <meta property="og:image" content="%VITE_SITE_URL%/media/og-plate.webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="628" />
+    <meta
+      property="og:image:alt"
+      content="A sheet of warm off-white paper in raking light, one corner lifted."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Know your score before they do" />
+    <meta
+      name="twitter:description"
+      content="The same weighted checks screening software runs, in your browser. Nothing uploaded."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/media/og-plate.webp" />
   </head>
   <body>
     <div id="root"></div>

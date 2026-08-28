@@ -80,7 +80,7 @@ export function ScanSkeleton() {
         {!reduce && (
           <motion.div
             aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-0.5 bg-accent/70 shadow-[0_0_12px_rgba(5,150,105,0.55)]"
+            className="absolute inset-x-0 top-0 h-0.5 bg-accent/70 shadow-[0_0_12px_rgba(0,117,222,0.55)]"
             initial={{ top: '0%', opacity: 0 }}
             animate={{ top: '100%', opacity: [0, 0.85, 0.85, 0] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}

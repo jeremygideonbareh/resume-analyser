@@ -317,7 +317,7 @@ function PracticeMode({
                           className={cn(
                             'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-medium',
                             selectedIndex === i
-                              ? 'border-accent bg-accent text-paper'
+                              ? 'border-accent bg-accent text-surface'
                               : 'border-ink/25 text-ink-soft',
                           )}
                         >
@@ -673,7 +673,7 @@ export function ChatView({ userId, onNavigate = () => {} }: ChatViewProps) {
                   className={cn(
                     'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
                     m.role === 'user'
-                      ? 'rounded-br-sm bg-ink text-paper'
+                      ? 'rounded-br-sm bg-ink text-surface'
                       : 'rounded-bl-sm bg-surface text-ink',
                   )}
                 >

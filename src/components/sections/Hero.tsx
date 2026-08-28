@@ -1,153 +1,161 @@
 import { useRef } from 'react'
-import {
-  motion,
-  useScroll,
-  useSpring,
-  useTransform,
-  type MotionStyle,
-  type MotionValue,
-} from 'motion/react'
-import { cn } from '@/lib/utils'
-
-const VIDEO_SRC =
-  'https://res.cloudinary.com/dsuwzuaxp/video/upload/video1_horxtt.mp4'
-
-/** Layered interwoven hero word — passes behind or in front of the central image via z-index. */
-function LayeredWord({
-  word,
-  className,
-  style,
-}: {
-  word: string
-  className: string
-  style?: MotionStyle
-}) {
-  return (
-    <motion.span
-      aria-hidden="true"
-      className={cn(
-        'pointer-events-none absolute select-none font-montserrat font-black leading-none tracking-[-0.05em]',
-        className,
-      )}
-      style={style}
-    >
-      {word}
-    </motion.span>
-  )
-}
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
+import { MediaBackdrop } from '@/components/media/MediaBackdrop'
 
 /**
- * Hero — interwoven "depth" layout: large typography passes behind and in
- * front of a central image to create a layered 3D effect, with a subtle
- * scroll-driven scrub (video grows, words recede as you scroll past).
+ * Hero — the document, whole.
  *
- *   z-5   → RESUME (top-left) + LAB (bottom-right) run behind the image.
- *   z-10  → the central video card is the anchor.
- *   z-20  → ANALYSE (middle-right) renders clearly on top of the image.
- *   z-30  → badge widget (left-center) + floating CTA (bottom-right).
+ * This is the first half of the page's one argument, and it only works because
+ * ParseSection takes the *same* object apart a screen later: here the resume is
+ * yours, intact and legible; there it is a record with gaps. The repetition is
+ * the device, not an accident — so the two must stay visually linked (same
+ * paper, same lines) while reading completely differently.
+ *
+ * Replaces the previous stock-video + layered-wordmark treatment. That hero was
+ * handsome but said "RESUME ANALYSE LAB" over footage of nothing in particular;
+ * it set up no argument for the sections beneath it, and its aesthetic lane
+ * (heavy display words over video) fought the quiet paper register everywhere
+ * else on the page.
+ *
+ * The scroll here is a hand-off, not an effect: the sheet lifts and squares up
+ * as you approach the parse band, so the object you are about to watch being
+ * dismantled is the object you were just looking at.
  */
+
+const RESUME_PREVIEW = [
+  { w: '46%', strong: true },
+  { w: '68%' },
+  { w: '0' },
+  { w: '28%', label: true },
+  { w: '84%' },
+  { w: '72%' },
+  { w: '0' },
+  { w: '32%', label: true },
+  { w: '88%' },
+  { w: '76%' },
+  { w: '58%' },
+  { w: '0' },
+  { w: '24%', label: true },
+  { w: '80%' },
+]
+
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
+  const reduce = useReducedMotion()
+
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end start'],
   })
-  const p = useSpring(scrollYProgress, { stiffness: 70, damping: 22 })
+  const p = useSpring(scrollYProgress, { stiffness: 70, damping: 24 })
 
-  const videoScale = useTransform(p, [0, 0.6], [0.86, 1])
-  const videoRadius = useTransform(p, [0, 0.6], ['clamp(1rem,3vw,1.75rem)', 'clamp(0.5rem,1.5vw,0.875rem)'])
-  const wordOpacity = useTransform(p, [0, 0.7], [1, 0])
-  const wordY = useTransform(p, [0, 0.7], [0, -50])
+  // Squares up and lifts as the parse band approaches.
+  const sheetRotate = useTransform(p, [0, 0.8], [-2.5, 0])
+  const sheetY = useTransform(p, [0, 0.8], [0, -40])
+  const sheetScale = useTransform(p, [0, 0.8], [1, 1.04])
 
-  const backgroundStyle = {
-    opacity: wordOpacity,
-    y: useTransform(wordY, (v) => v * 0.6),
-  }
-  const foregroundStyle: { opacity: MotionValue<number>; y: MotionValue<number> } = {
-    opacity: wordOpacity,
-    y: wordY,
-  }
+  const sheetStyle = reduce
+    ? undefined
+    : { rotate: sheetRotate, y: sheetY, scale: sheetScale }
 
   return (
     <section
       id="top"
       ref={sectionRef}
-      className="relative h-[170vh] border-b border-ink/10"
+      aria-labelledby="hero-heading"
+      className="relative overflow-hidden border-b border-hairline"
     >
-      <div className="sticky top-0 flex h-screen items-center justify-center overflow-hidden">
-        <div aria-hidden className="lab-dots absolute inset-0 -z-10" />
-        <div aria-hidden className="scanline" />
+      {/* Paper, lit from the side, with the light slowly travelling across it —
+          the scan, expressed as daylight rather than a sci-fi laser line. The
+          scrim is directional: dense under the headline column on the left,
+          nearly clear on the right where the sheet floats, so the texture stays
+          at full strength in the half of the frame the eye actually rests on.
+          A flat scrim heavy enough to protect the type would wash the image
+          back into the blankness this is here to fix. */}
+      <MediaBackdrop
+        src="hero-paper"
+        video="hero-light-sweep"
+        scrim={0.9}
+        scrimDirection="left"
+        eager
+      />
+      <div aria-hidden="true" className="lab-dots absolute inset-0 opacity-60" />
 
-        {/* Centered wrapper — locks the words + image together on every screen width */}
-        <div className="relative mx-auto w-[min(74vw,52rem)]">
-          {/* Background word — behind the image, tucked under its top-left corner */}
-          <LayeredWord
-            word="RESUME"
-            className="left-[-2.5rem] top-[-3rem] z-[5] text-[clamp(2.5rem,6vw,5rem)] text-ink"
-            style={backgroundStyle}
-          />
-          {/* Background word — behind the image, tucked under its bottom-right corner */}
-          <LayeredWord
-            word="LAB"
-            className="bottom-[-3rem] right-[-2.5rem] z-[5] text-[clamp(2.5rem,6vw,5rem)] text-ink"
-            style={backgroundStyle}
-          />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:gap-16 lg:py-32">
+        <div>
+          <h1 id="hero-heading" className="text-display-1 text-ink">
+            Know your score
+            <br />
+            <span className="text-link">before they do.</span>
+          </h1>
 
-          {/* Central image — the anchor */}
-          <motion.div
-            className="relative z-10 aspect-video w-full overflow-hidden bg-ink shadow-2xl"
-            style={{ scale: videoScale, borderRadius: videoRadius }}
-          >
-            <video
-              className="h-full w-full object-cover"
-              src={VIDEO_SRC}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            />
-            <div aria-hidden className="absolute inset-0 bg-ink/20" />
-          </motion.div>
+          <p className="measure mt-6 text-body-md text-ink-soft">
+            Employers screen resumes with software before a person opens one.
+            ResumeLab runs the same weighted checks &mdash; keywords, structure,
+            formatting, recency &mdash; and tells you exactly what to change.
+          </p>
 
-          {/* Foreground word — in front of the image, cutting across its right side */}
-          <LayeredWord
-            word="ANALYSE"
-            className="right-[-3rem] top-[38%] z-20 text-[clamp(3rem,8vw,7rem)] text-paper drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
-            style={foregroundStyle}
-          />
+          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a
+              href="#tool"
+              className="inline-flex items-center rounded-full bg-accent px-6 py-3 text-[16px] font-medium text-surface transition-colors hover:bg-accent-strong"
+            >
+              Score my resume
+            </a>
+            <a
+              href="#parse"
+              className="text-[16px] font-medium text-link underline-offset-4 hover:underline"
+            >
+              See what the filter sees
+            </a>
+          </div>
+
+          {/* ink-soft, not muted, and 13px rather than 12. Over flat canvas
+              muted clears 6.0:1, but measured against the darkest paper fibres
+              under the scrim it falls to 3.44:1 — below AA. This is the line
+              carrying the privacy promise, so it is the last one that should
+              be hard to read. */}
+          <p className="mt-8 font-mono text-[13px] text-ink-soft">
+            Runs in your browser · Nothing uploaded · No account needed to score
+          </p>
         </div>
 
-        {/* Left-center widget — badge */}
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
-          className="absolute left-4 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-full border border-ink/15 bg-paper/80 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft backdrop-blur sm:inline-flex"
-        >
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
-          ATS Resume Analyser — 100% in-browser
-        </motion.p>
-
-        {/* Bottom-right floating action — CTA */}
+        {/* The sheet — the same object ParseSection pulls apart. */}
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 0.6, ease: 'easeOut' }}
-          className="absolute bottom-6 right-4 z-30 flex flex-wrap items-center gap-3 sm:right-6"
+          style={sheetStyle}
+          className="relative mx-auto w-full max-w-sm rounded-lg bg-surface p-7 elev-raised sm:p-9"
         >
-          <a
-            href="#how-it-works"
-            className="text-sm font-medium text-ink-soft underline-offset-4 transition-colors hover:text-ink hover:underline"
-          >
-            How it works
-          </a>
-          <a
-            href="#tool"
-            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-paper shadow-sm transition-colors hover:bg-accent-strong"
-          >
-            Analyse my resume
-          </a>
+          <p className="sr-only">
+            An illustration of a resume page, shown whole before analysis.
+          </p>
+          <div aria-hidden="true" className="space-y-2.5">
+            {RESUME_PREVIEW.map((line, i) =>
+              line.w === '0' ? (
+                <div key={i} className="h-4" />
+              ) : (
+                <div
+                  key={i}
+                  style={{ width: line.w }}
+                  className={
+                    line.strong
+                      ? 'h-3.5 rounded-xs bg-ink'
+                      : line.label
+                        ? 'h-2 rounded-xs bg-ink/45'
+                        : 'h-2 rounded-xs bg-ink/15'
+                  }
+                />
+              ),
+            )}
+          </div>
+
+          {/* Unscored on purpose: the number is what the page is offering,
+              not something to hand over in the first screenful. */}
+          <div className="mt-8 flex items-center justify-between border-t border-hairline pt-5">
+            <span className="font-mono text-[12px] text-muted">ATS score</span>
+            <span className="font-mono text-[13px] text-ink-faint">
+              not yet scored
+            </span>
+          </div>
         </motion.div>
       </div>
     </section>

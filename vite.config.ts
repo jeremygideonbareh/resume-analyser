@@ -35,12 +35,42 @@ function cspMetaPlugin(): Plugin {
   }
 }
 
+/**
+ * Absolute URLs for the share-card meta tags.
+ *
+ * Scrapers do not resolve relative paths, so `og:image` has to be absolute or
+ * the preview silently comes back blank — a failure with no local symptom at
+ * all, which is exactly how it ships broken. Runs in dev as well as build so
+ * the placeholder never survives into served HTML.
+ *
+ * Precedence: VITE_SITE_URL, then Vercel's own VERCEL_PROJECT_PRODUCTION_URL,
+ * then the GitHub Pages fallback that matches `base` below.
+ */
+function siteUrlPlugin(): Plugin {
+  let siteUrl = ''
+  return {
+    name: 'inject-site-url',
+    configResolved(config) {
+      const env = loadEnv(config.mode, config.root, '')
+      const vercelHost = env.VERCEL_PROJECT_PRODUCTION_URL
+      siteUrl = (
+        env.VITE_SITE_URL ||
+        (vercelHost ? `https://${vercelHost}` : '') ||
+        'https://jeremygideonbareh.github.io/resume-analyser'
+      ).replace(/\/$/, '')
+    },
+    transformIndexHtml(html) {
+      return html.replaceAll('%VITE_SITE_URL%', siteUrl)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages serves the app under /resume-analyser/ â€” assets must be
   // base-prefixed or they 404 on the deployed site (Todo 4.3, 2026-08-19).
   base: process.env.VERCEL ? '/' : '/resume-analyser/',
-  plugins: [react(), tailwindcss(), cspMetaPlugin()],
+  plugins: [react(), tailwindcss(), cspMetaPlugin(), siteUrlPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),

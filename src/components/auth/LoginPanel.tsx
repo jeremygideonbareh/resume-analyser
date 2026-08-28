@@ -306,7 +306,7 @@ export function LoginPanel({
                     className={cn(
                       'flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] transition-colors',
                       mode === m
-                        ? 'bg-ink text-paper'
+                        ? 'bg-ink text-surface'
                         : 'text-ink-soft hover:text-ink',
                     )}
                   >

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Header, type AppView } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/sections/Hero'
+import { ParseSection } from '@/components/sections/ParseSection'
+import { ResolutionBand } from '@/components/sections/ResolutionBand'
+import { VerdictSection } from '@/components/sections/VerdictSection'
 import { ToolSection } from '@/components/sections/ToolSection'
 import { HowItWorks } from '@/components/sections/HowItWorks'
 import { SampleReport } from '@/components/sections/SampleReport'
@@ -41,11 +44,22 @@ function App() {
         ) : view === 'chat' && user ? (
           <ChatView userId={user.id} onNavigate={setView} />
         ) : (
+          // One argument, in order: here is your document → here is what the
+          // machine turns it into → here is what that costs you → here is how
+          // it's fixed → here is what you get back → now hand it over.
+          //
+          // The tool used to sit second, which asked for the upload before
+          // anything had earned it. It sits last now, with the hero CTA
+          // anchored straight to it so an impatient visitor still skips
+          // directly to the product.
           <>
             <Hero />
-            <ToolSection user={user} onSignIn={() => setLoginOpen(true)} />
+            <ParseSection />
+            <ResolutionBand />
+            <VerdictSection />
             <HowItWorks />
             <SampleReport />
+            <ToolSection user={user} onSignIn={() => setLoginOpen(true)} />
           </>
         )}
       </main>

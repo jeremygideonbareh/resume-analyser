@@ -5,41 +5,140 @@
    Tokens (Tailwind v4 @theme → generates utilities)
    ───────────────────────────────────────────── */
 @theme {
-  /* Surfaces */
-  --color-paper: oklch(0.985 0 0);      /* bg, chroma 0 — not warm cream */
-  --color-surface: oklch(0.96 0 0);
-  --color-ink: oklch(0.16 0 0);
-  --color-ink-soft: oklch(0.3 0 0);
-  --color-muted: oklch(0.45 0 0);
+  /* ─────────────────────────────────────────────
+     SURFACES — warm paper canvas, white cards.
+     The canvas is deliberately DARKER than the
+     cards: figure/ground comes from that gap.
+     (Before this port both were near-white, so
+     every bordered card was effectively invisible.)
+     ───────────────────────────────────────────── */
+  --color-paper: oklch(0.9706 0.0017 67.8);   /* #f6f5f4 warm canvas — page bg */
+  --color-surface: oklch(1 0 0);              /* #ffffff — cards, fields, nav */
 
-  /* Accent — emerald #059669 */
-  --color-accent: oklch(0.58 0.13 162);
-  --color-accent-strong: oklch(0.49 0.13 162);
-  --color-accent-soft: oklch(0.94 0.04 162);
+  /* TEXT RAMP — 3 readable steps + 1 decorative.
+     Contrast measured against the #f6f5f4 canvas. */
+  --color-ink: oklch(0.12 0 0);               /* near-black   19.3:1 ✅ */
+  --color-ink-soft: oklch(0.3095 0.0038 84.58); /* #31302e    12.1:1 ✅ */
+  --color-muted: oklch(0.4808 0.0082 67.63);  /* #615d59       6.0:1 ✅ */
+  /* NOT FOR TEXT — 2.4:1, fails AA at every size.
+     Dividers, disabled glyphs, decorative rules only.
+     Captions and placeholders use --color-muted. */
+  --color-ink-faint: oklch(0.7017 0.0104 72.62); /* #a39e98 */
 
-  /* Semantic */
-  --color-danger: oklch(0.55 0.2 27);
-  --color-warning: oklch(0.68 0.15 75);
-  --color-success: oklch(0.62 0.14 150);
-
-  /* Typography */
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-body: "Inter", "system-ui", sans-serif;
-  --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
-  --font-montserrat: "Montserrat", "system-ui", sans-serif;
-
-  /* Radius */
-  --radius-card: 0.75rem;
+  --color-hairline: oklch(0.9249 0 0);        /* #e6e6e6 — 1px borders */
 
   /* ─────────────────────────────────────────────
-     Chart + series colors (Todo 3.1 — efferd
-     dashboard block). Referenced directly at
-     runtime via var(--chart-N) / var(--color-*)
-     in the recharts configs. Mapped to the
-     ink/paper/accent token set per plan step 4.
+     ACCENT — exactly one structural colour.
+     Fills and large UI use --color-accent; inline
+     body links use --color-link, because accent on
+     the warm canvas is only 4.19:1 (large-text AA)
+     while the link tone clears 6.25:1.
+     ───────────────────────────────────────────── */
+  --color-accent: oklch(0.5679 0.1824 254.27);        /* #0075de */
+  --color-accent-strong: oklch(0.4727 0.1474 253.35); /* #005bab pressed */
+  --color-accent-soft: oklch(0.955 0.025 254.27);     /* tint fills */
+  --color-link: oklch(0.4727 0.1474 253.35);          /* #005bab inline links */
+
+  /* Night band — the single inverted island (machine view). */
+  --color-night: oklch(0.3557 0.1386 269.47);         /* #213183 */
+
+  /* ─────────────────────────────────────────────
+     STICKER PALETTE — decorative ONLY.
+     Never a CTA, never a structural fill, never
+     the sole carrier of meaning. Most of these
+     fail contrast as text on white; they exist to
+     colour illustration blocks and category dots.
+     ───────────────────────────────────────────── */
+  --color-sticker-sky: oklch(0.7291 0.1227 246.66);
+  --color-sticker-purple: oklch(0.8254 0.0942 307.19);
+  --color-sticker-purple-deep: oklch(0.2998 0.1032 303.34);
+  --color-sticker-pink: oklch(0.7299 0.2149 344.12);
+  --color-sticker-orange: oklch(0.6293 0.1805 44.83);
+  --color-sticker-orange-deep: oklch(0.4128 0.111 48.82);
+  --color-sticker-teal: oklch(0.6338 0.0985 191.47);
+  --color-sticker-green: oklch(0.6556 0.1957 145.41);
+  --color-sticker-brown: oklch(0.3536 0.0656 67.28);
+
+  /* Semantic — status states carry real meaning in
+     the analyser (issue severity), so these stay a
+     true ramp rather than borrowing sticker tones. */
+  --color-danger: oklch(0.52 0.2 27);
+  --color-warning: oklch(0.4128 0.111 48.82);
+  --color-success: oklch(0.5 0.15 145.41);
+
+  /* ─────────────────────────────────────────────
+     TYPOGRAPHY — one family, weight as the lever.
+     Display and body are the same typeface; the
+     contrast between 700+ and 400 is the whole
+     expressive range. Mono is data only.
+     ───────────────────────────────────────────── */
+  --font-display: "Archivo Variable", "system-ui", sans-serif;
+  --font-body: "Archivo Variable", "system-ui", sans-serif;
+  --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
+
+  /* Scale — fluid, ratio >=1.25 between steps.
+     Tracking tightens as size grows (a grotesque set
+     large reads loose at default tracking), but never
+     past -0.04em, where letters start to collide. */
+  --text-display-1: clamp(2.75rem, 6vw, 4rem);
+  --text-display-1--line-height: 1;
+  --text-display-1--letter-spacing: -0.033em;
+  --text-display-1--font-weight: 700;
+
+  --text-display-2: clamp(2.25rem, 4.6vw, 3.375rem);
+  --text-display-2--line-height: 1.04;
+  --text-display-2--letter-spacing: -0.035em;
+  --text-display-2--font-weight: 700;
+
+  --text-h1: clamp(1.875rem, 3.4vw, 2.5rem);
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.025em;
+  --text-h1--font-weight: 700;
+
+  --text-h2: clamp(1.375rem, 2.2vw, 1.625rem);
+  --text-h2--line-height: 1.23;
+  --text-h2--letter-spacing: -0.024em;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 1.375rem;
+  --text-h3--line-height: 1.27;
+  --text-h3--letter-spacing: -0.011em;
+  --text-h3--font-weight: 700;
+
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.4;
+  --text-title--letter-spacing: -0.006em;
+  --text-title--font-weight: 600;
+
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5;
+
+  --text-body-sm: 0.9375rem;
+  --text-body-sm--line-height: 1.33;
+
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.43;
+
+  /* ─────────────────────────────────────────────
+     RADIUS — one scale, applied by role.
+     Fields stay tight; marketing CTAs go full pill.
+     ───────────────────────────────────────────── */
+  --radius-xs: 4px;    /* fields, inline chips */
+  --radius-sm: 5px;    /* menu rows, status pills */
+  --radius-md: 8px;    /* utility + nav buttons */
+  --radius-lg: 12px;   /* feature cards, tiles */
+  --radius-xl: 16px;   /* large containers, wells */
+  --radius-card: 12px;
+
+  /* ─────────────────────────────────────────────
+     Chart series. Blue + ink carry the default
+     two-tone; sticker tones are available for
+     genuinely categorical multi-series data.
      ───────────────────────────────────────────── */
   --chart-1: var(--color-accent);
   --chart-2: var(--color-ink);
+  --chart-3: var(--color-sticker-teal);
+  --chart-4: var(--color-sticker-purple);
   --color-online: var(--color-accent);
   --color-retail: var(--color-ink);
   --color-sales: var(--color-accent-strong);
@@ -49,6 +148,47 @@
   --secondary: var(--color-surface);
   --foreground: var(--color-ink);
 }
+
+/* ─────────────────────────────────────────────
+   ELEVATION — "barely there": many near-transparent
+   layers rather than one hard cast, so a surface
+   lifts off the paper instead of dropping onto it.
+   Level 0 (hairline, no shadow) is the default;
+   these two are for genuinely floating surfaces.
+   Never pair one with a visible border — that is
+   the ghost-card look.
+
+   Deliberately NOT --shadow-* inside @theme. Tailwind
+   rewrites each layer's colour to
+   var(--tw-shadow-color, <original>) and registers
+   --tw-shadow-color through @property, so the
+   registered initial value beats every fallback and
+   all layers resolve transparent. A per-layer alpha
+   ramp cannot survive that pipeline, so these stay
+   plain classes under their own names.
+   ───────────────────────────────────────────── */
+:root {
+  --elev-soft:
+    rgba(0, 0, 0, 0.01) 0 0.175px 1.041px,
+    rgba(0, 0, 0, 0.02) 0 0.8px 2.925px,
+    rgba(0, 0, 0, 0.027) 0 2.025px 7.847px,
+    rgba(0, 0, 0, 0.04) 0 4px 18px;
+  --elev-raised:
+    rgba(0, 0, 0, 0.012) 0 0.4px 1.4px,
+    rgba(0, 0, 0, 0.02) 0 1.2px 4px,
+    rgba(0, 0, 0, 0.03) 0 3px 9px,
+    rgba(0, 0, 0, 0.04) 0 8px 22px,
+    rgba(0, 0, 0, 0.05) 0 23px 52px;
+}
+
+.elev-soft {
+  box-shadow: var(--elev-soft);
+}
+
+.elev-raised {
+  box-shadow: var(--elev-raised);
+}
+
 
 /* ─────────────────────────────────────────────
    shadcn semantic aliases (Todo 3.1 — efferd
@@ -66,62 +206,98 @@
 @theme inline {
   --color-background: var(--color-paper);
   --color-foreground: var(--color-ink);
-  --color-card: var(--color-paper);
+  /* White, not canvas — shadcn cards must read AGAINST
+     the warm page bg, which is the whole point of the
+     figure/ground pairing above. */
+  --color-card: var(--color-surface);
   --color-card-foreground: var(--color-ink);
   --color-primary: var(--color-accent);
-  --color-primary-foreground: var(--color-paper);
+  /* Pure white on the blue fill — 4.57:1. NOT the warm
+     canvas, which would drop it under AA. */
+  --color-primary-foreground: var(--color-surface);
   --color-secondary: var(--color-surface);
   --color-secondary-foreground: var(--color-ink);
   --color-muted-foreground: var(--color-muted);
   --color-accent-foreground: var(--color-ink);
   --color-destructive: var(--color-danger);
-  --color-destructive-foreground: var(--color-paper);
-  --color-border: oklch(0.16 0 0 / 0.12);
-  --color-input: oklch(0.16 0 0 / 0.15);
+  --color-destructive-foreground: var(--color-surface);
+  --color-border: var(--color-hairline);
+  --color-input: var(--color-hairline);
   --color-ring: var(--color-accent);
-  --color-sidebar: var(--color-paper);
+  --color-sidebar: var(--color-surface);
   --color-sidebar-foreground: var(--color-ink);
   --color-sidebar-primary: var(--color-accent);
-  --color-sidebar-primary-foreground: var(--color-paper);
+  --color-sidebar-primary-foreground: var(--color-surface);
   --color-sidebar-accent: var(--color-accent-soft);
   --color-sidebar-accent-foreground: var(--color-ink);
-  --color-sidebar-border: oklch(0.16 0 0 / 0.1);
+  --color-sidebar-border: var(--color-hairline);
   --color-sidebar-ring: var(--color-accent);
 }
 
-/* Base */
-html {
-  scroll-behavior: smooth;
-}
+/* ─────────────────────────────────────────────
+   Base element styles.
 
-body {
-  background: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.6;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+   These MUST stay inside @layer base. Unlayered CSS
+   beats every layered rule in the cascade no matter
+   how specific the layered one is — so an unlayered
+   `h1,h2,h3 { color: … }` silently overrides
+   `text-white` on every heading in the app, however
+   many classes you stack on it.
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--color-ink);
-}
+   That is not hypothetical: it shipped the parse
+   band's headline as near-black ink on dark indigo
+   at 1.56:1 — the section's own title, invisible —
+   and it stayed invisible precisely because element
+   selectors look harmless. Inside @layer base the
+   utilities layer wins, which is the whole point of
+   utilities.
+   ───────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-p {
-  color: var(--color-ink-soft);
-}
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-::selection {
-  background: var(--color-accent);
-  color: var(--color-paper);
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    color: var(--color-ink);
+    /* Even line lengths on headings; long words stop
+       stranding a single orphan on the last line. */
+    text-wrap: balance;
+  }
+
+  p {
+    color: var(--color-ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* Prose measure — beyond ~75ch the eye loses the
+     line return. Opt in on long-form copy blocks. */
+  .measure {
+    max-width: 68ch;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    /* Pure white, not the warm canvas — selected text
+       sits on the accent fill. */
+    color: var(--color-surface);
+  }
 }
 
 /* Focus-visible — accessible keyboard rings */
@@ -143,17 +319,6 @@ p {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* Paper texture — subtle ruled-line document feel */
-.paper-lines {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 31px,
-    oklch(0.96 0 0) 31px,
-    oklch(0.96 0 0) 32px
-  );
 }
 
 /* ─────────────────────────────────────────────

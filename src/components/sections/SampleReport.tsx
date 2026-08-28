@@ -1,205 +1,210 @@
 import { useRef } from 'react'
-import { motion, useInView, useReducedMotion, useSpring, useTransform } from 'motion/react'
-import { SectionReveal, StaggeredReveal } from '@/components/motion/SectionReveal'
-import { KineticTextReveal } from '@/components/ui/kinetic-text-reveal'
+import { motion, useInView, useReducedMotion } from 'motion/react'
+import { cn } from '@/lib/utils'
 
 /**
- * StatCounter — spring count-up that animates when scrolled into view.
- * Reduced-motion → renders the final value instantly.
+ * SampleReport — the payoff, shown before the ask.
+ *
+ * Parse showed what the machine extracts and Verdict showed what it costs;
+ * this shows the thing you actually receive, so the upload that follows is a
+ * known quantity rather than a leap of faith.
+ *
+ * The old version was four identical rule cards over a row of four count-up
+ * stat tiles — the SaaS metric-row cliché — and it opened with the same
+ * italic-accent-word headline construction HowItWorks used, so two consecutive
+ * sections read as one template applied twice. What replaced it is the actual
+ * differentiator: line-level issues with the specific edit to make, which is
+ * the part no generic scorer produces.
  */
-function StatCounter({
-  value,
-  suffix = '',
-  label,
-  delay = 0,
+
+const CATEGORIES = [
+  { label: 'Keyword match', score: 71, weight: 45 },
+  { label: 'Structure', score: 88, weight: 17 },
+  { label: 'Recency', score: 94, weight: 13 },
+  { label: 'Formatting', score: 90, weight: 12 },
+  { label: 'Contact info', score: 100, weight: 8 },
+  { label: 'Parse confidence', score: 96, weight: 5 },
+]
+
+const ISSUES = [
+  {
+    line: 9,
+    severity: 'critical' as const,
+    quote: 'Worked on the frontend team for the billing product',
+    fix: 'No outcome a reader can weigh. Name the result: "Rebuilt billing checkout, cutting failed payments 23%."',
+  },
+  {
+    line: 14,
+    severity: 'warning' as const,
+    quote: 'Familiar with React and some backend work',
+    fix: 'Hedged phrasing does not match. Filters look for the exact token — write "React", "Node.js", "PostgreSQL".',
+  },
+  {
+    line: 3,
+    severity: 'warning' as const,
+    quote: 'No portfolio or repository link',
+    fix: 'Add a GitHub or portfolio URL beside your email. Engineering screens weight it, and it costs one line.',
+  },
+]
+
+const SEVERITY = {
+  critical: { label: 'Costs the most', dot: 'bg-danger', text: 'text-danger' },
+  warning: {
+    label: 'Worth fixing',
+    dot: 'bg-sticker-orange',
+    text: 'text-warning',
+  },
+}
+
+function CategoryBar({
+  category,
+  index,
+  inView,
+  reduce,
 }: {
-  value: number
-  suffix?: string
-  label: string
-  delay?: number
+  category: (typeof CATEGORIES)[number]
+  index: number
+  inView: boolean
+  reduce: boolean | null
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-  const reduce = useReducedMotion()
-  const spring = useSpring(0, { stiffness: 50, damping: 14 })
-  const display = useTransform(spring, (latest) => Math.floor(latest))
-
-  if (inView && !reduce) {
-    spring.set(value)
-  } else if (inView && reduce) {
-    spring.jump(value)
-  }
-
   return (
-    <motion.div
-      ref={ref}
-      className="flex flex-col items-center gap-1 text-center"
-      initial={reduce ? false : { opacity: 0, y: 16 }}
-      animate={inView ? { opacity: 1, y: 0 } : undefined}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
-    >
-      <div className="font-mono text-3xl font-medium tabular-nums text-ink">
-        <motion.span>{display}</motion.span>
-        <span>{suffix}</span>
+    <div className="grid grid-cols-[8.5rem_1fr_2.5rem] items-center gap-3">
+      <span className="text-body-sm text-ink-soft">{category.label}</span>
+      <div className="h-1.5 overflow-hidden rounded-full bg-hairline">
+        <motion.div
+          initial={reduce ? false : { width: 0 }}
+          animate={inView || reduce ? { width: `${category.score}%` } : undefined}
+          transition={{
+            duration: 0.7,
+            ease: [0.16, 1, 0.3, 1],
+            delay: 0.1 + index * 0.07,
+          }}
+          style={reduce ? { width: `${category.score}%` } : undefined}
+          className={cn(
+            'h-full rounded-full',
+            // Only the weakest category is coloured differently — a chart
+            // where every bar is the accent tells you nothing about where
+            // to look first.
+            category.score < 75 ? 'bg-sticker-orange' : 'bg-accent',
+          )}
+        />
       </div>
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-        {label}
-      </p>
-    </motion.div>
+      <span className="text-right font-mono text-[12px] tabular-nums text-muted">
+        {category.score}
+      </span>
+    </div>
   )
 }
 
-const STATS = [
-  { value: 78, suffix: '', label: 'ATS Score' },
-  { value: 82, suffix: '%', label: 'Keyword match' },
-  { value: 4, suffix: '', label: 'Sections found' },
-  { value: 90, suffix: '%', label: 'Formatting' },
-]
-
-const ATS_RULES = [
-  {
-    title: 'Single-column, standard headings',
-    body: 'Workday and Greenhouse parse best when sections are named Summary, Skills, Experience, Education — creative headings get misread.',
-  },
-  {
-    title: '70% is the pass line',
-    body: 'Recruiters commonly filter at a 70%+ keyword match. Our score mirrors that threshold so you know where you stand.',
-  },
-  {
-    title: 'Keywords in the first bullet',
-    body: 'ATS ranks exact job-description phrasing — "React.js", not "React". Highest weight goes to your summary and the first bullet of each role.',
-  },
-  {
-    title: 'Company-specific signals',
-    body: 'Amazon screens for Leadership Principles and STAR bullets; Google looks for Googleyness; Meta for its five core values.',
-  },
-]
-
-/**
- * SampleReport — "Sample analysis" case study.
- * Layout pattern adapted from the pasted about-us-section (interior-design
- * services grid → ATS guidance cards + stat counters), content grounded in
- * real 2026 ATS research (Workday/Greenhouse parsing, 70% threshold,
- * Google/Amazon/Meta specifics).
- */
 export function SampleReport() {
+  const ref = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion()
+  const inView = useInView(ref, { once: true, margin: '-20% 0px' })
+
   return (
-    <section id="sample" className="border-b border-ink/10">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          {/* Left — narrative + mock scorecard */}
-          <SectionReveal>
-            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-              Sample analysis
-            </p>
-            <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-              <KineticTextReveal
-                text="What a real ATS "
-                splitBy="words"
-                direction="up"
-                distance={24}
-                stagger={0.06}
-                blur
-                className="text-ink"
-                segmentClassName="text-ink"
-              />
-              <em className="font-normal italic text-accent">
-                <KineticTextReveal
-                  text="sees"
-                  splitBy="words"
-                  direction="up"
-                  distance={24}
-                  stagger={0.06}
-                  delay={0.36}
-                  blur
-                  className="text-accent"
-                  segmentClassName="text-accent"
-                />
-              </em>
-              <KineticTextReveal
-                text="."
-                splitBy="words"
-                direction="up"
-                distance={24}
-                stagger={0.06}
-                delay={0.36}
-                blur
-                className="text-ink"
-                segmentClassName="text-ink"
-              />
-            </h2>
-            <p className="mt-4 max-w-md text-ink-soft">
-              Every resume is parsed into fields, scored against the job
-              description, and ranked — before a recruiter ever opens it. Here
-              is what a strong engineering resume scores like.
-            </p>
+    <section
+      id="sample"
+      aria-labelledby="sample-heading"
+      className="border-b border-hairline"
+    >
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+        <header className="max-w-2xl">
+          <h2 id="sample-heading" className="text-display-2 text-ink">
+            Not a grade. A list of edits.
+          </h2>
+          <p className="measure mt-4 text-body-md text-ink-soft">
+            Every score comes with the lines that produced it and the specific
+            change to make, ordered by how much each one is costing you.
+          </p>
+        </header>
 
-            {/* Mock scorecard */}
-            <div className="mt-8 max-w-sm rounded-xl border border-ink/10 bg-paper p-6 shadow-sm">
-              <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                  ATS Score
-                </span>
-                <span className="rounded-full bg-accent/10 px-2.5 py-0.5 font-mono text-[11px] font-medium text-accent">
-                  Passes 70% line
-                </span>
-              </div>
-              <div className="mt-3 font-mono text-6xl font-medium tabular-nums text-ink">
-                78
-              </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink/10">
-                <div className="h-full w-[78%] rounded-full bg-accent" />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-xs text-ink-soft">
-                <span>Keywords · 82%</span>
-                <span>Structure · 74%</span>
-                <span>Formatting · 90%</span>
-                <span>Recency · 70%</span>
-              </div>
-            </div>
-          </SectionReveal>
-
-          {/* Right — ATS guidance cards + stats */}
-          <div>
-            <StaggeredReveal className="grid gap-4 sm:grid-cols-2">
-              {ATS_RULES.map((rule) => (
-                <div
-                  key={rule.title}
-                  className="rounded-xl border border-ink/10 bg-surface p-5"
-                >
-                  <h3 className="text-sm font-semibold text-ink">{rule.title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-                    {rule.body}
-                  </p>
+        <div
+          ref={ref}
+          className="mt-12 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8"
+        >
+          {/* Scorecard */}
+          <div className="rounded-xl bg-surface p-6 elev-soft sm:p-7">
+            <div className="flex items-baseline justify-between gap-4">
+              <div>
+                <div className="font-mono text-[3.5rem] font-medium leading-none tabular-nums text-ink">
+                  78
                 </div>
-              ))}
-            </StaggeredReveal>
+                <p className="mt-1.5 font-mono text-[12px] text-muted">
+                  Weighted ATS score
+                </p>
+              </div>
+              <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-medium text-link">
+                Above the line
+              </span>
+            </div>
 
-            <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
-              {STATS.map((stat, i) => (
-                <StatCounter
-                  key={stat.label}
-                  value={stat.value}
-                  suffix={stat.suffix}
-                  label={stat.label}
-                  delay={i * 0.1}
+            <div className="mt-7 space-y-3.5">
+              {CATEGORIES.map((c, i) => (
+                <CategoryBar
+                  key={c.label}
+                  category={c}
+                  index={i}
+                  inView={inView}
+                  reduce={reduce}
                 />
               ))}
             </div>
 
-            <div className="mt-10">
-              <button
-                onClick={() =>
-                  document
-                    .getElementById('tool')
-                    ?.scrollIntoView({ behavior: 'smooth' })
-                }
-                className="rounded-md bg-accent px-6 py-3 text-sm font-semibold text-paper shadow-sm transition-colors hover:bg-accent-strong"
-              >
-                Analyse your resume now
-              </button>
-            </div>
+            <p className="mt-6 border-t border-hairline pt-4 text-body-sm text-muted">
+              Weights follow what screening software actually ranks on: keyword
+              match carries {CATEGORIES[0].weight}% of the total, which is why
+              it is the one category worth fixing first.
+            </p>
           </div>
+
+          {/* Line-level issues */}
+          <div className="rounded-xl bg-surface p-6 elev-soft sm:p-7">
+            <h3 className="text-title text-ink">Three edits, ranked</h3>
+            <ul className="mt-5 space-y-5">
+              {ISSUES.map((issue) => {
+                const sev = SEVERITY[issue.severity]
+                return (
+                  <li
+                    key={issue.line}
+                    className="border-b border-hairline pb-5 last:border-0 last:pb-0"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <span className="font-mono text-[12px] text-muted">
+                        line {issue.line}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          aria-hidden="true"
+                          className={cn('h-1.5 w-1.5 rounded-full', sev.dot)}
+                        />
+                        {/* Severity is stated in words, not just coloured. */}
+                        <span
+                          className={cn('text-[13px] font-medium', sev.text)}
+                        >
+                          {sev.label}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="mt-2 font-mono text-[13px] text-ink-soft">
+                      &ldquo;{issue.quote}&rdquo;
+                    </p>
+                    <p className="measure mt-2 text-body-sm text-ink">
+                      {issue.fix}
+                    </p>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <a
+            href="#tool"
+            className="inline-flex items-center rounded-full bg-accent px-6 py-3 text-[16px] font-medium text-surface transition-colors hover:bg-accent-strong"
+          >
+            Run this on my resume
+          </a>
         </div>
       </div>
     </section>

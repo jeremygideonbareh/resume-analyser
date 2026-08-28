@@ -103,10 +103,7 @@ export function ToolSection({
         <div className={`grid gap-10 ${phase === 'done' ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} lg:items-start`}>
           {phase !== 'done' && (
             <SectionReveal>
-              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-                The Analyser
-              </p>
-              <h2 className="max-w-md text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              <h2 className="max-w-md text-display-2 text-ink">
                 <LetterCascade
                   text="Drop your resume "
                   className="cursor-default justify-start"
@@ -122,8 +119,8 @@ export function ToolSection({
                 browser: sections, skills, formatting, and a weighted ATS score.
               </p>
               {parsed && phase !== 'idle' && (
-                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-accent">
-                  ✓ {parsed.format.toUpperCase()} loaded · {wordCount(parsed.text)}{' '}
+                <p className="mt-4 font-mono text-[13px] text-link">
+                  {parsed.format.toUpperCase()} loaded · {wordCount(parsed.text)}{' '}
                   words
                 </p>
               )}
@@ -149,10 +146,7 @@ export function ToolSection({
                           <Lock className="h-4 w-4" aria-hidden="true" />
                         </span>
                         <div>
-                          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-                            Sign in to analyse
-                          </p>
-                          <h3 className="mt-1 text-lg font-semibold tracking-tight text-ink">
+                          <h3 className="text-title text-ink">
                             Your resume stays on your device.
                           </h3>
                           <p className="mt-2 text-sm leading-relaxed text-ink-soft">
@@ -183,8 +177,8 @@ export function ToolSection({
                   transition={phaseTransition}
                 >
                   <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-                      ✓ {parsed.format.toUpperCase()} loaded
+                    <p className="font-mono text-[13px] text-link">
+                      {parsed.format.toUpperCase()} loaded
                     </p>
                     <p
                       role="status"

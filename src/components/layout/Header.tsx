@@ -59,7 +59,7 @@ export function Header({
       initial={reduce ? false : { y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-0 z-50 border-b border-ink/10 bg-paper/90 backdrop-blur-sm"
+      className="sticky top-0 z-50 border-b border-hairline bg-surface/85 backdrop-blur-sm"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <a
@@ -74,11 +74,11 @@ export function Header({
         >
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-ink/20 bg-surface font-mono text-sm font-medium text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline bg-surface font-mono text-sm font-medium text-ink"
           >
             RL
           </span>
-          <span className="font-display text-lg font-semibold tracking-tight text-ink">
+          <span className="text-[17px] font-bold tracking-tight text-ink">
             ResumeLab
           </span>
         </a>
@@ -104,11 +104,40 @@ export function Header({
             How it works
           </a>
         </nav>
-        <div className="flex items-center gap-2">
+        {/* Every one of these used to be a bordered button — four outlined
+            boxes plus a filled CTA, all shouting equally, so nothing read as
+            the action. Navigation is text; exactly one thing is a button. */}
+        <div className="flex items-center gap-5">
+          {user && (
+            <div className="hidden items-center gap-5 md:flex">
+              {(
+                [
+                  ['dashboard', 'Dashboard'],
+                  ['profile', 'Profile'],
+                  ['chat', 'Assistant'],
+                ] as const
+              ).map(([target, label]) => (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => onNavigate(target)}
+                  aria-current={view === target ? 'page' : undefined}
+                  className={
+                    view === target
+                      ? 'text-sm font-medium text-ink'
+                      : 'text-sm font-medium text-ink-soft transition-colors hover:text-ink'
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {user ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <span
-                className="font-mono text-xs text-ink-soft"
+                className="hidden font-mono text-xs text-muted sm:inline"
                 title="Signed in"
               >
                 {masked}
@@ -116,7 +145,7 @@ export function Header({
               <button
                 type="button"
                 onClick={onSignOut}
-                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+                className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
               >
                 Log out
               </button>
@@ -125,45 +154,20 @@ export function Header({
             <button
               type="button"
               onClick={onSignIn}
-              className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
+              className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
             >
               Sign in
             </button>
           )}
-          {user && (
-            <>
-              <button
-                type="button"
-                onClick={() => onNavigate('profile')}
-                aria-current={view === 'profile' ? 'page' : undefined}
-                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
-              >
-                Profile
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('chat')}
-                aria-current={view === 'chat' ? 'page' : undefined}
-                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
-              >
-                Assistant
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('dashboard')}
-                aria-current={view === 'dashboard' ? 'page' : undefined}
-                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/30 hover:bg-surface"
-              >
-                Dashboard
-              </button>
-            </>
-          )}
+
+          {/* Utility radius (8px), not the marketing pill — the nav CTA sits
+              in chrome, and the size contrast is deliberate. */}
           <FlippingWordSwap
             word1="Analyse"
             word2="Score it"
             onClick={() => goToSection('tool')}
-            className="rounded-md bg-ink px-3.5 py-1.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft"
-            toClassName="text-paper"
+            className="rounded-md bg-accent px-3.5 py-1.5 text-sm font-medium text-surface transition-colors hover:bg-accent-strong"
+            toClassName="text-surface"
           />
         </div>
       </div>

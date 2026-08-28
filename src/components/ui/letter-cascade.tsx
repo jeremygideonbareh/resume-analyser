@@ -122,15 +122,24 @@ export function LetterCascade({
     ]);
 
     return (
-        <span
-            ref={scope}
-            className={cn(
-                "inline-flex cursor-pointer select-none items-center justify-center",
-                className
-            )}
-            {...(triggerOnClick ? { onClick: trigger } : { onMouseEnter: trigger })}
-            aria-label={text}
-        >
+        <>
+            {/* The real text, for assistive tech. The animated faces below
+                render every letter TWICE (a front and an echo face), so they
+                must be removed from the a11y tree entirely — an aria-label on
+                a roleless <span> is not reliably honoured and would leave
+                screen readers announcing "DDrroopp yyoouurr". */}
+            <span className="sr-only">{text}</span>
+            <span
+                ref={scope}
+                aria-hidden="true"
+                className={cn(
+                    "inline-flex select-none items-center justify-center",
+                    // Only look clickable when a click actually does something.
+                    triggerOnClick && "cursor-pointer",
+                    className
+                )}
+                {...(triggerOnClick ? { onClick: trigger } : { onMouseEnter: trigger })}
+            >
             {text.split("").map((letter, i) => (
                 <span
                     key={i}
@@ -170,6 +179,7 @@ export function LetterCascade({
                     </motion.span>
                 </span>
             ))}
-        </span>
+            </span>
+        </>
     );
 }

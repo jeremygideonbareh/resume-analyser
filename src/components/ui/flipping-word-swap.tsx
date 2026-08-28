@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { stagger, useAnimate, useReducedMotion } from "motion/react";
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 const graphemeSegmenter =
   typeof Intl.Segmenter === "function"
@@ -48,8 +48,11 @@ export function FlippingWordSwap({
   onClick,
 }: FlippingWordSwapProps) {
   const [scope, animate] = useAnimate();
+  // The ref is the whole source of truth. There used to be a parallel
+  // isSwapped state here, but it existed only to drive aria-label/aria-pressed
+  // — both of which were wrong (see the button below) — so every hover paid
+  // for a re-render that changed nothing visible.
   const swappedRef = useRef(false);
-  const [isSwapped, setIsSwapped] = useState(false);
   const reduceMotion = useReducedMotion();
 
   // Resolve timings once; reduced motion collapses everything to instant.
@@ -59,7 +62,6 @@ export function FlippingWordSwap({
   const runSwap = useCallback(
     (next: boolean) => {
       swappedRef.current = next;
-      setIsSwapped(next);
 
       const firstWord = '[data-flip-word="first"]';
       const secondWord = '[data-flip-word="second"]';
@@ -141,8 +143,17 @@ export function FlippingWordSwap({
         "rounded-[0.08em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/30 focus-visible:ring-offset-2",
         className,
       )}
-      aria-label={isSwapped ? word2 : word1}
-      aria-pressed={isSwapped}
+      /* The name is fixed to word1 on purpose. It used to be
+         `isSwapped ? word2 : word1`, so focusing the button swapped its own
+         accessible name — a keyboard user heard "Score it" while a sighted
+         mouse user read "Analyse", which is exactly the mismatch WCAG 2.5.3
+         (Label in Name) exists to prevent. word2 is a hover flourish, not a
+         second meaning.
+
+         aria-pressed is gone for the same class of reason: this triggers a
+         navigation, so announcing it as a two-state toggle told screen
+         reader users about a state that does not exist. */
+      aria-label={word1}
       style={style}
       onMouseEnter={() => runSwap(true)}
       onMouseLeave={() => runSwap(false)}

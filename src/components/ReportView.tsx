@@ -203,10 +203,10 @@ export function ReportView({ result, parsed }: ReportViewProps) {
           <div className="mt-3 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={chartData} outerRadius="68%">
-                <PolarGrid stroke="oklch(0.16 0 0 / 0.12)" />
+                <PolarGrid stroke="var(--color-hairline)" />
                 <PolarAngleAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: 'oklch(0.3 0 0)' }}
+                  tick={{ fontSize: 10, fill: 'var(--color-ink-soft)' }}
                 />
                 <PolarRadiusAxis
                   domain={[0, 100]}
@@ -215,8 +215,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                 />
                 <Radar
                   dataKey="value"
-                  stroke="#059669"
-                  fill="#059669"
+                  stroke="var(--chart-1)"
+                  fill="var(--chart-1)"
                   fillOpacity={0.22}
                   isAnimationActive={!reduce}
                   animationDuration={700}
@@ -243,7 +243,7 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                   type="category"
                   dataKey="label"
                   width={96}
-                  tick={{ fontSize: 11, fill: 'oklch(0.3 0 0)' }}
+                  tick={{ fontSize: 11, fill: 'var(--color-ink-soft)' }}
                 />
                 <Bar
                   dataKey="value"
@@ -258,8 +258,8 @@ export function ReportView({ result, parsed }: ReportViewProps) {
                       key={d.id}
                       fill={
                         selected === d.id
-                          ? '#059669'
-                          : 'oklch(0.58 0.13 162 / 0.7)'
+                          ? 'var(--chart-1)'
+                          : 'color-mix(in oklch, var(--chart-1) 70%, transparent)'
                       }
                     />
                   ))}
