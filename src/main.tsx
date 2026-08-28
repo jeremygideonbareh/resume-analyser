@@ -6,6 +6,10 @@ import { Toaster } from 'sonner'
 // family separated by weight, not by typeface. The variable wght axis means
 // 400→800 costs one file instead of five.
 import '@fontsource-variable/archivo/wght.css'
+// Real italics, not a synthesised oblique. The hero leans on one italic word
+// for contrast, and a browser-skewed upright reads as a mistake at display
+// size — the letterforms keep their upright proportions while leaning.
+import '@fontsource-variable/archivo/wght-italic.css'
 // Mono is reserved for real data (scores, tokens, keyword lists), never for
 // decorative labels.
 import '@fontsource/ibm-plex-mono/400.css'

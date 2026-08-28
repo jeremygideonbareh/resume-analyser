@@ -20,12 +20,19 @@ afterEach(() => {
   reducedMotion.current = false
 })
 
-describe('Hero — document-led opening', () => {
+describe('Hero — cinematic opening', () => {
   it('states the promise as the page heading', () => {
     render(<Hero />)
     expect(
       screen.getByRole('heading', { level: 1, name: /Know your score/i }),
     ).toBeInTheDocument()
+  })
+
+  it('survives an environment without matchMedia', () => {
+    // jsdom has no matchMedia, and neither does any non-browser render path.
+    // The pointer-parallax effect must degrade to "no parallax", never throw.
+    expect(typeof window.matchMedia).not.toBe('function')
+    expect(() => render(<Hero />)).not.toThrow()
   })
 
   it('offers one primary action and one route into the argument', () => {
@@ -40,19 +47,22 @@ describe('Hero — document-led opening', () => {
     ).toHaveAttribute('href', '#parse')
   })
 
-  it('keeps the privacy claim visible without a decorative label', () => {
+  it('keeps the privacy claim visible and outside the parallax', () => {
     render(<Hero />)
-    expect(screen.getByText(/Nothing uploaded/i)).toBeInTheDocument()
+    // Held out of the moving layers deliberately: it is the trust claim, and
+    // it should not scroll away with the headline.
+    expect(screen.getByText(/Nothing is uploaded/i)).toBeInTheDocument()
   })
 
-  it('hides the decorative sheet from assistive tech but describes it once', () => {
+  it('keeps every decorative parallax layer out of the a11y tree', () => {
     render(<Hero />)
-    // The sheet is bars, not text — it carries no information a screen
-    // reader could use, so it is announced by a single sr-only sentence
-    // rather than fourteen anonymous divs.
-    expect(
-      screen.getByText(/illustration of a resume page/i),
-    ).toBeInTheDocument()
+    // Scene, glow and motes carry no information — they must not surface as
+    // anonymous nodes to a screen reader.
+    const hidden = document.querySelectorAll('[aria-hidden="true"]')
+    expect(hidden.length).toBeGreaterThanOrEqual(3)
+    for (const el of hidden) {
+      expect(el.textContent?.trim() ?? '').toBe('')
+    }
   })
 
   it('renders fully with motion disabled', () => {
