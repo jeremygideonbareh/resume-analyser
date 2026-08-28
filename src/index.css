@@ -26,6 +26,7 @@
   --font-display: "Fraunces", "Georgia", serif;
   --font-body: "Inter", "system-ui", sans-serif;
   --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
+  --font-montserrat: "Montserrat", "system-ui", sans-serif;
 
   /* Radius */
   --radius-card: 0.75rem;

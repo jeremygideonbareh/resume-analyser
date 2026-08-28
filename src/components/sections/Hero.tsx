@@ -26,7 +26,7 @@ function LayeredWord({
     <motion.span
       aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute select-none font-display font-semibold leading-none tracking-[-0.03em]',
+        'pointer-events-none absolute select-none font-montserrat font-black leading-none tracking-[-0.05em]',
         className,
       )}
       style={style}
