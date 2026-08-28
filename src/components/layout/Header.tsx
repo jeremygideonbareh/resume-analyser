@@ -59,7 +59,10 @@ export function Header({
       initial={reduce ? false : { y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-0 z-50 border-b border-hairline bg-surface/85 backdrop-blur-sm"
+      // Glass rather than a flat translucent bar: the header sits over the
+      // hero's paper video, so there is genuinely something behind it to
+      // refract. The border-b is dropped because .glass carries its own edge.
+      className="glass sticky top-0 z-50 border-x-0 border-t-0"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <a

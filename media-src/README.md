@@ -49,3 +49,14 @@ Vite `base` is `/resume-analyser/` locally and `/` on Vercel, so a literal
 Reference these through `import.meta.env.BASE_URL` or an import.
 
 Prompts and full art direction: the ResumeLab Art Direction artifact.
+
+## Round two (see the Art Direction artifact for prompts)
+
+| File | Slot | Target size | Budget |
+|---|---|---|---|
+| `the-stack.avif` + `.webp` | IMG 6 — archive of paper, one sheet lit | 2400 × 1400 | ≤ 240 KB |
+| `upload-ground.webp` | IMG 7 — near-empty field behind the dropzone | 2000 × 1200 | ≤ 110 KB |
+| `the-stack-loop.mp4` + `.webm` + `-poster.webp` | VID 3 — optional, light drifting over the stack | 8 s, 1920 × 1080 | ≤ 1.6 MB |
+
+VID 3 is genuinely optional. IMG 6 carries the verdict section on its own, and
+a third ambient loop starts to read as a screensaver.

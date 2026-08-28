@@ -277,7 +277,7 @@ export function ParseSection() {
             {/* ── Machine view ───────────────────────────────────── */}
             <motion.div
               style={reduce ? undefined : { opacity: recordOpacity }}
-              className="rounded-lg border border-white/15 bg-white/[0.04] p-5 backdrop-blur-sm sm:p-6"
+              className="glass-dark rounded-lg p-5 sm:p-6"
             >
               <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-white/15 pb-3">
                 <span className="font-mono text-[11px] text-white/60">
