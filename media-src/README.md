@@ -60,3 +60,17 @@ Prompts and full art direction: the ResumeLab Art Direction artifact.
 
 VID 3 is genuinely optional. IMG 6 carries the verdict section on its own, and
 a third ambient loop starts to read as a screensaver.
+
+## Hero scene (round three — highest priority)
+
+| File | Slot | Target size | Budget |
+|---|---|---|---|
+| `hero-scene.avif` + `.webp` | IMG 8 — figure + dissolving luminous sheet | 2560 × 1440 | ≤ 320 KB |
+| `hero-scene-loop.mp4` + `.webm` + `-poster.webp` | VID 4 — optional, the scene alive | 8 s, 1920 × 1080 | ≤ 2.2 MB |
+
+**Composition is a hard requirement, not a preference.** The copy column
+occupies the left 45% of the frame, so the left third must be dark, empty haze
+with no bright incident. The luminous subject lives in the right 55%.
+
+Hero.tsx currently uses `parse-atmosphere` as a stand-in. Swapping is a
+one-line change — the `src` on the MediaBackdrop inside the scene layer.
