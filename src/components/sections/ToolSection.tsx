@@ -99,8 +99,8 @@ export function ToolSection({
 
   return (
     <section id="tool" className="border-b border-ink/10">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+        <div className={`grid gap-10 ${phase === 'done' ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} lg:items-start`}>
           {phase !== 'done' && (
             <SectionReveal>
               <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
@@ -271,7 +271,6 @@ export function ToolSection({
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduce ? undefined : { opacity: 0, y: -8 }}
                   transition={phaseTransition}
-                  className="lg:col-span-2"
                 >
                   <div className="space-y-4">
                     <div className="flex justify-end">
