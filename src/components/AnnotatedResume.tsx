@@ -6,10 +6,10 @@ import { cn } from '@/lib/utils'
 
 const SEVERITY_STYLES: Record<ResumeIssue['severity'], string> = {
   critical:
-    'bg-red-200/60 text-red-900 ring-1 ring-red-300/70 dark:bg-red-500/30 dark:text-red-100',
+    'bg-red-200/30 text-red-900 ring-1 ring-red-300/35 dark:bg-red-500/15 dark:text-red-100',
   warning:
-    'bg-amber-200/60 text-amber-900 ring-1 ring-amber-300/70 dark:bg-amber-500/25 dark:text-amber-100',
-  info: 'bg-sky-200/60 text-sky-900 ring-1 ring-sky-300/70 dark:bg-sky-500/25 dark:text-sky-100',
+    'bg-amber-200/30 text-amber-900 ring-1 ring-amber-300/35 dark:bg-amber-500/12 dark:text-amber-100',
+  info: 'bg-sky-200/30 text-sky-900 ring-1 ring-sky-300/35 dark:bg-sky-500/12 dark:text-sky-100',
 }
 
 /**
