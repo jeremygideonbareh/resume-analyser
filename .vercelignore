@@ -1,0 +1,17 @@
+# Raw generator output — ~11MB of JPEG/MP4 that only build-media.sh reads.
+# The derived web assets it produces live in public/media/ and are what ship.
+media-src/
+
+# Local-only tooling and evidence, never referenced at build time.
+.omo/
+.claude/
+scripts/
+
+# Belt and braces: Vercel already excludes dotenv files, but this folder holds
+# a service-role key and a management PAT, so it is worth being explicit.
+.env
+.env.*
+!.env.example
+
+# Build output is produced on Vercel, not uploaded.
+dist/
