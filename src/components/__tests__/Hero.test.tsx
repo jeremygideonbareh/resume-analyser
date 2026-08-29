@@ -20,7 +20,7 @@ afterEach(() => {
   reducedMotion.current = false
 })
 
-describe('Hero — cinematic opening', () => {
+describe('Hero — cinematic video opening', () => {
   it('states the promise as the page heading', () => {
     render(<Hero />)
     expect(
@@ -28,41 +28,63 @@ describe('Hero — cinematic opening', () => {
     ).toBeInTheDocument()
   })
 
-  it('survives an environment without matchMedia', () => {
-    // jsdom has no matchMedia, and neither does any non-browser render path.
-    // The pointer-parallax effect must degrade to "no parallax", never throw.
-    expect(typeof window.matchMedia).not.toBe('function')
-    expect(() => render(<Hero />)).not.toThrow()
+  it('serves the background video from our own origin only', () => {
+    render(<Hero />)
+    const sources = [...document.querySelectorAll('video source')].map((s) =>
+      s.getAttribute('src'),
+    )
+    expect(sources.length).toBeGreaterThanOrEqual(2)
+    for (const src of sources) {
+      // The CSP is `media-src 'self' https://res.cloudinary.com`. An external
+      // host plays in dev and is blocked in production — a break with no local
+      // symptom, which is exactly why it is worth a test rather than a comment.
+      expect(src).not.toMatch(/^https?:\/\//)
+      expect(src).toMatch(/media\/hero-cinematic\.(webm|mp4)$/)
+    }
   })
 
-  it('offers one primary action and one route into the argument', () => {
+  it('carries a poster so the first frame is never a black box', () => {
     render(<Hero />)
-    expect(
-      screen.getByRole('link', { name: /score my resume/i }),
-    ).toHaveAttribute('href', '#tool')
-    // Points at the parse band, which is what actually earns the upload —
-    // the tool no longer sits directly beneath the hero.
-    expect(
-      screen.getByRole('link', { name: /see what the filter sees/i }),
-    ).toHaveAttribute('href', '#parse')
+    const video = document.querySelector('video')
+    expect(video?.getAttribute('poster')).toMatch(/hero-cinematic-poster\.webp$/)
+    // Autoplay only works muted, and an unmuted autoplay attempt is blocked
+    // outright by every current browser. React assigns `muted` as a DOM
+    // property rather than an attribute, so it has to be read off the element
+    // — toHaveAttribute('muted') passes on nothing and fails on a correct
+    // implementation.
+    expect((video as HTMLVideoElement).muted).toBe(true)
+    expect((video as HTMLVideoElement).loop).toBe(true)
+    expect((video as HTMLVideoElement).autoplay).toBe(true)
+    expect(video).toHaveAttribute('playsinline')
   })
 
-  it('keeps the privacy claim visible and outside the parallax', () => {
+  it('routes both calls to action at the analyser', () => {
     render(<Hero />)
-    // Held out of the moving layers deliberately: it is the trust claim, and
-    // it should not scroll away with the headline.
+    const ctas = screen.getAllByRole('link', { name: /score my resume/i })
+    expect(ctas).toHaveLength(2) // nav pill + hero button
+    for (const cta of ctas) expect(cta).toHaveAttribute('href', '#tool')
+  })
+
+  it('offers the section nav', () => {
+    render(<Hero />)
+    for (const [name, href] of [
+      [/analyser/i, '#tool'],
+      [/how it works/i, '#how-it-works'],
+      [/sample report/i, '#sample'],
+    ] as const) {
+      expect(screen.getByRole('link', { name })).toHaveAttribute('href', href)
+    }
+  })
+
+  it('keeps the privacy claim in the hero', () => {
+    render(<Hero />)
     expect(screen.getByText(/Nothing is uploaded/i)).toBeInTheDocument()
   })
 
-  it('keeps every decorative parallax layer out of the a11y tree', () => {
+  it('hides the decorative video layer from assistive tech', () => {
     render(<Hero />)
-    // Scene, glow and motes carry no information — they must not surface as
-    // anonymous nodes to a screen reader.
-    const hidden = document.querySelectorAll('[aria-hidden="true"]')
-    expect(hidden.length).toBeGreaterThanOrEqual(3)
-    for (const el of hidden) {
-      expect(el.textContent?.trim() ?? '').toBe('')
-    }
+    const video = document.querySelector('video')
+    expect(video?.closest('[aria-hidden="true"]')).not.toBeNull()
   })
 
   it('renders fully with motion disabled', () => {
@@ -71,8 +93,11 @@ describe('Hero — cinematic opening', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /Know your score/i }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: /score my resume/i }),
-    ).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /score my resume/i })).toHaveLength(2)
+  })
+
+  it('survives an environment without matchMedia', () => {
+    expect(typeof window.matchMedia).not.toBe('function')
+    expect(() => render(<Hero />)).not.toThrow()
   })
 })

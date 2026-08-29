@@ -88,6 +88,9 @@
      expressive range. Mono is data only.
      ───────────────────────────────────────────── */
   --font-display: "Archivo Variable", "system-ui", sans-serif;
+  /* Hero only. The rest of the page stays on the single-grotesque system;
+     this is a deliberate one-surface exception, not a second body face. */
+  --font-hero: "Instrument Serif", "Georgia", serif;
   --font-body: "Archivo Variable", "system-ui", sans-serif;
   --font-mono: "IBM Plex Mono", "ui-monospace", monospace;
 
@@ -648,4 +651,87 @@
   .no-print {
     display: none !important;
   }
+}
+
+/* ─────────────────────────────────────────────
+   LIQUID GLASS — the hero's own chrome.
+
+   Distinct from .glass / .glass-dark above: those are tinted slabs sized to
+   keep body copy legible over photography. This one is almost entirely
+   transparent (1% white) and reads purely through its gradient edge, which
+   only works over moving footage with real luminance range behind it. Used on
+   the hero nav pill and CTAs and nowhere else.
+   ───────────────────────────────────────────── */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Engines without backdrop-filter get an opaque panel rather than a 1% white
+   wash over video, which would leave the label sitting on raw footage. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: color-mix(in oklch, var(--color-night) 72%, black);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Entrance choreography for the hero.
+
+   `both` fill matters: the global reduced-motion block collapses
+   animation-duration to 0.01ms, and with backwards-and-forwards fill that
+   lands the element on its FINAL state instantly rather than leaving it
+   stuck at opacity 0. Reveal animations must enhance an already-reachable
+   default, never gate content on an animation firing.
+   ───────────────────────────────────────────── */
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.8s ease-out both;
+}
+
+.animate-fade-rise-delay {
+  animation: fade-rise 0.8s ease-out 0.2s both;
+}
+
+.animate-fade-rise-delay-2 {
+  animation: fade-rise 0.8s ease-out 0.4s both;
 }

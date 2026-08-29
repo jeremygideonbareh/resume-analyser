@@ -26,7 +26,7 @@ IMG_OG="Corner_of_white_paper_lifting_202608282057.jpeg"            # share card
 # ── Video ─────────────────────────────────────────────────────────────────
 VID_PARSE="Camera_descending_through_indigo…_202608282216.mp4"      # parse descent
 VID_STACK="Daylight_drifting_across_paper_l…_202608282217.mp4"      # verdict stack
-VID_HERO="Figure_watching_glowing_paper_tear_202608282222.mp4"      # hero (unwired)
+VID_CINE="hero-cinematic-src.mp4"                                   # hero background
 
 # Stills: 2752x1536 -> drop 180px right / 120px bottom to clear the sparkle.
 STILL_CROP="crop=2572:1416:0:0"
@@ -78,7 +78,6 @@ emit_video() {   # src, extra filters, basename
 }
 
 echo "Stills:"
-emit_still "$IMG_HERO"  "$STILL_CROP"          2400 "hero-scene"       84
 emit_still "$IMG_PARSE" "$STILL_CROP"          2000 "parse-atmosphere" 82
 # The ink source rendered as a framed museum plate with a baked-in caption.
 # Crop to the interior: the ink-to-halftone-to-fibre transition is the asset.
@@ -94,10 +93,15 @@ emit_video "$VID_PARSE" ""                                 "parse-lattice"
 # The stack loop came back distinctly golden; the verdict section sits on the
 # neutral #f6f5f4 ground, so pull the saturation back or it reads as sepia.
 emit_video "$VID_STACK" ",eq=saturation=0.45:gamma=1.03"   "the-stack-loop"
-# Built but NOT wired into any component. The figure and framing diverge from
-# the hero still, and the sheet visibly burns rather than dissolving — a
-# harsher claim than the product makes. Kept so the decision stays reversible.
-emit_video "$VID_HERO"  ""                                 "hero-scene-loop"
+
+# The hero background. Unlike the others this is not a generator plate and does
+# not ping-pong — it already loops, and reversing a camera move would read as a
+# rewind. 1924x1076 / 14.1MB in, 1600px / ~800KB out. Audio stripped: autoplay
+# only works muted, so the track is bytes nobody can ever hear.
+ffmpeg -v error -y -i "$VID_CINE" -an -vf "scale=1600:-2:flags=lanczos"   -c:v libx264 -profile:v high -pix_fmt yuv420p -crf 30 -preset slow   -movflags +faststart "$OUT/hero-cinematic.mp4"
+ffmpeg -v error -y -i "$VID_CINE" -an -vf "scale=1600:-2:flags=lanczos"   -c:v libvpx-vp9 -crf 38 -b:v 0 -row-mt 1 -deadline good "$OUT/hero-cinematic.webm"
+ffmpeg -v error -y -ss 1 -i "$VID_CINE" -vf "scale=1600:-2" -vframes 1 -q:v 4   "$OUT/hero-cinematic-poster.webp"
+say "hero-cinematic.mp4 + .webm + -poster.webp"
 
 # hero-paper and hero-light-sweep are deliberately no longer produced: the hero
 # now uses hero-scene, and shipping their replacements would be dead weight.

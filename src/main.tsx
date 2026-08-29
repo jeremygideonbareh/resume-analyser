@@ -10,6 +10,10 @@ import '@fontsource-variable/archivo/wght.css'
 // for contrast, and a browser-skewed upright reads as a mistake at display
 // size — the letterforms keep their upright proportions while leaning.
 import '@fontsource-variable/archivo/wght-italic.css'
+// Instrument Serif, self-hosted. The hero spec asked for it via a Google
+// Fonts <link>, which font-src 'self' data: blocks in production — it would
+// have silently fallen back to a system serif on the live site only.
+import '@fontsource/instrument-serif/400.css'
 // Mono is reserved for real data (scores, tokens, keyword lists), never for
 // decorative labels.
 import '@fontsource/ibm-plex-mono/400.css'
