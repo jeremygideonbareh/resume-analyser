@@ -29,13 +29,19 @@ function App() {
 
   return (
     <>
-      <Header
-        user={user}
-        onSignIn={() => setLoginOpen(true)}
-        onSignOut={signOut}
-        view={view}
-        onNavigate={setView}
-      />
+      {/* The landing page has no sticky masthead: the hero carries its own
+          transparent nav over the video, and stacking the solid Header above
+          it produced two navigation bars on top of each other. The Header
+          still serves every other view, which has no hero to host it. */}
+      {view !== 'landing' && (
+        <Header
+          user={user}
+          onSignIn={() => setLoginOpen(true)}
+          onSignOut={signOut}
+          view={view}
+          onNavigate={setView}
+        />
+      )}
       <main>
         {view === 'dashboard' && user ? (
           <Dashboard userId={user.id} onNavigate={setView} />
@@ -53,7 +59,12 @@ function App() {
           // anchored straight to it so an impatient visitor still skips
           // directly to the product.
           <>
-            <Hero />
+            <Hero
+              user={user}
+              onSignIn={() => setLoginOpen(true)}
+              onSignOut={signOut}
+              onNavigate={setView}
+            />
             <ParseSection />
             <ResolutionBand />
             <VerdictSection />

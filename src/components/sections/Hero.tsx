@@ -1,5 +1,15 @@
 import { useRef } from 'react'
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
+import { maskIdentifier, type AuthUser } from '@/lib/session'
+
+type AppView = 'landing' | 'dashboard' | 'profile' | 'chat'
+
+interface HeroProps {
+  user?: AuthUser | null
+  onSignIn?: () => void
+  onSignOut?: () => void
+  onNavigate?: (view: AppView) => void
+}
 
 /**
  * Hero — fullscreen cinematic video with liquid-glass chrome.
@@ -32,7 +42,12 @@ const NAV = [
   { label: 'Sample report', href: '#sample' },
 ]
 
-export function Hero() {
+export function Hero({
+  user = null,
+  onSignIn = () => {},
+  onSignOut = () => {},
+  onNavigate = () => {},
+}: HeroProps = {}) {
   const sectionRef = useRef<HTMLElement>(null)
   const reduce = useReducedMotion()
 
@@ -53,7 +68,12 @@ export function Hero() {
       id="top"
       ref={sectionRef}
       aria-labelledby="hero-heading"
-      className="relative isolate min-h-screen overflow-hidden bg-night"
+      // svh, not vh: on mobile vh is the tallest-possible viewport, so with
+      // browser chrome visible the hero overflows on first paint — the exact
+      // "I cannot see the whole hero" symptom. flex-col + flex-1 below lets
+      // the copy centre in whatever space the nav leaves, so it fits by
+      // construction rather than by tuned padding.
+      className="relative isolate flex min-h-svh flex-col overflow-hidden bg-night"
     >
       {/* Layer 0 — the footage. Everything above reads against it. */}
       <motion.div
@@ -104,7 +124,7 @@ export function Hero() {
       </motion.div>
 
       {/* Navigation */}
-      <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl shrink-0 items-center justify-between px-6 py-5 sm:px-8">
         <a href="#top" className="tracking-tight text-white">
           <span
             className="text-3xl"
@@ -127,22 +147,71 @@ export function Hero() {
           ))}
         </nav>
 
-        <a
-          href="#tool"
-          className="liquid-glass rounded-full px-6 py-2.5 text-sm text-white transition-transform hover:scale-[1.03] motion-reduce:transition-none motion-reduce:hover:scale-100"
-        >
-          Score my resume
-        </a>
+        <div className="flex items-center gap-5">
+          {/* Auth and app links moved here from the shared Header, which no
+              longer renders on this view. Dropping it without these would have
+              stranded signed-in users with no route to their dashboard. */}
+          {user && (
+            <div className="hidden items-center gap-5 lg:flex">
+              {(
+                [
+                  ['dashboard', 'Dashboard'],
+                  ['profile', 'Profile'],
+                  ['chat', 'Assistant'],
+                ] as const
+              ).map(([target, label]) => (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => onNavigate(target)}
+                  className="text-sm text-white/70 transition-colors hover:text-white"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="hidden font-mono text-xs text-white/60 sm:inline">
+                {maskIdentifier(user.email ?? user.phone ?? '')}
+              </span>
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="text-sm text-white/70 transition-colors hover:text-white"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="text-sm text-white/70 transition-colors hover:text-white"
+            >
+              Sign in
+            </button>
+          )}
+
+          <a
+            href="#tool"
+            className="liquid-glass rounded-full px-6 py-2.5 text-sm text-white transition-transform hover:scale-[1.03] motion-reduce:transition-none motion-reduce:hover:scale-100"
+          >
+            Score my resume
+          </a>
+        </div>
       </div>
 
       {/* Hero */}
       <motion.div
         style={reduce ? undefined : { y: copyY, opacity: copyOpacity }}
-        className="relative z-10 flex flex-col items-center px-6 pb-40 pt-24 text-center sm:pt-32"
+        className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-14 pt-6 text-center"
       >
         <h1
           id="hero-heading"
-          className="animate-fade-rise max-w-5xl text-5xl font-normal leading-[0.95] tracking-[-2.46px] text-white sm:text-7xl md:text-8xl"
+          className="animate-fade-rise max-w-5xl text-[clamp(2.5rem,7vw,5.5rem)] font-normal leading-[0.95] tracking-[-0.03em] text-white"
           style={{ fontFamily: 'var(--font-hero)' }}
         >
           Know your score{' '}
@@ -151,7 +220,7 @@ export function Hero() {
           </em>
         </h1>
 
-        <p className="animate-fade-rise-delay mt-8 max-w-2xl text-base leading-relaxed text-white/70 sm:text-lg">
+        <p className="animate-fade-rise-delay mt-6 max-w-2xl text-base leading-relaxed text-white/80">
           Employers screen resumes with software before a person opens one.
           careerBoT runs the same weighted checks &mdash; keywords, structure,
           formatting, recency &mdash; and tells you exactly what to change.
@@ -160,12 +229,12 @@ export function Hero() {
 
         <a
           href="#tool"
-          className="liquid-glass animate-fade-rise-delay-2 mt-12 cursor-pointer rounded-full px-14 py-5 text-base text-white transition-transform hover:scale-[1.03] motion-reduce:transition-none motion-reduce:hover:scale-100"
+          className="liquid-glass animate-fade-rise-delay-2 mt-9 cursor-pointer rounded-full px-12 py-4 text-base text-white transition-transform hover:scale-[1.03] motion-reduce:transition-none motion-reduce:hover:scale-100"
         >
           Score my resume
         </a>
 
-        <p className="animate-fade-rise-delay-2 mt-10 text-[13px] text-white/70">
+        <p className="animate-fade-rise-delay-2 mt-7 text-[13px] text-white/80">
           Nothing is uploaded &middot; No account needed to see your score
         </p>
       </motion.div>
