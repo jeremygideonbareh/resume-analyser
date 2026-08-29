@@ -1,4 +1,4 @@
-﻿# HANDOFF — ResumeLab
+﻿# HANDOFF — careerBoT
 
 Privacy-first ATS resume analyser + student placement assistant. Vite + React 19 + TypeScript + Tailwind v4 + shadcn/ui + `motion` (framer-motion successor) + recharts + Vitest. Branches: `feat/resume-analyser` (analyser waves) and `feat/placement-assistant` (placement wave, current — never commit to main without user consent).
 
@@ -6,7 +6,7 @@ Privacy-first ATS resume analyser + student placement assistant. Vite + React 19
 
 A single-page app: upload/paste a resume → rule-based ATS score (category breakdown, sections detected, skills extracted, feedback) → printable report. Optional env-gated LLM feedback tier (`VITE_ENABLE_LLM`, default off — key lives server-side in `api/analyze.ts`, never in the client). **Placement Assistant**: profile management, AI chat, grammar checker, placement dashboard, mock interview practice, aptitude practice — all behind Supabase Auth.
 
-**Brand name: ResumeLab** (chosen in Todo 1.2). Signature motif: lab-dots grid + scanline (`src/index.css`), emerald accent on ink-on-paper.
+**Brand name: careerBoT** (chosen in Todo 1.2). Signature motif: lab-dots grid + scanline (`src/index.css`), emerald accent on ink-on-paper.
 
 ## Architecture
 
@@ -108,7 +108,7 @@ echarts added across wave, no framer-motion/gsap) / **F3 real manual QA** (vite 
 
 ## Placement Assistant (Core 4) — Wave 5 (plan `.omo/plans/placement-assistant.md`, branch `feat/placement-assistant`)
 
-Turned ResumeLab into a student placement assistant. **Exactly 4 modules** per the user's decision (D2); everything else in the original spec is Phase 2 (listed below, NOT built — only explicit "coming in Phase 2" empty states).
+Turned careerBoT into a student placement assistant. **Exactly 4 modules** per the user's decision (D2); everything else in the original spec is Phase 2 (listed below, NOT built — only explicit "coming in Phase 2" empty states).
 
 ### Modules
 

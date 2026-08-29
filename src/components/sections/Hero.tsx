@@ -188,7 +188,7 @@ export function Hero() {
             subject for the same pixels. */}
         <p className="mt-6 max-w-md text-body-md text-white">
           Employers screen resumes with software before a person opens one.
-          ResumeLab runs the same weighted checks &mdash; keywords, structure,
+          careerBoT runs the same weighted checks &mdash; keywords, structure,
           formatting, recency &mdash; and tells you exactly what to change.
         </p>
 

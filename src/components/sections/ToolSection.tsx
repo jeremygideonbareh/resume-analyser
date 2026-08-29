@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ChevronDown, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { SectionReveal } from '@/components/motion/SectionReveal'
+import { MediaBackdrop } from '@/components/media/MediaBackdrop'
 import { LetterCascade } from '@/components/ui/letter-cascade'
 import { UploadZone } from '@/components/UploadZone'
 import { ReportView } from '@/components/ReportView'
@@ -98,8 +99,13 @@ export function ToolSection({
     : { duration: 0.2, ease: 'easeOut' as const }
 
   return (
-    <section id="tool" className="border-b border-hairline">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+    <section id="tool" className="relative overflow-hidden border-b border-hairline">
+      {/* The blank-sheet plate, used as a ground rather than a picture: the
+          upload zone should feel like it sits on a surface, not float in a
+          void. Scrimmed hard because the dropzone and its four states are the
+          only things here that should attract the eye. */}
+      <MediaBackdrop src="empty-page" scrim={0.88} scrimColor="canvas" scrimDirection="flat" />
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className={`grid gap-10 ${phase === 'done' ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} lg:items-start`}>
           {phase !== 'done' && (
             <SectionReveal>

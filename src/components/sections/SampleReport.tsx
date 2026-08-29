@@ -105,7 +105,10 @@ export function SampleReport() {
     <section
       id="sample"
       aria-labelledby="sample-heading"
-      className="border-b border-hairline"
+      // Sits on white rather than the warm canvas. Four consecutive light
+      // sections on one ground read as a single undifferentiated slab; a
+      // surface change is enough to tell the eye a new argument has started.
+      className="border-b border-hairline bg-surface"
     >
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <header className="max-w-2xl">

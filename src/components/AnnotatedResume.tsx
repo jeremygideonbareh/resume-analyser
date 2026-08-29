@@ -4,12 +4,34 @@ import type { ResumeIssue } from '@/lib/resume-issues'
 import { buildAnnotatedLines } from '@/lib/report-format'
 import { cn } from '@/lib/utils'
 
+/**
+ * Highlight chrome.
+ *
+ * The text inside a highlight is ALWAYS ink. Severity is carried by a tinted
+ * wash and a coloured underline, never by recolouring the words themselves —
+ * coloured text on a coloured wash is what made these hard to read, and the
+ * dark: variants that used to sit here rendered the annotation at 1.00:1 for
+ * anyone whose OS was in dark mode.
+ *
+ * Washes are deliberately faint (10-14%). The job of the highlight is to say
+ * "look here", not to obscure the sentence you are being asked to look at.
+ */
 const SEVERITY_STYLES: Record<ResumeIssue['severity'], string> = {
-  critical:
-    'bg-red-200/30 text-red-900 ring-1 ring-red-300/35 dark:bg-red-500/15 dark:text-red-100',
-  warning:
-    'bg-amber-200/30 text-amber-900 ring-1 ring-amber-300/35 dark:bg-amber-500/12 dark:text-amber-100',
-  info: 'bg-sky-200/30 text-sky-900 ring-1 ring-sky-300/35 dark:bg-sky-500/12 dark:text-sky-100',
+  critical: 'bg-danger/10 decoration-danger',
+  warning: 'bg-sticker-orange/14 decoration-sticker-orange',
+  info: 'bg-accent/10 decoration-accent',
+}
+
+const SEVERITY_DOT: Record<ResumeIssue['severity'], string> = {
+  critical: 'bg-danger',
+  warning: 'bg-sticker-orange',
+  info: 'bg-accent',
+}
+
+const SEVERITY_LABEL: Record<ResumeIssue['severity'], string> = {
+  critical: 'Costs the most',
+  warning: 'Worth fixing',
+  info: 'Optional',
 }
 
 /**
@@ -41,6 +63,10 @@ export function AnnotatedResume({
 
   const issueKey = (issue: ResumeIssue) => `${issue.start}:${issue.end}:${issue.category}:${issue.line}`
 
+  // Stable 1-based numbering shared by the highlight markers and the list, so
+  // a reader can move between "this phrase" and "here is why" without hunting.
+  const issueIndex = new Map(issues.map((iss, i) => [issueKey(iss), i]))
+
   return (
     <div className="w-full grid gap-4 lg:grid-cols-[1fr_280px]">
       {/* Resume text with highlights */}
@@ -71,13 +97,22 @@ export function AnnotatedResume({
                 seg.issue ? (
                   <mark
                     key={`${issueKey(seg.issue)}-${i}`}
-                    title={`${seg.issue.message}\n${seg.issue.suggestion}`}
+                    aria-describedby={`issue-${issueKey(seg.issue)}`}
                     className={cn(
-                      'rounded-sm px-0.5',
+                      'rounded-sm px-0.5 text-ink underline decoration-2 underline-offset-[3px]',
                       SEVERITY_STYLES[seg.issue.severity],
                     )}
                   >
                     {seg.text}
+                    {/* Footnote marker instead of a title tooltip. A native
+                        tooltip takes a second to appear, cannot be styled, and
+                        never shows on touch — so the explanation was
+                        effectively invisible. The number ties the highlight to
+                        the numbered list below, which states the problem and
+                        the fix in full. */}
+                    <sup className="ml-0.5 font-sans text-[10px] font-semibold text-muted">
+                      {(issueIndex.get(issueKey(seg.issue)) ?? 0) + 1}
+                    </sup>
                   </mark>
                 ) : (
                   <span key={`${line.line}-${i}`}>{seg.text}</span>
@@ -99,38 +134,49 @@ export function AnnotatedResume({
           </p>
         ) : (
           <ol className="space-y-1.5">
-            {issues.map((issue) => (
+            {issues.map((issue, i) => (
               <li key={issueKey(issue)}>
                 <button
                   type="button"
                   onClick={() => jumpTo(issue.line)}
                   className={cn(
-                    'group flex w-full items-start gap-2 rounded-lg border px-2.5 py-2 text-left text-xs transition-colors',
+                    'group flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
                     active === issue.line
-                      ? 'border-accent bg-accent-soft ring-1 ring-accent'
+                      ? 'border-accent bg-accent-soft'
                       : 'border-hairline bg-surface hover:border-ink/25',
                   )}
                 >
                   <span
-                    className={cn(
-                      'mt-0.5 h-2 w-2 shrink-0 rounded-full',
-                      issue.severity === 'critical'
-                        ? 'bg-red-500'
-                        : issue.severity === 'warning'
-                          ? 'bg-amber-500'
-                          : 'bg-sky-500',
-                    )}
-                  />
-                  <span className="flex-1">
-                    <span className="block text-ink">L{issue.line}</span>
-                    <span className="mt-0.5 block leading-snug text-ink-soft">
-                      {issue.message}
+                    aria-hidden="true"
+                    className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-paper text-[11px] font-semibold text-ink"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          aria-hidden="true"
+                          className={cn('h-1.5 w-1.5 rounded-full', SEVERITY_DOT[issue.severity])}
+                        />
+                        {/* Severity in words, not only as a coloured dot. */}
+                        <span className="text-[12px] font-medium text-ink">
+                          {SEVERITY_LABEL[issue.severity]}
+                        </span>
+                      </span>
+                      <span className="font-mono text-[11px] text-muted">line {issue.line}</span>
                     </span>
-                    <span className="mt-0.5 block leading-snug text-ink-soft/80">
-                      {issue.suggestion}
+                    {/* The id the highlight points at with aria-describedby. */}
+                    <span id={`issue-${issueKey(issue)}`} className="mt-1 block">
+                      <span className="block text-[13px] leading-snug text-ink-soft">
+                        {issue.message}
+                      </span>
+                      <span className="mt-1 block text-[13px] leading-snug text-ink">
+                        {issue.suggestion}
+                      </span>
                     </span>
                   </span>
-                  <MousePointer2 className="h-3 w-3 shrink-0 text-ink-soft/60 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <MousePointer2 className="mt-0.5 h-3 w-3 shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100" />
                 </button>
               </li>
             ))}

@@ -157,7 +157,7 @@ export function VerdictSection() {
 
             <p className="measure mt-6 text-body-sm text-muted">
               Employers commonly screen at a {THRESHOLD}% keyword match.
-              ResumeLab scores against that same threshold, so the number you
+              careerBoT scores against that same threshold, so the number you
               see here is the number that decides your application.
             </p>
 

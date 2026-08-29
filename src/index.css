@@ -1,7 +1,22 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────
-   ResumeLab — ink-on-paper scorecard identity
+   dark: is a CLASS variant here, not a media query.
+
+   Tailwind v4 defaults `dark:` to prefers-color-scheme, and this app has no
+   dark theme — surfaces are always white on warm canvas. That combination is
+   worse than useless: on a dark-mode OS, utilities like `dark:text-red-100`
+   fired while the card behind them stayed white, rendering the resume
+   highlight text at 1.00:1 — invisible. Anyone whose machine is in dark mode
+   could not read the annotations at all.
+
+   Binding the variant to a .dark ancestor, which nothing sets, neutralises all
+   33 orphaned dark: utilities at once and keeps the door open for a real dark
+   theme later.
+   ───────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+/* ─────────────────────────────────────────────
+   careerBoT — ink-on-paper scorecard identity
    Tokens (Tailwind v4 @theme → generates utilities)
    ───────────────────────────────────────────── */
 @theme {

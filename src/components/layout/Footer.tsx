@@ -22,10 +22,10 @@ export function Footer() {
               aria-hidden="true"
               className="flex h-7 w-7 items-center justify-center rounded-md border border-hairline bg-surface font-mono text-xs font-medium text-ink"
             >
-              RL
+              cB
             </span>
             <LetterCascade
-              text="ResumeLab"
+              text="careerBoT"
               className="justify-start text-[17px] font-bold tracking-tight text-ink"
             />
           </div>
@@ -39,7 +39,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap gap-x-8 gap-y-2 border-t border-hairline pt-6 text-caption text-muted">
-          <span>© 2026 ResumeLab</span>
+          <span>© 2026 careerBoT</span>
           <span className="font-mono">v0.1.0</span>
         </div>
       </div>

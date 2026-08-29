@@ -18,8 +18,8 @@ interface HeaderProps {
 }
 
 /**
- * Header — sticky ResumeLab masthead.
- * Logo mark: a small scorecard glyph (mono "RL" in a ruled box).
+ * Header — sticky careerBoT masthead.
+ * Logo mark: a small scorecard glyph (mono "cB" in a ruled box).
  * Right side: auth control (Sign in / masked id + Log out), a signed-in
  * "Dashboard" link (next to the Analyse CTA, same pattern as Sign in), and
  * the Analyse CTA. Nav links + CTA scroll to landing sections — when the
@@ -79,10 +79,10 @@ export function Header({
             aria-hidden="true"
             className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline bg-surface font-mono text-sm font-medium text-ink"
           >
-            RL
+            cB
           </span>
           <span className="text-[17px] font-bold tracking-tight text-ink">
-            ResumeLab
+            careerBoT
           </span>
         </a>
         <nav aria-label="Primary" className="hidden items-center gap-6 sm:flex">

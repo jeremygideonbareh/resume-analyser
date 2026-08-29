@@ -1,5 +1,13 @@
 import { useRef } from 'react'
-import { motion, useInView, useReducedMotion } from 'motion/react'
+import {
+  motion,
+  useInView,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'motion/react'
+import { cn } from '@/lib/utils'
 
 /**
  * HowItWorks — the repair, after the diagnosis.
@@ -57,14 +65,14 @@ function Step({
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: index * 0.05 }}
       className="relative pb-14 pl-14 last:pb-0 sm:pl-20"
     >
-      {/* The through-line, drawn once and shared by every step. */}
+      {/* The numeral sits ON the rail, so it needs the section's own ground
+          behind it or the drawn line runs straight through the disc. */}
       <span
         aria-hidden="true"
-        className="absolute left-[1.125rem] top-10 h-[calc(100%-2rem)] w-px bg-hairline sm:left-[1.625rem]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute left-0 top-0 flex h-9 w-9 items-center justify-center rounded-full bg-accent font-mono text-[13px] font-medium text-surface sm:h-[3.25rem] sm:w-[3.25rem] sm:text-[15px]"
+        className={cn(
+          'absolute left-0 top-0 flex h-9 w-9 items-center justify-center rounded-full font-mono text-[13px] font-medium ring-4 ring-paper transition-colors duration-300 sm:h-[3.25rem] sm:w-[3.25rem] sm:text-[15px]',
+          inView ? 'bg-accent text-surface' : 'bg-hairline text-muted',
+        )}
       >
         {step.n}
       </span>
@@ -77,6 +85,19 @@ function Step({
 }
 
 export function HowItWorks() {
+  const railRef = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion()
+  // Mapped across the rail's own travel through the viewport, not the whole
+  // section, so the line finishes at the last step rather than at the footer.
+  const { scrollYProgress } = useScroll({
+    target: railRef,
+    offset: ['start 75%', 'end 60%'],
+  })
+  const railScale = useSpring(
+    useTransform(scrollYProgress, [0, 1], [0, 1]),
+    { stiffness: 90, damping: 30, restDelta: 0.001 },
+  )
+
   return (
     <section
       id="how-it-works"
@@ -97,11 +118,26 @@ export function HowItWorks() {
             </p>
           </div>
 
-          <ol className="lg:pt-2">
-            {STEPS.map((step, i) => (
-              <Step key={step.n} step={step} index={i} />
-            ))}
-          </ol>
+          <div ref={railRef} className="relative lg:pt-2">
+            {/* Track + the line that draws along it. Scroll-linked rather than
+                triggered: the rail fills exactly as far as the reader has got,
+                so the progress they see IS their progress, not an animation
+                that fires once and finishes without them. */}
+            <span
+              aria-hidden="true"
+              className="absolute left-[1.125rem] top-10 bottom-14 w-px bg-hairline sm:left-[1.625rem]"
+            />
+            <motion.span
+              aria-hidden="true"
+              style={reduce ? { scaleY: 1 } : { scaleY: railScale }}
+              className="absolute left-[1.125rem] top-10 bottom-14 w-px origin-top bg-accent sm:left-[1.625rem]"
+            />
+            <ol>
+              {STEPS.map((step, i) => (
+                <Step key={step.n} step={step} index={i} />
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
     </section>

@@ -1,8 +1,8 @@
-# ResumeLab — ATS Resume Analyser
+# careerBoT — ATS Resume Analyser
 
 **Privacy-first ATS resume analyser.** Drop in a PDF, DOCX, or TXT resume and get an instant ATS score with a category breakdown, detected sections, and actionable feedback — **100% in your browser**. No uploads, no cookies — parsing runs entirely on your device. Analyses run while signed in are saved to your account so you can review them in your dashboard; your resume text is never stored. Sign out or delete your history any time.
 
-> Brand name: **ResumeLab** (chosen in Todo 1.2 — see `HANDOFF.md` for the rationale).
+> Brand name: **careerBoT** (chosen in Todo 1.2 — see `HANDOFF.md` for the rationale).
 
 ## Features
 
