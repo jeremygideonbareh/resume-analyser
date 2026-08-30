@@ -171,7 +171,19 @@ function isContactLine(line: string): boolean {
 const IMPACT_VERB_RE =
   /\b(improved|increased|reduced|grew|boosted|cut|raised|accelerated|doubled|tripled|saved|shipped|launched|scaled|optimi[sz]ed)\b/gi
 
-const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b/
+/**
+ * Quantifiers are bounded, and that is load-bearing rather than tidiness.
+ *
+ * An unbounded `[\w.+-]+@` matches to the end of a long word-character run
+ * and then backtracks one character at a time looking for an "@" that is not
+ * there — at every start position, so quadratic. A PDF that extracts without
+ * spaces (common) yields a single 100k-character token, and that froze
+ * analyzeResume for 24 seconds on the main thread, hanging the browser.
+ *
+ * RFC 5321 caps the local part at 64 and each domain label at 63, so these
+ * bounds lose nothing real and make the scan linear.
+ */
+const EMAIL_RE = /\b[\w.+-]{1,64}@[\w-]{1,63}\.[\w.]{2,24}\b/
 
 /**
  * Candidate phone-shaped runs. Grouping varies too much between countries for
@@ -222,7 +234,7 @@ export function hasPhoneNumber(text: string): boolean {
  * matters, so the score has to agree with the advice.
  */
 const PROFILE_LINK_RE =
-  /linkedin\.com|\blinkedin\b|github\.com|\bgithub\b|gitlab\.com|behance\.net|dribbble\.com|\bportfolio\b|[\w-]+\.(?:dev|me|io)\b/i
+  /linkedin\.com|\blinkedin\b|github\.com|\bgithub\b|gitlab\.com|behance\.net|dribbble\.com|\bportfolio\b|[\w-]{1,63}\.(?:dev|me|io)\b/i
 
 const YEAR_RE = /\b(19\d{2}|20\d{2})\b/g
 
