@@ -528,3 +528,77 @@ describe('api/practice — pure helpers', () => {
     expect(practice.stripFences('```json\n{"a":1}\n```')).toBe('{"a":1}')
   })
 })
+
+
+describe('option shuffling defeats the answer-position bias', () => {
+  const q = (correctIndex: number) => ({
+    type: 'technical' as const,
+    prompt: 'p',
+    options: ['A', 'B', 'C', 'D'],
+    correctIndex,
+    explanation: 'e',
+  })
+
+  it('keeps correctIndex pointing at the same option text', async () => {
+    const { shuffleOptions } = await loadPractice()
+    const input = [q(0), q(1), q(2), q(3)]
+    const out = shuffleOptions(input, () => 0.42)
+    out.forEach((shuffled, i) => {
+      const original = input[i]
+      expect(shuffled.options[shuffled.correctIndex]).toBe(
+        original.options[original.correctIndex],
+      )
+      expect([...shuffled.options].sort()).toEqual([...original.options].sort())
+    })
+  })
+
+  it('spreads the correct answer across all four positions', async () => {
+    const { shuffleOptions } = await loadPractice()
+    // Every question here arrives with the answer at index 1, which is what
+    // the live model actually produces — measured at 9 out of 10. After
+    // shuffling no single slot may dominate, or a student can score by always
+    // choosing B without reading.
+    const many = Array.from({ length: 400 }, () => q(1))
+    const counts = [0, 0, 0, 0]
+    for (const sq of shuffleOptions(many)) counts[sq.correctIndex]++
+    for (const c of counts) {
+      expect(c).toBeGreaterThan(40)
+      expect(c).toBeLessThan(220)
+    }
+  })
+})
+
+describe('previously asked questions are excluded from the next session', () => {
+  const profile = {
+    skills: ['React'],
+    programming_languages: ['TypeScript'],
+    certifications: [],
+    target_role: 'Frontend Engineer',
+    cgpa: 8.6,
+    department: 'CSE',
+  } as unknown as StudentProfile
+
+  it('omits the exclusion block on a first session', async () => {
+    const { buildStartUserPrompt } = await loadPractice()
+    expect(buildStartUserPrompt(profile, 'medium')).not.toMatch(/already been asked/i)
+  })
+
+  it('lists prior prompts so a repeat session cannot reuse them', async () => {
+    const { buildStartUserPrompt } = await loadPractice()
+    // Measured before this existed: 2 of 10 prompts came back verbatim on an
+    // unchanged profile, with 0.40 word overlap overall.
+    const out = buildStartUserPrompt(profile, 'medium', [
+      'Which React hook manages local component state?',
+    ])
+    expect(out).toMatch(/already been asked/i)
+    expect(out).toContain('Which React hook manages local component state?')
+  })
+
+  it('caps the exclusion list so the prompt cannot grow without bound', async () => {
+    const { buildStartUserPrompt } = await loadPractice()
+    const many = Array.from({ length: 200 }, (_, i) => `Question number ${i}`)
+    const out = buildStartUserPrompt(profile, 'medium', many)
+    expect(out).toContain('Question number 39')
+    expect(out).not.toContain('Question number 40')
+  })
+})

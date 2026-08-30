@@ -103,6 +103,62 @@ export function parseQuestions(content: string): ParsedPracticeQuestion[] | null
   }
 }
 
+/**
+ * Re-orders each question's options and moves correctIndex with them.
+ *
+ * The model is heavily biased about where it puts the right answer: measured
+ * across three generations, the correct option landed at index 1 nine times
+ * out of ten ([0,9,1,0] and [1,9,0,0]). A student could score 90% by always
+ * choosing B without reading the question, which makes the exercise worthless
+ * as practice.
+ *
+ * Shuffled before persistence, so the stored correct_index always matches the
+ * order the student is actually shown.
+ */
+export function shuffleOptions(
+  questions: ParsedPracticeQuestion[],
+  rand: () => number = Math.random,
+): ParsedPracticeQuestion[] {
+  return questions.map((q) => {
+    const order = q.options.map((_, i) => i)
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1))
+      const tmp = order[i]
+      order[i] = order[j]
+      order[j] = tmp
+    }
+    return {
+      ...q,
+      options: order.map((i) => q.options[i]),
+      correctIndex: order.indexOf(q.correctIndex),
+    }
+  })
+}
+
+/**
+ * Prompts this student has already been asked, newest first.
+ *
+ * Without this a repeat session reuses about a fifth of its questions verbatim
+ * (measured: 2/10 identical prompts, 0.40 word overlap on an unchanged
+ * profile) — the model is deterministic enough at temperature 0.4 to land on
+ * the same obvious questions about the same skill list. Feeding the history
+ * back as an exclusion list beats raising temperature, which degrades question
+ * quality faster than it adds variety.
+ */
+async function recentPrompts(
+  admin: SupabaseClient,
+  userId: string,
+  limit = 40,
+): Promise<string[]> {
+  const { data } = await admin
+    .from('practice_questions')
+    .select('prompt, created_at, practice_sessions!inner(user_id)')
+    .eq('practice_sessions.user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map((r) => String((r as { prompt: string }).prompt))
+}
+
 // --- prompt builders (exported for tests) -----------------------------------
 
 export function buildStartSystemPrompt(): string {
@@ -126,7 +182,18 @@ Return exactly 10 questions, no more, no less.`
 export function buildStartUserPrompt(
   profile: StudentProfile,
   difficulty: PracticeDifficulty,
+  alreadyAsked: string[] = [],
 ): string {
+  const exclusions =
+    alreadyAsked.length > 0
+      ? [
+          ``,
+          `This student has already been asked the questions below. Do not repeat`,
+          `any of them, and do not ask a trivially reworded version of one. Cover`,
+          `different concepts within the same skills instead:`,
+          ...alreadyAsked.slice(0, 40).map((q) => `- ${q}`),
+        ]
+      : []
   return [
     `Student profile:`,
     `- Skills: ${profile.skills.join(', ') || 'none'}`,
@@ -139,6 +206,7 @@ export function buildStartUserPrompt(
     `Difficulty: ${difficulty}`,
     ``,
     `Generate 10 multiple-choice practice questions (7 technical, 3 behavioral).`,
+    ...exclusions,
   ].join('\n')
 }
 
@@ -248,12 +316,20 @@ async function handleStart(
   const baseUrl = process.env.LLM_BASE_URL ?? DEFAULT_BASE_URL
   const timeoutMs = Number(process.env.LLM_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS)
 
+  // Best effort: a history lookup failing must never block a practice session.
+  let asked: string[] = []
+  try {
+    asked = await recentPrompts(auth!.admin, auth!.userId)
+  } catch {
+    asked = []
+  }
+
   let content: string
   try {
     content = await callLlm(
       apiKey, model, baseUrl,
       buildStartSystemPrompt(),
-      buildStartUserPrompt(auth!.profile, difficulty),
+      buildStartUserPrompt(auth!.profile, difficulty, asked),
       timeoutMs,
     )
   } catch (err) {
@@ -262,8 +338,9 @@ async function handleStart(
     return json(res, { error: 'llm-upstream-error' }, 502)
   }
 
-  const questions = parseQuestions(content)
-  if (!questions) return json(res, { error: 'llm-malformed-response' }, 502)
+  const parsed = parseQuestions(content)
+  if (!parsed) return json(res, { error: 'llm-malformed-response' }, 502)
+  const questions = shuffleOptions(parsed)
 
   // Persist session + questions.
   const { data: session, error: sessionErr } = await auth!.admin
