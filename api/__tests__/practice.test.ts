@@ -330,6 +330,78 @@ describe('api/practice — start', () => {
     expect(res.statusCode).toBe(502)
     expect((res.body as { status?: number }).status).toBe(404)
   })
+
+  it('retries once on a transient 429 and succeeds on the second attempt', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    vi.mocked(createClient).mockReturnValue(
+      makeMockClient({
+        profile,
+        insertedQuestions: Array.from({ length: 10 }, (_, i) => ({
+          id: `q_${i + 1}`,
+          seq: i + 1,
+          type: i < 7 ? 'technical' : 'behavioral',
+          prompt: `Question ${i + 1}`,
+          options: ['A', 'B', 'C', 'D'],
+          correct_index: i % 4,
+          explanation: `Exp ${i + 1}`,
+        })),
+      }).client as never,
+    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: QUESTIONS_JSON } }] }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'start', difficulty: 'medium' }, 'valid-token'),
+      res,
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('retries at most once — two consecutive 502s still fail as llm-upstream-error', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    vi.mocked(createClient).mockReturnValue(
+      makeMockClient({ profile }).client as never,
+    )
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 502 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'start', difficulty: 'medium' }, 'valid-token'),
+      res,
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { error?: string }).error).toBe('llm-upstream-error')
+  })
+
+  it('does not retry a non-retryable 4xx (other than 429)', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    vi.mocked(createClient).mockReturnValue(
+      makeMockClient({ profile }).client as never,
+    )
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 400 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const practice = await loadPractice()
+    const res = makeRes()
+    await practice.default(
+      makeReq('POST', { action: 'start', difficulty: 'medium' }, 'valid-token'),
+      res,
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(res.statusCode).toBe(502)
+  })
 })
 
 describe('api/practice — answer', () => {

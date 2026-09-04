@@ -252,7 +252,13 @@ async function authenticateAndLoadProfile(
   return { userId: user.id, profile: profile as StudentProfile, admin }
 }
 
-async function callLlm(
+const RETRYABLE_RETRY_DELAY_MS = 600
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || status >= 500
+}
+
+async function callLlmOnce(
   apiKey: string,
   model: string,
   baseUrl: string,
@@ -288,6 +294,32 @@ async function callLlm(
     return content
   } finally {
     clearTimeout(timer)
+  }
+}
+
+/**
+ * Wraps callLlmOnce with a single retry for transient upstream failures
+ * (429 rate-limit / 5xx) — Groq's free tier is prone to both, and the
+ * practice prompt's larger structured-JSON response is more likely to hit
+ * them than the shorter analyse/grammar prompts. Non-retryable failures
+ * (4xx other than 429, abort/timeout) fail immediately as before.
+ */
+async function callLlm(
+  apiKey: string,
+  model: string,
+  baseUrl: string,
+  systemPrompt: string,
+  userPrompt: string,
+  timeoutMs: number,
+): Promise<string> {
+  try {
+    return await callLlmOnce(apiKey, model, baseUrl, systemPrompt, userPrompt, timeoutMs)
+  } catch (err) {
+    if (err instanceof LlmUpstreamError && isRetryableStatus(err.status)) {
+      await new Promise((resolve) => setTimeout(resolve, RETRYABLE_RETRY_DELAY_MS))
+      return callLlmOnce(apiKey, model, baseUrl, systemPrompt, userPrompt, timeoutMs)
+    }
+    throw err
   }
 }
 

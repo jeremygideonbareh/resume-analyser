@@ -316,3 +316,33 @@ describe('ChatView — practice MCQ flow', () => {
     expect(screen.getByText('SQL stands for Structured Query Language.')).toBeInTheDocument()
   })
 })
+
+describe('ChatView — practice errors are humanized', () => {
+  it('shows a friendly message (not the raw code) for an upstream LLM failure', async () => {
+    loadConversation.mockResolvedValue([])
+    startPractice.mockRejectedValue(new Error('llm-upstream-error'))
+    render(<ChatView userId="user_1" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^practice$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /start practice/i }))
+
+    expect(
+      await screen.findByText(/AI service is temporarily unavailable/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('llm-upstream-error')).not.toBeInTheDocument()
+  })
+
+  it('shows a connectivity-specific message for a raw fetch failure', async () => {
+    loadConversation.mockResolvedValue([])
+    startPractice.mockRejectedValue(new Error('Failed to fetch'))
+    render(<ChatView userId="user_1" />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^practice$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /start practice/i }))
+
+    expect(
+      await screen.findByText(/check your internet connection/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Failed to fetch')).not.toBeInTheDocument()
+  })
+})

@@ -37,6 +37,30 @@ interface LocalMessage extends ChatMessage {
 
 type PracticePhase = 'idle' | 'active' | 'complete'
 
+/**
+ * Maps raw /api/practice error codes (and native fetch-rejection text, e.g.
+ * a dropped connection) to copy a student can actually act on, instead of
+ * showing an internal code like "llm-upstream-error" verbatim.
+ */
+function friendlyPracticeError(code: string): string {
+  switch (code) {
+    case 'llm-upstream-error':
+      return "Couldn't generate questions right now — the AI service is temporarily unavailable. Please try again in a moment."
+    case 'llm-malformed-response':
+    case 'timeout':
+      return "Couldn't generate questions right now — please try again."
+    case 'unauthorized':
+      return 'Your session expired — please sign in again.'
+    case 'db-not-configured':
+    case 'llm-not-configured':
+      return "This feature isn't available right now."
+    default:
+      return /fetch|network/i.test(code)
+        ? "Couldn't reach the server — check your internet connection and try again."
+        : 'Something went wrong. Please try again.'
+  }
+}
+
 function PracticeMode({
   onNavigate,
 }: {
@@ -76,12 +100,12 @@ function PracticeMode({
       setFeedback(null)
       setPhase('active')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start'
-      if (msg === 'profile-required') {
+      const code = err instanceof Error ? err.message : 'Failed to start'
+      if (code === 'profile-required') {
         onNavigate('profile')
         return
       }
-      setError(msg)
+      setError(friendlyPracticeError(code))
     } finally {
       setLoading(false)
     }
@@ -109,7 +133,8 @@ function PracticeMode({
           : prev,
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to grade')
+      const code = err instanceof Error ? err.message : 'Failed to grade'
+      setError(friendlyPracticeError(code))
     } finally {
       setLoading(false)
     }

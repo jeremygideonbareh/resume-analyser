@@ -107,6 +107,39 @@ describe('UploadZone', () => {
     ).toBeInTheDocument()
   })
 
+  it('offers a reload button (not "Try again") for a stale-build error', async () => {
+    const { ParsingError } = await import('@/lib/parsing')
+    mockedExtract.mockRejectedValue(
+      new ParsingError('stale-build', 'A new version of this app is available.')
+    )
+    const reloadSpy = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...originalLocation, reload: reloadSpy },
+    })
+
+    render(<UploadZone onParsed={vi.fn()} />)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1, 2, 3])], 'resume.pdf', { type: 'application/pdf' })] },
+    })
+
+    expect(
+      await screen.findByText(/A new version of ResumeLab is available\. Reload the page and try again\./i)
+    ).toBeInTheDocument()
+    const reloadButton = screen.getByRole('button', { name: 'Reload page' })
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+
+    fireEvent.click(reloadButton)
+    expect(reloadSpy).toHaveBeenCalledTimes(1)
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: originalLocation,
+    })
+  })
+
   it('opens the file picker on Enter key on the dropzone', async () => {
     render(<UploadZone onParsed={vi.fn()} />)
     const clickSpy = vi

@@ -208,110 +208,6 @@
 }
 
 /* ─────────────────────────────────────────────
-   LIQUID GLASS
-
-   Only ever used over imagery. Glass is a lens —
-   with a flat colour behind it there is nothing to
-   refract and it degrades into a slightly muddy
-   panel, which is how glassmorphism earned its bad
-   name. This page has exactly three surfaces with
-   something behind them (the sticky header, the
-   hero plate, the parse band), and those are the
-   three places these classes appear.
-
-   Four layers make it read as glass rather than as
-   translucency:
-     1. a tint gradient, brighter at the top where a
-        real slab would catch the sky
-     2. backdrop blur + saturate — the saturate is
-        what stops blurred content going grey and
-        lifeless
-     3. a specular inset highlight on the top edge
-        and a fainter one on the bottom
-     4. edge lensing: a slightly stronger border than
-        the fill, standing in for the refraction that
-        happens at a real bevel
-   ───────────────────────────────────────────── */
-.glass,
-.glass-dark {
-  position: relative;
-  backdrop-filter: blur(20px) saturate(175%);
-  -webkit-backdrop-filter: blur(20px) saturate(175%);
-  transition: background-color 200ms ease, box-shadow 200ms ease;
-}
-
-.glass {
-  background-image: linear-gradient(
-    to bottom,
-    rgb(255 255 255 / 0.72),
-    rgb(255 255 255 / 0.52)
-  );
-  border: 1px solid rgb(255 255 255 / 0.7);
-  box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.9),
-    inset 0 -1px 0 0 rgb(255 255 255 / 0.25),
-    0 8px 32px rgb(0 0 0 / 0.08);
-}
-
-/* The dark variant carries its own dark tint rather than only laying white
-   over whatever is behind. A white-only veil inherits the backdrop's
-   brightness, so over the lit part of the cloudscape the panel lightened and
-   the 12px sky labels on it fell to 1.6:1. A tinted slab keeps the ground
-   consistent no matter what drifts underneath — which is also how real smoked
-   glass behaves. */
-.glass-dark {
-  /* 0.7, not 0.6: at 0.6 the 12px sky-coloured record keys measured 4.11:1
-     where the panel crosses the brightest part of the cloudscape — passing on
-     average but failing at the worst point, which is the only point that
-     matters. */
-  background-color: rgb(10 14 38 / 0.7);
-  background-image: linear-gradient(
-    to bottom,
-    rgb(255 255 255 / 0.1),
-    rgb(255 255 255 / 0.02)
-  );
-  border: 1px solid rgb(255 255 255 / 0.2);
-  box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.24),
-    inset 0 -1px 0 0 rgb(255 255 255 / 0.05),
-    0 10px 40px rgb(0 0 0 / 0.32);
-}
-
-/* Firefox before 103 and any engine without the
-   property get an opaque panel instead. Without this
-   the fill alone is far too transparent and text
-   lands directly on the photograph. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass {
-    background-image: none;
-    background-color: color-mix(in oklch, var(--color-surface) 94%, transparent);
-  }
-  .glass-dark {
-    background-image: none;
-    background-color: color-mix(in oklch, var(--color-night) 88%, black);
-  }
-}
-
-/* Blurring a region that is playing video costs a
-   full-frame GPU composite every frame. Readers who
-   asked for less motion get the cheap version, which
-   is also the one that stays legible when the video
-   behind it is replaced by a still. */
-@media (prefers-reduced-motion: reduce) {
-  .glass {
-    backdrop-filter: blur(8px) saturate(120%);
-    -webkit-backdrop-filter: blur(8px) saturate(120%);
-    background-image: none;
-    background-color: color-mix(in oklch, var(--color-surface) 90%, transparent);
-  }
-  .glass-dark {
-    backdrop-filter: blur(8px) saturate(120%);
-    -webkit-backdrop-filter: blur(8px) saturate(120%);
-  }
-}
-
-
-/* ─────────────────────────────────────────────
    shadcn semantic aliases (Todo 3.1 — efferd
    dashboard block). The block's classes
    (bg-background, text-foreground, border-border,
@@ -418,6 +314,126 @@
     /* Pure white, not the warm canvas — selected text
        sits on the accent fill. */
     color: var(--color-surface);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   LIQUID GLASS — also @layer base (kept as its own
+   block rather than merged into the one above, to
+   keep this comment and the rules next to each other).
+   .glass/.glass-dark set `position` and `border`, and
+   used to be unlayered — which meant they silently beat
+   `sticky`/`fixed` and `border-x-0`/`border-t-0` on any
+   consumer that paired them, no matter how the utility
+   was stacked (the exact class of bug the @layer base
+   comment above warns about, just not caught here until
+   now). That's why Header's "sticky careerBoT masthead"
+   never actually stuck, and why its "only the bottom
+   border shows" comment didn't hold — both were silently
+   downgraded to `position: relative` / a 4-sided border.
+   Layering these fixes both, and MobileNav's `fixed`
+   bottom bar needs the same fix to render pinned instead
+   of inline at the end of the page.
+
+   Only ever used over imagery. Glass is a lens —
+   with a flat colour behind it there is nothing to
+   refract and it degrades into a slightly muddy
+   panel, which is how glassmorphism earned its bad
+   name. This page has exactly three surfaces with
+   something behind them (the sticky header, the
+   hero plate, the parse band), and those are the
+   three places these classes appear.
+
+   Four layers make it read as glass rather than as
+   translucency:
+     1. a tint gradient, brighter at the top where a
+        real slab would catch the sky
+     2. backdrop blur + saturate — the saturate is
+        what stops blurred content going grey and
+        lifeless
+     3. a specular inset highlight on the top edge
+        and a fainter one on the bottom
+     4. edge lensing: a slightly stronger border than
+        the fill, standing in for the refraction that
+        happens at a real bevel
+   ───────────────────────────────────────────── */
+@layer base {
+  .glass,
+  .glass-dark {
+    position: relative;
+    backdrop-filter: blur(20px) saturate(175%);
+    -webkit-backdrop-filter: blur(20px) saturate(175%);
+    transition: background-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .glass {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.72),
+      rgb(255 255 255 / 0.52)
+    );
+    border: 1px solid rgb(255 255 255 / 0.7);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.9),
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.25),
+      0 8px 32px rgb(0 0 0 / 0.08);
+  }
+
+  /* The dark variant carries its own dark tint rather than only laying white
+     over whatever is behind. A white-only veil inherits the backdrop's
+     brightness, so over the lit part of the cloudscape the panel lightened and
+     the 12px sky labels on it fell to 1.6:1. A tinted slab keeps the ground
+     consistent no matter what drifts underneath — which is also how real smoked
+     glass behaves. */
+  .glass-dark {
+    /* 0.7, not 0.6: at 0.6 the 12px sky-coloured record keys measured 4.11:1
+       where the panel crosses the brightest part of the cloudscape — passing on
+       average but failing at the worst point, which is the only point that
+       matters. */
+    background-color: rgb(10 14 38 / 0.7);
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.1),
+      rgb(255 255 255 / 0.02)
+    );
+    border: 1px solid rgb(255 255 255 / 0.2);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.24),
+      inset 0 -1px 0 0 rgb(255 255 255 / 0.05),
+      0 10px 40px rgb(0 0 0 / 0.32);
+  }
+
+  /* Firefox before 103 and any engine without the
+     property get an opaque panel instead. Without this
+     the fill alone is far too transparent and text
+     lands directly on the photograph. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background-image: none;
+      background-color: color-mix(in oklch, var(--color-surface) 94%, transparent);
+    }
+    .glass-dark {
+      background-image: none;
+      background-color: color-mix(in oklch, var(--color-night) 88%, black);
+    }
+  }
+
+  /* Blurring a region that is playing video costs a
+     full-frame GPU composite every frame. Readers who
+     asked for less motion get the cheap version, which
+     is also the one that stays legible when the video
+     behind it is replaced by a still. */
+  @media (prefers-reduced-motion: reduce) {
+    .glass {
+      backdrop-filter: blur(8px) saturate(120%);
+      -webkit-backdrop-filter: blur(8px) saturate(120%);
+      background-image: none;
+      background-color: color-mix(in oklch, var(--color-surface) 90%, transparent);
+    }
+    .glass-dark {
+      backdrop-filter: blur(8px) saturate(120%);
+      -webkit-backdrop-filter: blur(8px) saturate(120%);
+    }
   }
 }
 

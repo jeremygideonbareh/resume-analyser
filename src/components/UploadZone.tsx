@@ -30,6 +30,8 @@ function errorMessage(error: unknown): string {
         return 'No readable text found — this looks like a scanned/image PDF. Try pasting the text instead.'
       case 'parse-error':
         return 'Could not read that file. Try converting it to text and pasting it instead.'
+      case 'stale-build':
+        return 'A new version of ResumeLab is available. Reload the page and try again.'
     }
   }
   return 'Something went wrong while reading the file. Please try again.'
@@ -51,6 +53,7 @@ interface UploadZoneProps {
 export function UploadZone({ onParsed }: UploadZoneProps) {
   const [phase, setPhase] = useState<UploadPhase>('idle')
   const [message, setMessage] = useState('')
+  const [errorCode, setErrorCode] = useState<string | null>(null)
   const [result, setResult] = useState<ParsedResume | null>(null)
   const [dragOver, setDragOver] = useState(false)
 const [pasteOpen, setPasteOpen] = useState(false)
@@ -74,6 +77,7 @@ useEffect(() => {
     if (!file) return
     setPhase('parsing')
     setMessage('')
+    setErrorCode(null)
     const started = performance.now()
     try {
       const parsed = await extractTextFromFile(file)
@@ -89,6 +93,7 @@ useEffect(() => {
     } catch (error) {
       setResult(null)
       setMessage(errorMessage(error))
+      setErrorCode(error instanceof ParsingError ? error.code : null)
       setPhase('error')
     }
   }
@@ -111,6 +116,7 @@ useEffect(() => {
   const reset = () => {
     setPhase('idle')
     setMessage('')
+    setErrorCode(null)
     setResult(null)
     setPasteText('')
     setPasteOpen(false)
@@ -215,16 +221,29 @@ useEffect(() => {
                 <p role="alert" className="max-w-sm text-sm text-ink">
                   {message}
                 </p>
-                <Button
-                  variant="outline"
-                  className="mt-1"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    reset()
-                  }}
-                >
-                  Try again
-                </Button>
+                {errorCode === 'stale-build' ? (
+                  <Button
+                    variant="outline"
+                    className="mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.location.reload()
+                    }}
+                  >
+                    Reload page
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      reset()
+                    }}
+                  >
+                    Try again
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}

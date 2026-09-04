@@ -1,8 +1,9 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { FlippingWordSwap } from '@/components/ui/flipping-word-swap'
 import { maskIdentifier, type AuthUser } from '@/lib/session'
+import { navigateToSection, type AppView } from '@/lib/navigate'
 
-export type AppView = 'landing' | 'dashboard' | 'profile' | 'chat'
+export type { AppView }
 
 interface HeaderProps {
   /** Signed-in user from useAuthSession(), or null when signed out. */
@@ -38,21 +39,7 @@ export function Header({
     ? maskIdentifier(user.email ?? user.phone ?? '')
     : ''
 
-  /**
-   * Scroll to a landing-page section. If the dashboard view is active the
-   * target doesn't exist yet — navigate to 'landing' first, then scroll on
-   * the next frame once the landing sections have mounted.
-   */
-  const goToSection = (id: string) => {
-    if (view !== 'landing') {
-      onNavigate('landing')
-      requestAnimationFrame(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-      })
-    } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
+  const goToSection = (id: string) => navigateToSection(id, view, onNavigate)
 
   return (
     <motion.header

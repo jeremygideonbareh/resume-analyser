@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Header, type AppView } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { MobileNav } from '@/components/layout/MobileNav'
 import { Hero } from '@/components/sections/Hero'
 import { ParseSection } from '@/components/sections/ParseSection'
 import { ResolutionBand } from '@/components/sections/ResolutionBand'
@@ -42,39 +43,49 @@ function App() {
           onNavigate={setView}
         />
       )}
-      <main>
-        {view === 'dashboard' && user ? (
-          <Dashboard userId={user.id} onNavigate={setView} />
-        ) : view === 'profile' && user ? (
-          <ProfileView userId={user.id} onNavigate={setView} />
-        ) : view === 'chat' && user ? (
-          <ChatView userId={user.id} onNavigate={setView} />
-        ) : (
-          // One argument, in order: here is your document → here is what the
-          // machine turns it into → here is what that costs you → here is how
-          // it's fixed → here is what you get back → now hand it over.
-          //
-          // The tool used to sit second, which asked for the upload before
-          // anything had earned it. It sits last now, with the hero CTA
-          // anchored straight to it so an impatient visitor still skips
-          // directly to the product.
-          <>
-            <Hero
-              user={user}
-              onSignIn={() => setLoginOpen(true)}
-              onSignOut={signOut}
-              onNavigate={setView}
-            />
-            <ParseSection />
-            <ResolutionBand />
-            <VerdictSection />
-            <HowItWorks />
-            <SampleReport />
-            <ToolSection user={user} onSignIn={() => setLoginOpen(true)} />
-          </>
-        )}
-      </main>
-      <Footer />
+      {/* pb-16 clears the fixed MobileNav bar (h-16) below md so it never
+          covers the tail end of the page's content or the Footer. */}
+      <div className="pb-16 md:pb-0">
+        <main>
+          {view === 'dashboard' && user ? (
+            <Dashboard userId={user.id} onNavigate={setView} />
+          ) : view === 'profile' && user ? (
+            <ProfileView userId={user.id} onNavigate={setView} />
+          ) : view === 'chat' && user ? (
+            <ChatView userId={user.id} onNavigate={setView} />
+          ) : (
+            // One argument, in order: here is your document → here is what the
+            // machine turns it into → here is what that costs you → here is how
+            // it's fixed → here is what you get back → now hand it over.
+            //
+            // The tool used to sit second, which asked for the upload before
+            // anything had earned it. It sits last now, with the hero CTA
+            // anchored straight to it so an impatient visitor still skips
+            // directly to the product.
+            <>
+              <Hero
+                user={user}
+                onSignIn={() => setLoginOpen(true)}
+                onSignOut={signOut}
+                onNavigate={setView}
+              />
+              <ParseSection />
+              <ResolutionBand />
+              <VerdictSection />
+              <HowItWorks />
+              <SampleReport />
+              <ToolSection user={user} onSignIn={() => setLoginOpen(true)} />
+            </>
+          )}
+        </main>
+        <Footer />
+      </div>
+      <MobileNav
+        user={user}
+        view={view}
+        onNavigate={setView}
+        onSignIn={() => setLoginOpen(true)}
+      />
       <LoginPanel
         open={loginOpen}
         onOpenChange={setLoginOpen}

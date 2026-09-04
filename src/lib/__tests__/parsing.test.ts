@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -115,5 +115,31 @@ describe('extractTextFromFile — failure paths', () => {
     )
     const res = await extractTextFromFile(short)
     expect(res.warnings).toContain('possible-scanned')
+  })
+
+  it('rejects a PDF with code stale-build when the lazy pdf.js chunk fails to load', async () => {
+    // Simulates a tab left open across a deploy: the in-memory bundle still
+    // points at an old, now-404'd chunk hash for the dynamically imported
+    // pdf.js module. The failed import() must be distinguished from a
+    // generic parse-error so the UI can offer a reload instead of a retry
+    // that fails identically.
+    vi.resetModules()
+    vi.doMock('pdfjs-dist/legacy/build/pdf.mjs', () => {
+      throw new Error('Failed to fetch dynamically imported module')
+    })
+    try {
+      const { extractTextFromFile: extract, ParsingError: PE } = await import(
+        '../parsing'
+      )
+      const file = new File([new Uint8Array([1, 2, 3])], 'resume.pdf', {
+        type: 'application/pdf',
+      })
+      const err = await extract(file).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(PE)
+      expect((err as InstanceType<typeof PE>).code).toBe('stale-build')
+    } finally {
+      vi.doUnmock('pdfjs-dist/legacy/build/pdf.mjs')
+      vi.resetModules()
+    }
   })
 })

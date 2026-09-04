@@ -21,6 +21,7 @@ export type ParsingErrorCode =
   | 'unsupported-type'
   | 'no-text'
   | 'parse-error'
+  | 'stale-build'
 
 export class ParsingError extends Error {
   readonly code: ParsingErrorCode
@@ -57,7 +58,19 @@ function detectFormat(type: string, name: string): ParsedFormat | null {
 async function extractPdf(file: File): Promise<string> {
   // Lazy-load pdf.js only when a PDF is actually analysed (Todo 5.2) so the
   // library ships as a dynamic chunk instead of inflating the main bundle.
-  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // A tab left open across a deploy still holds the OLD chunk hash in its
+  // in-memory bundle — that hash 404s once a newer deploy replaces
+  // dist/assets/*. Distinguish that specific failure so the UI can offer a
+  // reload instead of a generic (and useless) "try again".
+  let pdfjsLib: typeof import('pdfjs-dist/legacy/build/pdf.mjs')
+  try {
+    pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  } catch {
+    throw new ParsingError(
+      'stale-build',
+      'A new version of this app is available.'
+    )
+  }
   // Browser-only: the real Web Worker needs an explicit src. In Node/Vitest
   // `window` is undefined and pdf.js falls back to its built-in main-thread
   // "fake worker" — setting workerSrc there would make it try to dynamic-import
